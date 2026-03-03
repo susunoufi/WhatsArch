@@ -1,0 +1,8 @@
+faster-whisper
+flask
+tqdm
+anthropic
+openai
+python-dotenv
+pymupdf
+sentence-transformers
