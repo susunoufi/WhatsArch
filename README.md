@@ -52,18 +52,9 @@ See [HOW_IT_WORKS.md](HOW_IT_WORKS.md) for a visual walkthrough.
 
 ## Installation
 
-### Windows (Quick Start)
-
-1. Download or clone this repository
-2. Double-click **`setup.bat`** — it installs Python, ffmpeg, and all dependencies
-3. Export your WhatsApp chats and place the folders in the `chats/` directory
-4. Double-click **`WhatsArch.bat`** to start
-
-### Manual Setup
-
 **Requirements:**
 - Python 3.10+
-- ffmpeg (for video processing)
+- ffmpeg (for video processing — `winget install ffmpeg` on Windows)
 
 ```bash
 # Clone the repo
@@ -148,8 +139,6 @@ API keys are stored in a `.env` file in the project root.
 ```
 WhatsArch/
   run.py                  # Main entry point
-  setup.bat               # Windows installer
-  WhatsArch.bat           # Windows launcher
   requirements.txt
   chat_search/
     parser.py             # WhatsApp chat parser

@@ -415,10 +415,6 @@
         .pdf-preview-name { color: var(--text-primary); font-size: 0.9em; font-weight: 500; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pdf-preview-text { font-size: 0.83em; color: var(--text-secondary); line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
-        /* Old pdf-link kept for fallback */
-        .pdf-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--bg-tertiary); border-radius: var(--radius); color: var(--accent-blue); text-decoration: none; font-size: 0.9em; transition: background 0.2s; }
-        .pdf-link:hover { background: var(--bg-hover); }
-
         /* --- Context Messages --- */
         .context-wrapper { margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px; }
         .context-wrapper .context-title { font-size: 0.82em; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
@@ -790,6 +786,8 @@
             $dateTo.addEventListener('change', () => performSearch(true));
 
             $chatSelector.addEventListener('change', () => {
+                // Clear progress pollers from previous chat
+                Object.keys(progressPollers).forEach(stopProgressPolling);
                 currentChat = $chatSelector.value;
                 localStorage.setItem('selectedChat', currentChat);
                 document.getElementById('senderDropdownContent').innerHTML = '';
@@ -798,6 +796,11 @@
                 loadStats();
                 managementLoaded = false;
                 if (activeTab === 'management') loadManagementData();
+            });
+
+            // Clean up pollers on page unload
+            window.addEventListener('beforeunload', () => {
+                Object.keys(progressPollers).forEach(stopProgressPolling);
             });
 
             $query.addEventListener('keydown', (e) => {
@@ -825,8 +828,9 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabName + 'Tab').classList.add('active');
 
-            // Show/hide search bar
+            // Show/hide search bar and chat selector
             document.getElementById('searchBarRow').style.display = tabName === 'search' ? 'flex' : 'none';
+            document.getElementById('chatSelector').style.display = tabName === 'search' ? '' : 'none';
 
             if (tabName === 'management' && !managementLoaded) {
                 loadManagementData();
@@ -973,6 +977,12 @@
                 return;
             }
 
+            // Show loading state on search button
+            const searchBtn = document.getElementById('searchBtn');
+            const searchBtnOriginal = searchBtn.innerHTML;
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מחפש...';
+
             showState('loading');
 
             const params = new URLSearchParams();
@@ -1005,6 +1015,9 @@
                 showState('results');
                 $resultsInfo.style.display = 'flex';
                 $resultsCount.innerHTML = '<span style="color:#e57373;"><i class="fas fa-exclamation-circle"></i> שגיאה בחיפוש</span>';
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = searchBtnOriginal;
             }
         }
 
@@ -1366,7 +1379,17 @@
             if (expandIcon) expandIcon.classList.toggle('open');
         }
 
+        const SLOW_TASKS = {
+            transcribe: 'תמלול אודיו עלול לקחת זמן רב. להמשיך?',
+            images: 'עיבוד תמונות דורש API ועלול לקחת זמן. להמשיך?',
+            videos: 'עיבוד וידאו דורש API ועלול לקחת זמן רב. להמשיך?',
+            embeddings: 'יצירת embeddings עלולה לקחת מספר דקות. להמשיך?',
+        };
+
         async function startProcessing(chatName, task) {
+            // Confirm before slow tasks
+            if (SLOW_TASKS[task] && !confirm(SLOW_TASKS[task])) return;
+
             try {
                 const res = await fetch('/api/process/start', {
                     method: 'POST',

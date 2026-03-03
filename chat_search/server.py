@@ -186,6 +186,9 @@ def create_app(chats_dir: str) -> Flask:
         if len(parts) != 2:
             abort(400, "Invalid path")
         chat_name, filename = parts
+        # Sanitize to prevent path traversal
+        chat_name = os.path.basename(chat_name)
+        filename = os.path.basename(filename)
         chat_dir = os.path.join(chats_dir, chat_name)
         if not os.path.isdir(chat_dir):
             abort(404)
@@ -292,6 +295,9 @@ def create_app(chats_dir: str) -> Flask:
         if len(parts) != 2:
             abort(400, "Invalid media path")
         chat_name, filename = parts
+        # Sanitize to prevent path traversal
+        chat_name = os.path.basename(chat_name)
+        filename = os.path.basename(filename)
         chat_dir = os.path.join(chats_dir, chat_name)
         if not os.path.isdir(chat_dir):
             abort(404)
@@ -304,14 +310,14 @@ def create_app(chats_dir: str) -> Flask:
     def _get_chunk_count(db_path):
         """Get the number of chunks in the database."""
         import sqlite3
+        conn = sqlite3.connect(db_path)
         try:
-            conn = sqlite3.connect(db_path)
             c = conn.cursor()
             c.execute("SELECT COUNT(*) FROM chunks")
-            count = c.fetchone()[0]
-            conn.close()
-            return count
+            return c.fetchone()[0]
         except Exception:
             return 0
+        finally:
+            conn.close()
 
     return app

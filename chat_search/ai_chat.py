@@ -1,5 +1,6 @@
 """RAG-based AI chat for WhatsApp conversation analysis."""
 
+import bisect
 import os
 import re
 import sqlite3
@@ -136,17 +137,18 @@ def _like_search(db_path: str, query: str, limit: int = 50) -> list[dict]:
     """Direct LIKE search on messages table - catches things FTS5 trigram may miss."""
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    like_pattern = f"%{query}%"
-    c.execute(
-        "SELECT id FROM messages WHERE text LIKE ? OR transcription LIKE ? "
-        "OR visual_description LIKE ? OR video_transcription LIKE ? "
-        "OR pdf_text LIKE ? OR sender LIKE ? LIMIT ?",
-        (like_pattern, like_pattern, like_pattern, like_pattern, like_pattern, like_pattern, limit),
-    )
-    results = [dict(row) for row in c.fetchall()]
-    conn.close()
-    return results
+    try:
+        c = conn.cursor()
+        like_pattern = f"%{query}%"
+        c.execute(
+            "SELECT id FROM messages WHERE text LIKE ? OR transcription LIKE ? "
+            "OR visual_description LIKE ? OR video_transcription LIKE ? "
+            "OR pdf_text LIKE ? OR sender LIKE ? LIMIT ?",
+            (like_pattern, like_pattern, like_pattern, like_pattern, like_pattern, like_pattern, limit),
+        )
+        return [dict(row) for row in c.fetchall()]
+    finally:
+        conn.close()
 
 
 def _expand_keywords(keywords: list[str]) -> list[dict]:
@@ -214,19 +216,26 @@ def retrieve_chunks(db_path: str, question: str, max_results: int = 12) -> list[
                 chunk_roots[cid] = set()
             chunk_roots[cid].add(root_idx)
 
-    # Load chunk ranges for message-to-chunk mapping
+    # Load chunk ranges for message-to-chunk mapping (sorted by start_message_id)
     chunk_ranges = _load_chunk_ranges(db_path)
+    # Pre-extract start IDs for bisect lookup
+    chunk_starts = [r[1] for r in chunk_ranges]
 
     def msg_ids_to_chunk_ids(msg_ids):
-        """Map message IDs to containing chunk IDs."""
+        """Map message IDs to containing chunk IDs using binary search."""
         cids = set()
         for mid in msg_ids:
-            for cid, start, end in chunk_ranges:
+            # Find the rightmost chunk whose start_id <= mid
+            idx = bisect.bisect_right(chunk_starts, mid) - 1
+            # Check this and nearby chunks (overlapping chunks may contain mid)
+            for i in range(max(0, idx - 1), min(len(chunk_ranges), idx + 3)):
+                cid, start, end = chunk_ranges[i]
                 if start <= mid <= end:
                     cids.add(cid)
         return cids
 
     # === TIER 1: Semantic search on chunks ===
+    MAX_SEMANTIC_QUERIES = 15
     try:
         semantic_queries = [question]
         if keywords:
@@ -238,15 +247,31 @@ def retrieve_chunks(db_path: str, question: str, max_results: int = 12) -> list[
                     forms.add(exp["root"])
                 kw_forms.append(forms)
 
+            # Adjacent pairs
             for i in range(len(keywords) - 1):
+                if len(semantic_queries) >= MAX_SEMANTIC_QUERIES:
+                    break
                 for fi in kw_forms[i]:
+                    if len(semantic_queries) >= MAX_SEMANTIC_QUERIES:
+                        break
                     for fj in kw_forms[i + 1]:
+                        if len(semantic_queries) >= MAX_SEMANTIC_QUERIES:
+                            break
                         semantic_queries.append(f"{fi} {fj}")
 
+            # Adjacent triplets (only if room remains)
             for i in range(len(keywords) - 2):
+                if len(semantic_queries) >= MAX_SEMANTIC_QUERIES:
+                    break
                 for fi in kw_forms[i]:
+                    if len(semantic_queries) >= MAX_SEMANTIC_QUERIES:
+                        break
                     for fj in kw_forms[i + 1]:
+                        if len(semantic_queries) >= MAX_SEMANTIC_QUERIES:
+                            break
                         for fk in kw_forms[i + 2]:
+                            if len(semantic_queries) >= MAX_SEMANTIC_QUERIES:
+                                break
                             semantic_queries.append(f"{fi} {fj} {fk}")
 
         semantic_results = indexer.semantic_search_chunks(db_path, semantic_queries, top_k=100)
@@ -319,7 +344,7 @@ def retrieve_chunks(db_path: str, question: str, max_results: int = 12) -> list[
     top_scored = sorted(scored.items(), key=lambda x: x[1], reverse=True)[:20]
     boosted_threads = set()
     for cid, score in top_scored:
-        if score >= 5:
+        if score >= 8:
             tid = chunk_threads.get(cid)
             if tid and tid > 0:
                 boosted_threads.add(tid)
@@ -380,30 +405,42 @@ def retrieve_chunks(db_path: str, question: str, max_results: int = 12) -> list[
     return selected
 
 
+_chunk_ranges_cache = {}   # db_path -> list of (id, start, end)
+_chunk_threads_cache = {}  # db_path -> dict {chunk_id: thread_id}
+
+
 def _load_chunk_ranges(db_path: str) -> list[tuple]:
-    """Load all chunk (id, start_message_id, end_message_id) for mapping."""
+    """Load all chunk (id, start_message_id, end_message_id) for mapping. Cached."""
+    if db_path in _chunk_ranges_cache:
+        return _chunk_ranges_cache[db_path]
     conn = sqlite3.connect(db_path)
-    c = conn.cursor()
     try:
-        c.execute("SELECT id, start_message_id, end_message_id FROM chunks")
+        c = conn.cursor()
+        c.execute("SELECT id, start_message_id, end_message_id FROM chunks ORDER BY start_message_id")
         ranges = c.fetchall()
+        _chunk_ranges_cache[db_path] = ranges
+        return ranges
     except Exception:
-        ranges = []
-    conn.close()
-    return ranges
+        return []
+    finally:
+        conn.close()
 
 
 def _load_chunk_threads(db_path: str) -> dict:
-    """Load chunk_id -> thread_id mapping for thread boosting."""
+    """Load chunk_id -> thread_id mapping for thread boosting. Cached."""
+    if db_path in _chunk_threads_cache:
+        return _chunk_threads_cache[db_path]
     conn = sqlite3.connect(db_path)
-    c = conn.cursor()
     try:
+        c = conn.cursor()
         c.execute("SELECT id, thread_id FROM chunks WHERE thread_id IS NOT NULL")
         result = {row[0]: row[1] for row in c.fetchall()}
+        _chunk_threads_cache[db_path] = result
+        return result
     except Exception:
-        result = {}
-    conn.close()
-    return result
+        return {}
+    finally:
+        conn.close()
 
 
 def format_chunks_for_prompt(chunk_groups: list[dict], chat_name: str) -> str:
@@ -497,186 +534,6 @@ def _format_single_chunk(group: dict, section_num: int, indent: str = "") -> str
     return ""
 
 
-# Legacy: message-level retrieval (kept for reference)
-def retrieve_messages(db_path: str, question: str, max_results: int = 25) -> list[dict]:
-    """Legacy: Retrieve relevant messages using semantic-first hybrid search."""
-    keywords = extract_keywords(question)
-
-    # Collect scored results from multiple search strategies
-    scored = {}  # message_id -> score
-    # Track which root concepts each message matches (for intersection boost)
-    message_roots = {}  # message_id -> set of root indices
-
-    def add_score(msg_id, score, root_idx=None):
-        scored[msg_id] = scored.get(msg_id, 0) + score
-        if root_idx is not None:
-            if msg_id not in message_roots:
-                message_roots[msg_id] = set()
-            message_roots[msg_id].add(root_idx)
-
-    # === PRIMARY: Multi-query semantic search (vector similarity) ===
-    # Search with the full question AND keyword sub-phrases.
-    # Each sub-query independently contributes its top-k candidates, then merged.
-    # Uses both original keyword forms and morphological variants to catch
-    # different verb conjugations and noun forms in short WhatsApp messages.
-    try:
-        semantic_queries = [question]
-        if keywords:
-            expanded = _expand_keywords(keywords)
-            # For each keyword: original form + root (most-stripped) form
-            kw_forms = []
-            for exp in expanded:
-                forms = {exp["original"]}
-                if exp["root"] != exp["original"] and len(exp["root"]) >= 2:
-                    forms.add(exp["root"])
-                kw_forms.append(forms)
-
-            # Generate adjacent pairs with variant substitution
-            for i in range(len(keywords) - 1):
-                for fi in kw_forms[i]:
-                    for fj in kw_forms[i + 1]:
-                        semantic_queries.append(f"{fi} {fj}")
-
-            # Generate adjacent triplets with variant substitution
-            for i in range(len(keywords) - 2):
-                for fi in kw_forms[i]:
-                    for fj in kw_forms[i + 1]:
-                        for fk in kw_forms[i + 2]:
-                            semantic_queries.append(f"{fi} {fj} {fk}")
-
-        semantic_results = indexer.semantic_search(db_path, semantic_queries, top_k=200)
-        for msg_id, sim_score in semantic_results:
-            # High weight: top semantic matches get 10-15 points
-            weight = round(sim_score * 20, 1)
-            add_score(msg_id, weight)
-    except Exception:
-        pass  # Graceful degradation if embeddings not available
-
-    # === SECONDARY: Keyword search (precision boost) ===
-    # Keyword matches boost messages that also contain exact terms
-    if not keywords:
-        if not scored:
-            return []
-    else:
-        expanded = _expand_keywords(keywords)
-
-        # --- Keyword Strategy 1: FTS5 with all keywords combined ---
-        combined = " ".join(keywords)
-        try:
-            results, _ = indexer.search(db_path, combined, page=1, per_page=50)
-            for r in results:
-                add_score(r["id"], 4)
-        except Exception:
-            pass
-
-        # --- Keyword Strategy 2: FTS5 per keyword + morphological variants ---
-        for i, exp in enumerate(expanded):
-            weight = 2 if len(exp["original"]) >= 4 else 1
-            searched = set()
-            for variant in exp["variants"]:
-                if variant in searched or len(variant) < 2:
-                    continue
-                searched.add(variant)
-                try:
-                    results, _ = indexer.search(db_path, variant, page=1, per_page=50)
-                    for r in results:
-                        add_score(r["id"], weight, i)
-                except Exception:
-                    pass
-
-        # --- Keyword Strategy 3: LIKE search with all morphological variants ---
-        for i, exp in enumerate(expanded):
-            searched = set()
-            for variant in exp["variants"]:
-                if variant in searched or len(variant) < 2:
-                    continue
-                searched.add(variant)
-                try:
-                    results = _like_search(db_path, variant, limit=80)
-                    for r in results:
-                        add_score(r["id"], 2, i)
-                except Exception:
-                    pass
-
-        # --- Keyword Strategy 4: Intersection boost ---
-        for msg_id, roots in message_roots.items():
-            if len(roots) >= 3:
-                scored[msg_id] += 6
-            elif len(roots) >= 2:
-                scored[msg_id] += 3
-
-    if not scored:
-        return []
-
-    # Sort by score descending, take top results
-    sorted_ids = sorted(scored.keys(), key=lambda mid: scored[mid], reverse=True)
-    top_ids = sorted_ids[:max_results]
-
-    # Deduplicate overlapping context windows (wider window = wider gap)
-    selected_ids = []
-    for mid in top_ids:
-        if any(abs(mid - s) <= 10 for s in selected_ids):
-            continue
-        selected_ids.append(mid)
-
-    # Fetch context for each selected message (wider window: ±5)
-    groups = []
-    for mid in selected_ids:
-        messages = indexer.get_context(db_path, mid, before=5, after=5)
-        groups.append({
-            "focus_id": mid,
-            "messages": messages,
-        })
-
-    return groups
-
-
-def format_messages_for_prompt(message_groups: list[dict], chat_name: str) -> str:
-    """Format retrieved message groups into compact text for the LLM."""
-    if not message_groups:
-        return "(לא נמצאו הודעות רלוונטיות)"
-
-    parts = []
-    for i, group in enumerate(message_groups, 1):
-        lines = []
-        for m in group["messages"]:
-            text = m.get("text") or ""
-            transcription = m.get("transcription") or ""
-            visual_desc = m.get("visual_description") or ""
-            video_trans = m.get("video_transcription") or ""
-            pdf_text = m.get("pdf_text") or ""
-
-            # Skip truly empty messages
-            if not text and not transcription and not visual_desc and not video_trans and not pdf_text:
-                continue
-
-            # Build content parts
-            content_parts = []
-            if text:
-                content_parts.append(text[:500])
-            if transcription:
-                content_parts.append(f"[תמלול: {transcription[:300]}]")
-            if visual_desc:
-                content_parts.append(f"[תיאור חזותי: {visual_desc[:300]}]")
-            if video_trans:
-                content_parts.append(f"[תמלול וידאו: {video_trans[:300]}]")
-            if pdf_text:
-                content_parts.append(f"[טקסט PDF: {pdf_text[:500]}]")
-
-            content = " ".join(content_parts)
-
-            dt = m.get("datetime", "")[:16]  # YYYY-MM-DDTHH:MM
-            sender = m.get("sender", "?")
-            marker = ">>> " if m["id"] == group["focus_id"] else "    "
-
-            lines.append(f"{marker}[{dt}] {sender} (#{m['id']}): {content}")
-
-        if lines:
-            parts.append(f"--- קטע #{i} ---\n" + "\n".join(lines))
-
-    return "\n\n".join(parts)
-
-
 class LLMClient:
     """Abstraction over Anthropic and OpenAI APIs."""
 
@@ -741,6 +598,17 @@ class LLMClient:
             return response.choices[0].message.content
 
 
+_llm_client = None
+
+
+def _get_llm_client():
+    """Get or create a singleton LLMClient instance."""
+    global _llm_client
+    if _llm_client is None:
+        _llm_client = LLMClient()
+    return _llm_client
+
+
 def ask(db_path: str, question: str, chat_name: str, history: list = None) -> dict:
     """Main RAG pipeline: retrieve relevant chunks, then ask LLM.
 
@@ -765,7 +633,7 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None) -> di
         user_message = f"היסטוריית שיחה אחרונה:\n{history_text}\n\n{user_message}"
 
     # 5. Call LLM
-    llm = LLMClient()
+    llm = _get_llm_client()
     system = SYSTEM_PROMPT.format(chat_name=chat_name)
     answer = llm.chat(system, user_message, max_tokens=2048)
 

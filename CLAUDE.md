@@ -160,6 +160,8 @@ Stored in `chat_metadata` table: `{chat_type, unique_senders, total_messages}`.
 ### Step 5: Indexing (`chat_search/indexer.py`)
 
 - Drops and rebuilds `chat.db` each run (no migration needed)
+- All DB connections use `try/finally` for leak-safe cleanup
+- `get_stats()` uses a single aggregated SQL query instead of multiple queries
 - See Section 4 for full details
 
 ---
@@ -269,15 +271,15 @@ CREATE VIRTUAL TABLE chunks_fts USING fts5(
 
 | Tier | Strategy | Weight | Details |
 |------|----------|--------|---------|
-| 1 | **Semantic search on chunks** (primary) | sim*20 pts | E5-large with "query: " prefix; full question + keyword pairs/triplets; round-robin merge; `top_k=100` |
+| 1 | **Semantic search on chunks** (primary) | sim*20 pts | E5-large with "query: " prefix; full question + keyword pairs/triplets (capped at 15 queries); round-robin merge; `top_k=100` |
 | 2 | FTS5 on chunks_fts | 4 pts | All keywords in one FTS5 query on chunk text |
 | 3 | FTS5 per-keyword on messages_fts | 1-2 pts | Map matched message_ids → chunk_ids via range lookup |
 | 4 | LIKE substring on messages | 2 pts | Map matched message_ids → chunk_ids |
 | 5 | Intersection boost | +3 or +6 pts | Chunks matching 2+ keyword roots get +3, 3+ get +6 |
 
-**Message-to-chunk mapping:** All chunk ranges `(id, start, end)` loaded into memory. For each matched message_id, find containing chunks where `start <= msg_id <= end`.
+**Message-to-chunk mapping:** All chunk ranges `(id, start, end)` loaded and cached in memory (sorted by `start_message_id`). Uses `bisect` binary search for O(log n) lookup instead of linear scan.
 
-**Thread boosting (group chats):** After scoring, if a high-scoring chunk (score >= 5) has a `thread_id`, all other chunks with the same `thread_id` get +2 boost. This pulls in related conversation context from the same thread.
+**Thread boosting (group chats):** After scoring, if a high-scoring chunk (score >= 8) has a `thread_id`, all other chunks with the same `thread_id` get +2 boost. This pulls in related conversation context from the same thread.
 
 **Deduplication:** Skip chunks whose message range overlaps >30% with any already-selected chunk.
 
@@ -313,7 +315,7 @@ CREATE VIRTUAL TABLE chunks_fts USING fts5(
 2. `retrieve_chunks(db_path, question, max_results=12)` - 5-tier hybrid chunk search
 3. `format_chunks_for_prompt(chunk_groups, chat_name)` - Build context string
 4. Append last 4 history items (2 Q&A exchanges)
-5. Call LLM with system prompt + context + question (max_tokens=2048)
+5. Call LLM via singleton `_get_llm_client()` with system prompt + context + question (max_tokens=2048)
 6. Extract source citations from chunk messages
 7. Return `{answer, sources, keywords, provider}`
 
@@ -342,9 +344,12 @@ CREATE VIRTUAL TABLE chunks_fts USING fts5(
 | GET | `/api/process/status?chat=` | Full processing status with per-file detail |
 | POST | `/api/process/start` | Trigger background processing. Body: `{chat, task}` |
 | GET | `/api/process/progress?chat=` | Lightweight polling for active task progress |
-| GET | `/media/<chat_name>/<filename>` | Serve media files (images, audio, video) |
+| POST | `/api/process/stop` | Cancel running task. Body: `{chat}` |
+| GET | `/media/<chat_name>/<filename>` | Serve media files (path-traversal protected) |
 
 MIME type registration: `.opus` -> `audio/ogg` for browser playback.
+
+**Security:** Media and thumbnail endpoints sanitize `chat_name` and `filename` with `os.path.basename()` to prevent path traversal attacks.
 
 ---
 
@@ -405,9 +410,6 @@ Both loaded from `.env` file via `python-dotenv` (loaded in `run.py` and `ai_cha
 
 ## 8. Current Limitations / TODOs
 
-### Incomplete Processing
-- Video vision processing is partially complete for the "אבא" chat. Remaining videos need `python run.py` without `--skip-vision` to finish.
-
 ### Architecture Limitations
 - **No incremental indexing:** `build_index()` drops and recreates the entire database each run. Adding new messages requires full reprocessing.
 - **No streaming responses:** AI chat endpoint returns full response (no SSE/WebSocket streaming).
@@ -432,4 +434,3 @@ Both loaded from `.env` file via `python-dotenv` (loaded in `run.py` and `ai_cha
 
 ### Multi-Chat
 - Each chat is fully independent (separate DB, separate embeddings). No cross-chat search.
-- Legacy migration (`migrate_legacy_layout()`) hardcodes "אבא" as the migration target folder name.

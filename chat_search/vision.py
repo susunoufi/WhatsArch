@@ -37,10 +37,6 @@ def _has_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
-def _has_ffprobe() -> bool:
-    return shutil.which("ffprobe") is not None
-
-
 def get_video_duration(video_path: str) -> float:
     """Get video duration in seconds using ffprobe."""
     try:

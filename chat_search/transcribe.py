@@ -3,7 +3,6 @@
 import json
 import glob
 import os
-from pathlib import Path
 
 from tqdm import tqdm
 
@@ -19,13 +18,6 @@ def save_cache(cache_path: str, cache: dict):
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     with open(cache_path, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
-
-
-def get_transcription_text(entry) -> str:
-    """Extract text from a cache entry (handles both old string format and new dict format)."""
-    if isinstance(entry, dict):
-        return entry.get("text", "")
-    return entry  # old format: plain string
 
 
 def transcribe_audio_files(
