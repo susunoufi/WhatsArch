@@ -25,8 +25,39 @@ DEFAULT_SETTINGS = {
     "ollama_vision_model": "llama3.2-vision",
     "ollama_rag_model": "qwen2.5:14b",
     "sender_aliases": {},  # {"chat_name": {"original_name": "display_name", ...}}
-    "user_plans": {},      # {"user@email.com": "budget|balanced|premium|local"}
+    "user_plans": {},      # {"user@email.com": {mode, cloud_preset, local_vision, local_rag}}
 }
+
+# Per-user plan structure
+DEFAULT_USER_PLAN = {
+    "mode": "cloud",           # "cloud" | "local" | "both"
+    "cloud_preset": "budget",  # "budget" | "balanced" | "premium"
+    "local_vision": "proxy",   # "proxy" | "own_key" | "ollama"
+    "local_rag": "proxy",      # "proxy" | "own_key" | "ollama"
+}
+
+VALID_MODES = ("cloud", "local", "both")
+VALID_CLOUD_PRESETS = ("budget", "balanced", "premium")
+VALID_LOCAL_OPTIONS = ("proxy", "own_key", "ollama")
+
+
+def normalize_user_plan(plan_value) -> dict:
+    """Normalize a user plan value. Handles legacy string format and new dict format."""
+    if plan_value is None:
+        return dict(DEFAULT_USER_PLAN)
+    if isinstance(plan_value, str):
+        # Legacy: "budget" -> full dict
+        return {
+            "mode": "local" if plan_value == "local" else "cloud",
+            "cloud_preset": plan_value if plan_value in VALID_CLOUD_PRESETS else "budget",
+            "local_vision": "ollama" if plan_value == "local" else "proxy",
+            "local_rag": "ollama" if plan_value == "local" else "proxy",
+        }
+    if isinstance(plan_value, dict):
+        result = dict(DEFAULT_USER_PLAN)
+        result.update(plan_value)
+        return result
+    return dict(DEFAULT_USER_PLAN)
 
 PRESETS = {
     "budget": {

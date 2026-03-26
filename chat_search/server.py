@@ -88,14 +88,18 @@ def create_app(chats_dir: str) -> Flask:
             return f(*args, **kwargs)
         return decorated
 
-    def get_user_preset(user_email: str) -> str:
-        """Get the preset assigned to a user. Admin gets 'premium', others get their assigned plan."""
+    def get_user_plan(user_email: str) -> dict:
+        """Get the full plan assigned to a user."""
         if user_email == ADMIN_EMAIL:
-            return "premium"  # Admin gets full access
+            return {"mode": "both", "cloud_preset": "premium", "local_vision": "proxy", "local_rag": "proxy"}
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
         user_plans = settings.get("user_plans", {})
-        return user_plans.get(user_email, DEFAULT_USER_PRESET)
+        return config.normalize_user_plan(user_plans.get(user_email))
+
+    def get_user_preset(user_email: str) -> str:
+        """Legacy helper: returns cloud_preset string for enforce_user_preset()."""
+        return get_user_plan(user_email).get("cloud_preset", "budget")
 
     def enforce_user_preset():
         """In web mode, override settings with the user's assigned preset."""
@@ -1091,17 +1095,18 @@ def create_app(chats_dir: str) -> Flask:
         user_plans = settings.get("user_plans", {})
 
         try:
-            # Get all users from Supabase auth
             users_response = sb.auth.admin.list_users()
             users = []
             for u in users_response:
                 email = u.email or ""
                 user_meta = u.user_metadata or {}
+                plan = config.normalize_user_plan(user_plans.get(email))
                 users.append({
                     "id": u.id,
                     "email": email,
                     "display_name": user_meta.get("display_name", email.split("@")[0]),
-                    "preset": user_plans.get(email, DEFAULT_USER_PRESET),
+                    "plan": plan,
+                    "preset": plan["cloud_preset"],  # backward compat
                     "is_admin": email == ADMIN_EMAIL,
                     "created_at": str(u.created_at) if u.created_at else "",
                     "last_sign_in": str(u.last_sign_in_at) if u.last_sign_in_at else "",
@@ -1113,28 +1118,53 @@ def create_app(chats_dir: str) -> Flask:
     @app.route("/api/admin/users", methods=["POST"])
     @require_admin
     def api_admin_update_user():
-        """Update a user's plan. Admin only."""
+        """Update a user's plan (partial update). Admin only."""
         data = request.get_json()
         if not data:
             abort(400, "Missing JSON body")
 
         email = data.get("email", "").strip()
-        preset = data.get("preset", "").strip()
+        if not email:
+            abort(400, "Missing email")
 
-        if not email or not preset:
-            abort(400, "Missing email or preset")
+        # Validate provided fields
+        mode = data.get("mode", "").strip()
+        cloud_preset = data.get("cloud_preset", "").strip()
+        local_vision = data.get("local_vision", "").strip()
+        local_rag = data.get("local_rag", "").strip()
+        # Backward compat: accept "preset" as cloud_preset
+        if not cloud_preset and data.get("preset"):
+            cloud_preset = data.get("preset", "").strip()
 
-        if preset not in config.PRESETS:
-            abort(400, f"Invalid preset: {preset}. Must be one of: {', '.join(config.PRESETS.keys())}")
+        if mode and mode not in config.VALID_MODES:
+            abort(400, f"Invalid mode: {mode}")
+        if cloud_preset and cloud_preset not in config.VALID_CLOUD_PRESETS:
+            abort(400, f"Invalid cloud_preset: {cloud_preset}")
+        if local_vision and local_vision not in config.VALID_LOCAL_OPTIONS:
+            abort(400, f"Invalid local_vision: {local_vision}")
+        if local_rag and local_rag not in config.VALID_LOCAL_OPTIONS:
+            abort(400, f"Invalid local_rag: {local_rag}")
 
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
         if "user_plans" not in settings:
             settings["user_plans"] = {}
-        settings["user_plans"][email] = preset
+
+        # Load existing plan, then update only provided fields
+        existing = config.normalize_user_plan(settings["user_plans"].get(email))
+        if mode:
+            existing["mode"] = mode
+        if cloud_preset:
+            existing["cloud_preset"] = cloud_preset
+        if local_vision:
+            existing["local_vision"] = local_vision
+        if local_rag:
+            existing["local_rag"] = local_rag
+
+        settings["user_plans"][email] = existing
         config.save_settings(project_root, settings)
 
-        return jsonify({"status": "ok", "email": email, "preset": preset})
+        return jsonify({"status": "ok", "email": email, "plan": existing})
 
     @app.route("/api/admin/users", methods=["DELETE"])
     @require_admin
@@ -1154,17 +1184,21 @@ def create_app(chats_dir: str) -> Flask:
         settings["user_plans"] = user_plans
         config.save_settings(project_root, settings)
 
-        return jsonify({"status": "ok", "email": email, "preset": DEFAULT_USER_PRESET})
+        return jsonify({"status": "ok", "email": email, "plan": config.DEFAULT_USER_PLAN})
 
     @app.route("/api/user/plan")
     @require_auth
     def api_user_plan():
-        """Get the current user's assigned plan/preset."""
+        """Get the current user's assigned plan."""
         user = request.user
-        preset_key = get_user_preset(user["email"])
-        preset = config.PRESETS.get(preset_key, {})
+        plan = get_user_plan(user["email"])
+        preset = config.PRESETS.get(plan["cloud_preset"], {})
         return jsonify({
-            "preset": preset_key,
+            "mode": plan["mode"],
+            "cloud_preset": plan["cloud_preset"],
+            "local_vision": plan["local_vision"],
+            "local_rag": plan["local_rag"],
+            "preset": plan["cloud_preset"],  # backward compat
             "name_he": preset.get("name_he", ""),
             "name_en": preset.get("name_en", ""),
             "icon": preset.get("icon", ""),

@@ -29,6 +29,7 @@ from flask import Flask, request, jsonify, send_from_directory, abort, Response
 from flask_cors import CORS
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024  # 2GB — local, no limit
 CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localhost:*", "https://*.railway.app"])
 
 # Agent version
@@ -246,6 +247,56 @@ def upload_local():
 
     else:
         return jsonify({"error": "Path must be a ZIP file or directory"}), 400
+
+
+@app.route("/upload/zip", methods=["POST"])
+def upload_zip():
+    """Upload a ZIP file directly from the browser (multipart form upload).
+
+    Unlike /upload/local (which takes a path), this accepts a file upload.
+    Used when the browser sends a ZIP to the local agent instead of Railway.
+    """
+    import zipfile
+    import tempfile
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "Empty filename"}), 400
+
+    temp_dir = tempfile.mkdtemp()
+    temp_zip = os.path.join(temp_dir, "upload.zip")
+    try:
+        file.save(temp_zip)
+
+        if not zipfile.is_zipfile(temp_zip):
+            return jsonify({"error": "Not a valid ZIP file"}), 400
+
+        chat_name = Path(file.filename).stem
+        dest = CHATS_DIR / chat_name
+        if dest.exists():
+            chat_name = chat_name + "_" + str(int(time.time()))
+            dest = CHATS_DIR / chat_name
+
+        with zipfile.ZipFile(temp_zip, "r") as zf:
+            zf.extractall(dest)
+
+        # Flatten if single subdirectory
+        entries = list(dest.iterdir())
+        if len(entries) == 1 and entries[0].is_dir():
+            sub = entries[0]
+            for item in sub.iterdir():
+                shutil.move(str(item), str(dest / item.name))
+            sub.rmdir()
+
+        # Update agent chats set
+        return jsonify({"status": "ok", "chat_name": chat_name, "path": str(dest)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 # ===========================================================================
