@@ -587,11 +587,16 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                 continue
 
             with lock:
-                cache[filename] = desc
-                save_cache(cache_path, cache)
+                # Don't cache error responses — leave them for retry
+                if desc and not desc.startswith("[vision error:"):
+                    cache[filename] = desc
+                    save_cache(cache_path, cache)
                 processed_count += 1
                 bar.update(1)
-                bar.set_postfix_str(filename[:35])
+                try:
+                    bar.set_postfix_str(filename[:35])
+                except UnicodeEncodeError:
+                    bar.set_postfix_str("...")
 
             if progress_callback:
                 progress_callback(filename, processed_count, len(image_files))
@@ -673,7 +678,11 @@ def process_videos(
             frames = extract_key_frames(filepath, tmp_dir)
             if frames:
                 description = describe_video_frames(frames, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url)
-                desc_cache[filename] = description
+                # Don't cache error responses — leave for retry
+                if description and not description.startswith("[vision error:"):
+                    desc_cache[filename] = description
+                else:
+                    desc_cache[filename] = ""
             else:
                 desc_cache[filename] = ""
 
