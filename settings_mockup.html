@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>הגדרות — WhatsArch</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-deep: #060d11;
+  --bg-primary: #0b141a;
+  --bg-card: #111b21;
+  --bg-elevated: #1a2730;
+  --bg-hover: #233038;
+  --bg-input: #0c1317;
+  --border: #233038;
+  --border-light: #2a3942;
+  --text-primary: #e9edef;
+  --text-secondary: #8696a0;
+  --text-muted: #667781;
+  --green: #00a884;
+  --green-dim: #00a88422;
+  --green-glow: #00a88444;
+  --blue: #53bdeb;
+  --blue-dim: #53bdeb22;
+  --gold: #f5c842;
+  --gold-dim: #f5c84222;
+  --orange: #ff7b54;
+  --red: #ea4335;
+  --red-dim: #ea433522;
+  --purple: #a970ff;
+  --provider-gemini: #4285f4;
+  --provider-openai: #10a37f;
+  --provider-anthropic: #d4a27f;
+  --provider-ollama: #a970ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans Hebrew', 'Segoe UI', Tahoma, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Animated background ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 10%, var(--green-dim) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 300px at 80% 90%, var(--blue-dim) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Page layout ── */
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+/* ── Header ── */
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeSlideDown 0.6s ease-out;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 24px;
+  animation: fadeSlideUp 0.5s ease-out both;
+}
+
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.2s; }
+.card:nth-child(4) { animation-delay: 0.3s; }
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title .icon {
+  font-size: 1.3rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.card-title .icon.keys { background: var(--gold-dim); }
+.card-title .icon.models { background: var(--blue-dim); }
+.card-title .icon.cost { background: var(--green-dim); }
+
+/* ── API Key inputs ── */
+.api-key-group {
+  margin-bottom: 16px;
+}
+
+.api-key-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.api-key-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.api-key-label .provider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 48px 12px 16px;
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  direction: ltr;
+  text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-wrapper input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-dim);
+}
+
+.input-wrapper input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.toggle-visibility {
+  position: absolute;
+  left: 12px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 1.1rem;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-visibility:hover { color: var(--text-primary); }
+
+.api-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.api-note svg { flex-shrink: 0; opacity: 0.6; }
+
+.api-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.78rem;
+}
+
+.api-status.connected { color: var(--green); }
+.api-status.missing { color: var(--text-muted); }
+
+/* ── Model Sections ── */
+.model-section {
+  margin-bottom: 32px;
+}
+
+.model-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.section-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.info-trigger {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.info-trigger:hover {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.info-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -10px;
+  width: 280px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.2s;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+
+.info-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 16px;
+  width: 10px;
+  height: 10px;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+  transform: rotate(-45deg);
+}
+
+.info-trigger:hover .info-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* ── Model cards grid ── */
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.model-card {
+  position: relative;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.model-card:hover {
+  border-color: var(--border-light);
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.model-card.selected {
+  border-color: var(--green);
+  background: linear-gradient(135deg, var(--green-dim), transparent 60%);
+  box-shadow: 0 0 20px var(--green-dim);
+}
+
+.model-card .card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.provider-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.provider-circle.gemini { background: var(--provider-gemini); }
+.provider-circle.openai { background: var(--provider-openai); }
+.provider-circle.anthropic { background: var(--provider-anthropic); }
+.provider-circle.ollama { background: var(--provider-ollama); }
+
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-info .model-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-info .provider-name {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.badge.recommended { background: var(--blue-dim); color: var(--blue); }
+.badge.free { background: var(--green-dim); color: var(--green); }
+.badge.best { background: var(--gold-dim); color: var(--gold); }
+
+.card-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.detail-item .label {
+  color: var(--text-muted);
+}
+
+.detail-item .value {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.detail-item .value.price-free {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.stars {
+  color: var(--gold);
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+}
+
+.speed-fast { color: var(--green); }
+.speed-slow { color: var(--orange); }
+
+/* ── Check indicator ── */
+.check-indicator {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s;
+}
+
+.model-card.selected .check-indicator {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.check-indicator svg {
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s;
+}
+
+.model-card.selected .check-indicator svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── API key warning ── */
+.api-warning {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: var(--red-dim);
+  border-radius: 8px;
+  font-size: 0.76rem;
+  color: #ea4335;
+  animation: fadeIn 0.3s ease;
+}
+
+.api-warning.show { display: flex; }
+
+/* ── Cost calculator ── */
+.cost-calculator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.cost-calculator .cost-icon {
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+.cost-calculator .cost-amount {
+  font-weight: 700;
+  color: var(--green);
+  direction: ltr;
+  margin-right: auto;
+}
+
+.cost-calculator .cost-amount.free-amount {
+  color: var(--green);
+}
+
+/* ── Summary section ── */
+.summary-receipt {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.receipt-row:last-child { border-bottom: none; }
+
+.receipt-row:hover { background: var(--bg-elevated); }
+
+.receipt-row .task-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.receipt-row .task-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.receipt-row .model-tag {
+  background: var(--bg-elevated);
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.receipt-row .cost-tag {
+  font-weight: 700;
+  direction: ltr;
+  min-width: 60px;
+  text-align: left;
+}
+
+.cost-tag.free { color: var(--green); }
+.cost-tag.paid { color: var(--gold); }
+
+.receipt-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--green-dim), transparent);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.receipt-total .total-amount {
+  font-size: 1.3rem;
+  direction: ltr;
+  color: var(--green);
+}
+
+/* ── Save button ── */
+.save-button {
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--green), #00c49a);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--green-dim);
+}
+
+.save-button:active {
+  transform: translateY(0);
+}
+
+.save-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.5s, height 0.5s;
+}
+
+.save-button:active::after {
+  width: 400px;
+  height: 400px;
+}
+
+/* ── Divider ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to left, transparent, var(--border), transparent);
+  margin: 28px 0;
+}
+
+/* ── Animations ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .page-wrapper { padding: 20px 14px 60px; }
+  .card { padding: 20px 16px; }
+  .model-grid { grid-template-columns: 1fr; }
+  .page-header h1 { font-size: 1.6rem; }
+}
+
+/* ── Toast notification ── */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--green);
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 8px 32px rgba(0,168,132,0.3);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1000;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Ollama status ── */
+.ollama-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.offline { background: var(--red); }
+
+/* ── Hardware card ── */
+.hw-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.hw-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to left, var(--provider-gemini), var(--purple), var(--green));
+}
+
+.hw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.hw-stat {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hw-stat .hw-label {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hw-stat .hw-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  direction: ltr;
+  text-align: right;
+}
+
+.hw-stat .hw-sub {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.hw-verdict {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.verdict-box {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.verdict-box .verdict-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.verdict-box .verdict-meter {
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.verdict-box .verdict-meter .meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+.meter-fill.level-low { background: var(--orange); width: 30%; }
+.meter-fill.level-mid { background: var(--gold); width: 60%; }
+.meter-fill.level-good { background: var(--green); width: 85%; }
+
+.verdict-box .verdict-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.verdict-box .verdict-estimate {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.hw-recommendation {
+  margin-top: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--green);
+  background: linear-gradient(135deg, var(--green-dim), transparent 60%);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.hw-recommendation .rec-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.hw-recommendation strong {
+  color: var(--green);
+}
+
+/* perf tag on model cards */
+.perf-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.perf-tag.slow { background: var(--red-dim); color: #ea4335; }
+.perf-tag.medium { background: var(--gold-dim); color: var(--gold); }
+.perf-tag.ok { background: var(--green-dim); color: var(--green); }
+
+@media (max-width: 640px) {
+  .hw-grid { grid-template-columns: 1fr 1fr; }
+  .hw-verdict { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <header class="page-header">
+    <h1>הגדרות WhatsArch</h1>
+    <p>בחר ספקי AI, הגדר מפתחות, וראה עלויות משוערות</p>
+  </header>
+
+  <!-- Card 1: API Keys -->
+  <section class="card">
+    <div class="card-title">
+      <span class="icon keys">🔑</span>
+      מפתחות API
+    </div>
+
+    <div class="api-key-group">
+      <label class="api-key-label">
+        <span class="provider-dot" style="background:var(--provider-anthropic)"></span>
+        Anthropic
+      </label>
+      <div class="input-wrapper">
+        <input type="password" id="key-anthropic" placeholder="sk-ant-api03-..." value="sk-ant-api03-xxxx...xxxx">
+        <button class="toggle-visibility" onclick="toggleKey('key-anthropic', this)" title="הצג/הסתר">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="api-status connected">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        מחובר
+      </div>
+    </div>
+
+    <div class="api-key-group">
+      <label class="api-key-label">
+        <span class="provider-dot" style="background:var(--provider-openai)"></span>
+        OpenAI
+      </label>
+      <div class="input-wrapper">
+        <input type="password" id="key-openai" placeholder="sk-...">
+        <button class="toggle-visibility" onclick="toggleKey('key-openai', this)" title="הצג/הסתר">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="api-status missing">לא הוגדר</div>
+    </div>
+
+    <div class="api-key-group">
+      <label class="api-key-label">
+        <span class="provider-dot" style="background:var(--provider-gemini)"></span>
+        Google Gemini
+      </label>
+      <div class="input-wrapper">
+        <input type="password" id="key-gemini" placeholder="AIza...">
+        <button class="toggle-visibility" onclick="toggleKey('key-gemini', this)" title="הצג/הסתר">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="api-status missing">לא הוגדר</div>
+    </div>
+
+    <div class="api-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.
+    </div>
+
+    <div class="ollama-status">
+      <span class="status-dot offline"></span>
+      <span>Ollama —</span>
+      <span style="color:var(--text-muted)">לא מותקן. מודלים לוקאליים לא יהיו זמינים.</span>
+    </div>
+  </section>
+
+  <!-- Card 1.5: Hardware Detection -->
+  <section class="card hw-card">
+    <div class="card-title">
+      <span class="icon" style="background: var(--purple); background: linear-gradient(135deg, var(--purple), var(--provider-gemini)); color:#fff; font-size:1rem;">🖥️</span>
+      זיהוי חומרה
+      <span style="margin-right:auto; font-size:0.75rem; color:var(--text-muted); font-weight:400;">זוהה אוטומטית</span>
+    </div>
+
+    <div class="hw-grid">
+      <div class="hw-stat">
+        <span class="hw-label">מעבד (CPU)</span>
+        <span class="hw-value">Intel i7-1360P</span>
+        <span class="hw-sub">דור 13 · 12 ליבות · 2.20 GHz</span>
+      </div>
+      <div class="hw-stat">
+        <span class="hw-label">זיכרון (RAM)</span>
+        <span class="hw-value">16 GB</span>
+        <span class="hw-sub">15.7 GB זמין</span>
+      </div>
+      <div class="hw-stat">
+        <span class="hw-label">כרטיס מסך (GPU)</span>
+        <span class="hw-value" style="color:var(--orange)">Intel Iris Xe</span>
+        <span class="hw-sub">משולב · ללא GPU ייעודי</span>
+      </div>
+      <div class="hw-stat">
+        <span class="hw-label">מכשיר</span>
+        <span class="hw-value">Lenovo Yoga 9</span>
+        <span class="hw-sub">Windows 11 · 64-bit</span>
+      </div>
+    </div>
+
+    <div class="hw-verdict">
+      <div class="verdict-box">
+        <div class="verdict-title">💬 RAG — שאלות AI</div>
+        <div class="verdict-meter"><div class="meter-fill level-mid"></div></div>
+        <div class="verdict-desc">
+          <strong>qwen2.5:14b</strong> ירוץ ב-CPU בלבד. ישתמש ב~10GB RAM, ישאיר מעט מקום לשאר.
+        </div>
+        <div class="verdict-estimate">⏱️ זמן תשובה משוער: <strong style="color:var(--gold)">1-3 דקות</strong></div>
+      </div>
+      <div class="verdict-box">
+        <div class="verdict-title">📷 Vision — תיאור תמונות</div>
+        <div class="verdict-meter"><div class="meter-fill level-low"></div></div>
+        <div class="verdict-desc">
+          <strong>llama3.2-vision</strong> (11B) ידרוש ~8GB RAM ויהיה איטי מאוד ב-CPU. עם 899 תמונות — ייקח שעות.
+        </div>
+        <div class="verdict-estimate">⏱️ זמן לתמונה: <strong style="color:var(--orange)">30-60 שניות</strong> · 899 תמונות ≈ <strong style="color:var(--red)">8-15 שעות</strong></div>
+      </div>
+      <div class="verdict-box">
+        <div class="verdict-title">🎬 Video — תיאור סרטונים</div>
+        <div class="verdict-meter"><div class="meter-fill level-low"></div></div>
+        <div class="verdict-desc">
+          <strong>llama3.2-vision</strong> עם מספר פריימים לסרטון. CPU בלבד = מאוד איטי.
+        </div>
+        <div class="verdict-estimate">⏱️ זמן לסרטון: <strong style="color:var(--orange)">2-5 דקות</strong> · 198 סרטונים ≈ <strong style="color:var(--red)">7-16 שעות</strong></div>
+      </div>
+    </div>
+
+    <div class="hw-recommendation">
+      <span class="rec-icon">💡</span>
+      <div>
+        <strong>המלצה למחשב שלך:</strong> ל-RAG (שאלות) — Ollama יעבוד, אבל לא מיידי (1-3 דקות לתשובה). לתמונות וסרטונים — <strong>מומלץ API ענן</strong> (Gemini Flash) כי עיבוד לוקאלי ייקח שעות רבות ללא GPU ייעודי.
+      </div>
+    </div>
+  </section>
+
+  <!-- Card 2: Model Selection -->
+  <section class="card">
+    <div class="card-title">
+      <span class="icon models">⚙️</span>
+      בחירת מודלים
+    </div>
+
+    <!-- Vision -->
+    <div class="model-section" id="section-vision">
+      <div class="section-header">
+        <h3>📷 תיאור תמונות</h3>
+        <div class="info-trigger">
+          ?
+          <div class="info-tooltip">AI "מסתכל" על כל תמונה שנשלחה בצ'אט וכותב תיאור שלה — כך אפשר למצוא תמונות בחיפוש טקסטואלי.</div>
+        </div>
+      </div>
+
+      <div class="model-grid" data-task="vision">
+
+        <div class="model-card selected" data-provider="gemini" data-model="Gemini 2.0 Flash" data-cost="0.00004" onclick="selectModel(this, 'vision')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle gemini">G</div>
+            <div class="card-info">
+              <div class="model-name">Gemini 2.0 Flash</div>
+              <div class="provider-name">Google</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge recommended">מומלץ</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.00004</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="openai" data-model="GPT-4.1 nano" data-cost="0.0001" onclick="selectModel(this, 'vision')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle openai">O</div>
+            <div class="card-info">
+              <div class="model-name">GPT-4.1 nano</div>
+              <div class="provider-name">OpenAI</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.0001</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★☆☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="openai" data-model="GPT-4o-mini" data-cost="0.0003" onclick="selectModel(this, 'vision')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle openai">O</div>
+            <div class="card-info">
+              <div class="model-name">GPT-4o-mini</div>
+              <div class="provider-name">OpenAI</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.0003</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="anthropic" data-model="Haiku 3.5" data-cost="0.002" onclick="selectModel(this, 'vision')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle anthropic">A</div>
+            <div class="card-info">
+              <div class="model-name">Claude Haiku 3.5</div>
+              <div class="provider-name">Anthropic</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.002</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="anthropic" data-model="Sonnet 4" data-cost="0.008" onclick="selectModel(this, 'vision')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle anthropic">A</div>
+            <div class="card-info">
+              <div class="model-name">Claude Sonnet 4</div>
+              <div class="provider-name">Anthropic</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge best">הכי מדויק</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.008</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★★</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="ollama" data-model="llama3.2-vision" data-cost="0" onclick="selectModel(this, 'vision')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle ollama">L</div>
+            <div class="card-info">
+              <div class="model-name">llama3.2-vision</div>
+              <div class="provider-name">Ollama (לוקאלי)</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge free">חינם</span>
+              <span class="perf-tag slow">⚠ איטי על המחשב שלך</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value price-free">חינם</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-slow">🐌 30-60 שניות</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★☆☆</span></div>
+            <div class="detail-item" style="grid-column:1/-1"><span class="label">במחשב שלך:</span> <span class="value speed-slow">~8GB RAM · CPU בלבד · 899 תמונות ≈ 8-15 שעות</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="api-warning" id="warning-vision">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <span>נדרש מפתח API שלא הוגדר</span>
+      </div>
+
+      <div class="cost-calculator" id="calc-vision">
+        <span class="cost-icon">📷</span>
+        <span>יש לך <strong>899</strong> תמונות בצ'אט — עלות משוערת:</span>
+        <span class="cost-amount" id="cost-vision">$0.04</span>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Video -->
+    <div class="model-section" id="section-video">
+      <div class="section-header">
+        <h3>🎬 תיאור סרטונים</h3>
+        <div class="info-trigger">
+          ?
+          <div class="info-tooltip">AI צופה בפריימים מהסרטון ומתאר מה קורה בו. גם האודיו מתומלל (חינם, לוקאלית עם Whisper).</div>
+        </div>
+      </div>
+
+      <div class="model-grid" data-task="video">
+
+        <div class="model-card selected" data-provider="gemini" data-model="Gemini 2.0 Flash" data-cost="0.002" onclick="selectModel(this, 'video')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle gemini">G</div>
+            <div class="card-info">
+              <div class="model-name">Gemini 2.0 Flash</div>
+              <div class="provider-name">Google</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge recommended">מומלץ</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.002/דקה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="openai" data-model="GPT-4.1 nano" data-cost="0.002" onclick="selectModel(this, 'video')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle openai">O</div>
+            <div class="card-info">
+              <div class="model-name">GPT-4.1 nano</div>
+              <div class="provider-name">OpenAI</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.002/דקה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★☆☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="anthropic" data-model="Haiku 3.5" data-cost="0.03" onclick="selectModel(this, 'video')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle anthropic">A</div>
+            <div class="card-info">
+              <div class="model-name">Claude Haiku 3.5</div>
+              <div class="provider-name">Anthropic</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.03/דקה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="anthropic" data-model="Sonnet 4" data-cost="0.11" onclick="selectModel(this, 'video')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle anthropic">A</div>
+            <div class="card-info">
+              <div class="model-name">Claude Sonnet 4</div>
+              <div class="provider-name">Anthropic</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge best">הכי מדויק</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.11/דקה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★★</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="ollama" data-model="llama3.2-vision" data-cost="0" onclick="selectModel(this, 'video')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle ollama">L</div>
+            <div class="card-info">
+              <div class="model-name">llama3.2-vision</div>
+              <div class="provider-name">Ollama (לוקאלי)</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge free">חינם</span>
+              <span class="perf-tag slow">⚠ איטי על המחשב שלך</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value price-free">חינם</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-slow">🐌 2-5 דקות/סרטון</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★☆☆</span></div>
+            <div class="detail-item" style="grid-column:1/-1"><span class="label">במחשב שלך:</span> <span class="value speed-slow">CPU בלבד · 198 סרטונים ≈ 7-16 שעות</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="api-warning" id="warning-video">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <span>נדרש מפתח API שלא הוגדר</span>
+      </div>
+
+      <div class="cost-calculator" id="calc-video">
+        <span class="cost-icon">🎬</span>
+        <span>יש לך <strong>198</strong> סרטונים בצ'אט — עלות משוערת:</span>
+        <span class="cost-amount" id="cost-video">$0.40</span>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- RAG -->
+    <div class="model-section" id="section-rag">
+      <div class="section-header">
+        <h3>💬 צ'אט AI — תשאול חכם</h3>
+        <div class="info-trigger">
+          ?
+          <div class="info-tooltip">מאפשר לשאול שאלות על השיחה בשפה טבעית ולקבל תשובות מבוססות על תוכן הצ'אט, כולל הפניה להודעות מקור.</div>
+        </div>
+      </div>
+
+      <div class="model-grid" data-task="rag">
+
+        <div class="model-card" data-provider="gemini" data-model="Gemini 2.0 Flash" data-cost="0.0005" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle gemini">G</div>
+            <div class="card-info">
+              <div class="model-name">Gemini 2.0 Flash</div>
+              <div class="provider-name">Google</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.0005/שאלה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="openai" data-model="GPT-4.1 nano" data-cost="0.0005" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle openai">O</div>
+            <div class="card-info">
+              <div class="model-name">GPT-4.1 nano</div>
+              <div class="provider-name">OpenAI</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.0005/שאלה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★☆☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="openai" data-model="GPT-4o-mini" data-cost="0.0008" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle openai">O</div>
+            <div class="card-info">
+              <div class="model-name">GPT-4o-mini</div>
+              <div class="provider-name">OpenAI</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.0008/שאלה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="anthropic" data-model="Haiku 3.5" data-cost="0.004" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle anthropic">A</div>
+            <div class="card-info">
+              <div class="model-name">Claude Haiku 3.5</div>
+              <div class="provider-name">Anthropic</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.004/שאלה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="anthropic" data-model="Sonnet 4" data-cost="0.017" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle anthropic">A</div>
+            <div class="card-info">
+              <div class="model-name">Claude Sonnet 4</div>
+              <div class="provider-name">Anthropic</div>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.017/שאלה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★★</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="anthropic" data-model="Opus 4" data-cost="0.083" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle anthropic">A</div>
+            <div class="card-info">
+              <div class="model-name">Claude Opus 4</div>
+              <div class="provider-name">Anthropic</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge best">הכי חכם</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value">$0.083/שאלה</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-fast">⚡ מהיר</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★★</span></div>
+          </div>
+        </div>
+
+        <div class="model-card selected" data-provider="ollama" data-model="qwen2.5:14b" data-cost="0" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle ollama">L</div>
+            <div class="card-info">
+              <div class="model-name">qwen2.5:14b</div>
+              <div class="provider-name">Ollama (לוקאלי)</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge recommended">מומלץ</span>
+              <span class="badge free">חינם</span>
+              <span class="perf-tag medium">סביר על המחשב שלך</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value price-free">חינם</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-slow">🐌 1-3 דקות</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★★☆</span></div>
+            <div class="detail-item" style="grid-column:1/-1"><span class="label">במחשב שלך:</span> <span class="value" style="color:var(--gold)">~10GB RAM · 3-6 טוקנים/שנייה · צפוף אך אפשרי</span></div>
+          </div>
+        </div>
+
+        <div class="model-card" data-provider="ollama" data-model="qwen2.5:7b" data-cost="0" onclick="selectModel(this, 'rag')">
+          <div class="check-indicator"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          <div class="card-top">
+            <div class="provider-circle ollama">L</div>
+            <div class="card-info">
+              <div class="model-name">qwen2.5:7b</div>
+              <div class="provider-name">Ollama (לוקאלי)</div>
+            </div>
+            <div class="card-badges">
+              <span class="badge free">חינם</span>
+              <span class="perf-tag ok">נוח על המחשב שלך</span>
+            </div>
+          </div>
+          <div class="card-details">
+            <div class="detail-item"><span class="label">עלות:</span> <span class="value price-free">חינם</span></div>
+            <div class="detail-item"><span class="label">מהירות:</span> <span class="value speed-slow">🕐 30-90 שניות</span></div>
+            <div class="detail-item"><span class="label">עברית:</span> <span class="stars">★★★☆☆</span></div>
+            <div class="detail-item" style="grid-column:1/-1"><span class="label">במחשב שלך:</span> <span class="value" style="color:var(--green)">~5GB RAM · 6-12 טוקנים/שנייה · רץ בנוחות</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="api-warning" id="warning-rag">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <span>נדרש מפתח API שלא הוגדר</span>
+      </div>
+
+      <div class="cost-calculator" id="calc-rag">
+        <span class="cost-icon">💬</span>
+        <span>עלות משוערת ל-100 שאלות:</span>
+        <span class="cost-amount" id="cost-rag">חינם</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Card 3: Cost Summary -->
+  <section class="card">
+    <div class="card-title">
+      <span class="icon cost">💰</span>
+      סיכום עלויות — אמיר נופי
+    </div>
+
+    <div class="summary-receipt">
+      <div class="receipt-row">
+        <span class="task-name">📷 תיאור תמונות</span>
+        <div class="task-detail">
+          <span class="model-tag" id="summary-vision-model">Gemini 2.0 Flash</span>
+          <span style="color:var(--text-muted); font-size: 0.82rem;">899 תמונות</span>
+          <span class="cost-tag paid" id="summary-vision-cost">$0.04</span>
+        </div>
+      </div>
+      <div class="receipt-row">
+        <span class="task-name">🎬 תיאור סרטונים</span>
+        <div class="task-detail">
+          <span class="model-tag" id="summary-video-model">Gemini 2.0 Flash</span>
+          <span style="color:var(--text-muted); font-size: 0.82rem;">198 סרטונים</span>
+          <span class="cost-tag paid" id="summary-video-cost">$0.40</span>
+        </div>
+      </div>
+      <div class="receipt-row">
+        <span class="task-name">💬 צ'אט AI (100 שאלות)</span>
+        <div class="task-detail">
+          <span class="model-tag" id="summary-rag-model">qwen2.5:14b</span>
+          <span class="cost-tag free" id="summary-rag-cost">חינם</span>
+        </div>
+      </div>
+      <div class="receipt-total">
+        <span>סה"כ משוער</span>
+        <span class="total-amount" id="summary-total">$0.44</span>
+      </div>
+    </div>
+
+    <button class="save-button" onclick="saveSettings()">
+      שמור הגדרות
+    </button>
+  </section>
+
+</div>
+
+<div class="toast" id="toast">ההגדרות נשמרו בהצלחה ✓</div>
+
+<script>
+// ── State ──
+const state = {
+  vision: { cost: 0.00004, model: 'Gemini 2.0 Flash', provider: 'gemini', count: 899 },
+  video:  { cost: 0.002,   model: 'Gemini 2.0 Flash', provider: 'gemini', count: 198 },
+  rag:    { cost: 0,       model: 'qwen2.5:14b',      provider: 'ollama', count: 100 }
+};
+
+const apiKeys = {
+  anthropic: true,
+  openai: false,
+  gemini: false,
+  ollama: false
+};
+
+const providerKeyMap = {
+  gemini: 'gemini',
+  openai: 'openai',
+  anthropic: 'anthropic',
+  ollama: 'ollama'
+};
+
+// ── Model selection ──
+function selectModel(card, task) {
+  const grid = card.closest('.model-grid');
+  grid.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+
+  const cost = parseFloat(card.dataset.cost);
+  const model = card.dataset.model;
+  const provider = card.dataset.provider;
+
+  state[task] = { ...state[task], cost, model, provider };
+
+  updateCosts();
+  checkApiWarnings();
+}
+
+// ── Cost calculations ──
+function updateCosts() {
+  // Vision
+  const visionTotal = state.vision.cost * state.vision.count;
+  const visionEl = document.getElementById('cost-vision');
+  if (state.vision.cost === 0) {
+    visionEl.textContent = 'חינם';
+    visionEl.classList.add('free-amount');
+  } else {
+    visionEl.textContent = '$' + formatCost(visionTotal);
+    visionEl.classList.remove('free-amount');
+  }
+
+  // Video
+  const videoTotal = state.video.cost * state.video.count;
+  const videoEl = document.getElementById('cost-video');
+  if (state.video.cost === 0) {
+    videoEl.textContent = 'חינם';
+    videoEl.classList.add('free-amount');
+  } else {
+    videoEl.textContent = '$' + formatCost(videoTotal);
+    videoEl.classList.remove('free-amount');
+  }
+
+  // RAG
+  const ragTotal = state.rag.cost * state.rag.count;
+  const ragEl = document.getElementById('cost-rag');
+  if (state.rag.cost === 0) {
+    ragEl.textContent = 'חינם';
+    ragEl.classList.add('free-amount');
+  } else {
+    ragEl.textContent = '$' + formatCost(ragTotal);
+    ragEl.classList.remove('free-amount');
+  }
+
+  // Summary
+  document.getElementById('summary-vision-model').textContent = state.vision.model;
+  document.getElementById('summary-video-model').textContent = state.video.model;
+  document.getElementById('summary-rag-model').textContent = state.rag.model;
+
+  const svCost = document.getElementById('summary-vision-cost');
+  if (state.vision.cost === 0) { svCost.textContent = 'חינם'; svCost.className = 'cost-tag free'; }
+  else { svCost.textContent = '$' + formatCost(visionTotal); svCost.className = 'cost-tag paid'; }
+
+  const svvCost = document.getElementById('summary-video-cost');
+  if (state.video.cost === 0) { svvCost.textContent = 'חינם'; svvCost.className = 'cost-tag free'; }
+  else { svvCost.textContent = '$' + formatCost(videoTotal); svvCost.className = 'cost-tag paid'; }
+
+  const srCost = document.getElementById('summary-rag-cost');
+  if (state.rag.cost === 0) { srCost.textContent = 'חינם'; srCost.className = 'cost-tag free'; }
+  else { srCost.textContent = '$' + formatCost(ragTotal); srCost.className = 'cost-tag paid'; }
+
+  const total = visionTotal + videoTotal + ragTotal;
+  const totalEl = document.getElementById('summary-total');
+  if (total === 0) {
+    totalEl.textContent = 'חינם!';
+  } else {
+    totalEl.textContent = '$' + formatCost(total);
+  }
+}
+
+function formatCost(val) {
+  if (val === 0) return '0';
+  if (val < 0.01) return val.toFixed(4);
+  if (val < 1) return val.toFixed(2);
+  return val.toFixed(2);
+}
+
+// ── API warnings ──
+function checkApiWarnings() {
+  ['vision', 'video', 'rag'].forEach(task => {
+    const warning = document.getElementById('warning-' + task);
+    const provider = state[task].provider;
+    if (provider === 'ollama') {
+      warning.classList.remove('show');
+    } else {
+      const hasKey = apiKeys[providerKeyMap[provider]];
+      if (!hasKey) {
+        warning.classList.add('show');
+      } else {
+        warning.classList.remove('show');
+      }
+    }
+  });
+}
+
+// ── API key toggle ──
+function toggleKey(id, btn) {
+  const input = document.getElementById(id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  } else {
+    input.type = 'password';
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  }
+}
+
+// ── Monitor API key inputs ──
+document.querySelectorAll('.api-key-group input').forEach(input => {
+  input.addEventListener('input', () => {
+    const id = input.id;
+    const provider = id.replace('key-', '');
+    const hasValue = input.value.trim().length > 5;
+    apiKeys[provider] = hasValue;
+
+    const statusEl = input.closest('.api-key-group').querySelector('.api-status');
+    if (hasValue) {
+      statusEl.className = 'api-status connected';
+      statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> מחובר';
+    } else {
+      statusEl.className = 'api-status missing';
+      statusEl.textContent = 'לא הוגדר';
+    }
+
+    checkApiWarnings();
+  });
+});
+
+// ── Save ──
+function saveSettings() {
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ── Init ──
+checkApiWarnings();
+</script>
+
+</body>
+</html>

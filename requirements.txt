@@ -3,6 +3,7 @@ flask
 tqdm
 anthropic
 openai
+google-genai
 python-dotenv
 pymupdf
 sentence-transformers

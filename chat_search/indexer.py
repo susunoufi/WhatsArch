@@ -8,13 +8,80 @@ _chunk_embedding_cache = {}  # db_path -> numpy array (chunk-level)
 _model_cache = {}      # singleton
 
 
+def build_index_incremental(db_path: str, messages: list) -> bool:
+    """Incrementally update the search index. Returns True if incremental update was possible."""
+    if not os.path.exists(db_path):
+        return False  # Need full build
+
+    conn = sqlite3.connect(db_path)
+    try:
+        c = conn.cursor()
+
+        # Check existing message count
+        try:
+            c.execute("SELECT COUNT(*) FROM messages")
+            existing_count = c.fetchone()[0]
+        except Exception:
+            return False  # Table doesn't exist, need full build
+
+        if existing_count == 0:
+            return False  # Empty DB, need full build
+
+        if len(messages) <= existing_count:
+            if len(messages) == existing_count:
+                print(f"  Index up to date ({existing_count} messages)")
+                return True  # No changes
+            return False  # Fewer messages = something changed, full rebuild
+
+        # We have new messages to add
+        new_messages = messages[existing_count:]
+        new_count = len(new_messages)
+        print(f"  Adding {new_count} new messages (total: {len(messages)}, existing: {existing_count})")
+
+        # Insert new messages
+        for i, msg in enumerate(new_messages, start=existing_count + 1):
+            c.execute(
+                "INSERT INTO messages (id, datetime, sender, text, attachment, media_type, transcription, visual_description, video_transcription, pdf_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (i, msg.get("datetime", ""), msg.get("sender", ""), msg.get("text", ""),
+                 msg.get("attachment", ""), msg.get("media_type", ""),
+                 msg.get("transcription", ""), msg.get("visual_description", ""),
+                 msg.get("video_transcription", ""), msg.get("pdf_text", ""))
+            )
+            # Update FTS5
+            c.execute(
+                "INSERT INTO messages_fts (rowid, text, transcription, sender, visual_description, video_transcription, pdf_text) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (i, msg.get("text", ""), msg.get("transcription", ""), msg.get("sender", ""),
+                 msg.get("visual_description", ""), msg.get("video_transcription", ""), msg.get("pdf_text", ""))
+            )
+
+        conn.commit()
+        print(f"  Incrementally indexed {new_count} new messages")
+        return True
+    except Exception as e:
+        print(f"  Incremental index failed: {e}, will do full rebuild")
+        return False
+    finally:
+        conn.close()
+
+
 def build_index(messages: list, db_path: str):
-    """Build SQLite database with FTS5 full-text search index."""
+    """Build (or incrementally update) the FTS5 search index."""
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
+    # Try incremental update first
+    if build_index_incremental(db_path, messages):
+        return
+
+    # Full rebuild
     # Remove old DB to rebuild fresh
     if os.path.exists(db_path):
         os.remove(db_path)
+        # Also remove stale chunk embeddings to prevent mismatch
+        # (chunks table will be empty until build_chunks is called)
+        emb_path = db_path.replace(".db", "_chunk_embeddings.npy")
+        if os.path.exists(emb_path):
+            os.remove(emb_path)
+            _chunk_embedding_cache.pop(db_path, None)
 
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -185,6 +252,10 @@ def search(db_path: str, query: str, sender: str = "", date_from: str = "", date
                     type_conds.append("(m.transcription IS NOT NULL AND m.transcription != '')")
                 elif st == "visual":
                     type_conds.append("(m.visual_description IS NOT NULL AND m.visual_description != '')")
+                elif st == "image":
+                    type_conds.append("(m.media_type = 'image' AND m.visual_description IS NOT NULL AND m.visual_description != '')")
+                elif st == "video":
+                    type_conds.append("(m.media_type = 'video')")
                 elif st == "pdf":
                     type_conds.append("(m.pdf_text IS NOT NULL AND m.pdf_text != '')")
             if type_conds:
@@ -227,8 +298,8 @@ def search(db_path: str, query: str, sender: str = "", date_from: str = "", date
                     snippet(messages_fts, 3, '<mark>', '</mark>', '...', 30) as visual_description_snippet,
                     snippet(messages_fts, 4, '<mark>', '</mark>', '...', 30) as video_transcription_snippet,
                     snippet(messages_fts, 5, '<mark>', '</mark>', '...', 30) as pdf_text_snippet
-                FROM messages_fts f
-                JOIN messages m ON m.id = f.rowid
+                FROM messages_fts
+                JOIN messages m ON m.id = messages_fts.rowid
                 WHERE messages_fts MATCH ? {where}
                 ORDER BY m.datetime DESC
                 LIMIT ? OFFSET ?
@@ -245,6 +316,8 @@ def search(db_path: str, query: str, sender: str = "", date_from: str = "", date
                     "text": "m.text",
                     "transcription": "m.transcription",
                     "visual": "m.visual_description",
+                    "image": "m.visual_description",
+                    "video": "m.visual_description",
                     "pdf": "m.pdf_text",
                 }
                 for st in type_list:
@@ -294,6 +367,15 @@ def search(db_path: str, query: str, sender: str = "", date_from: str = "", date
             c.execute(results_sql, like_params + params + [per_page, offset])
 
         results = [dict(row) for row in c.fetchall()]
+
+        # Add metadata flags to each result
+        for r in results:
+            r["has_transcription"] = bool(r.get("transcription"))
+            r["has_visual"] = bool(r.get("visual_description"))
+            r["has_video_transcription"] = bool(r.get("video_transcription"))
+            r["has_pdf"] = bool(r.get("pdf_text"))
+            r["media_type"] = r.get("media_type", "")
+            r["relevance_score"] = r.get("relevance_score", 0)
 
         # For short queries (LIKE fallback), add highlighting manually
         if not use_fts and query:
@@ -446,27 +528,86 @@ def build_chunks(chunks: list, db_path: str):
     print(f"  Inserted {len(chunks)} chunks into {db_path}")
 
 
+def load_chunks_from_db(db_path: str) -> list:
+    """Load existing chunks from the database for embedding reuse.
+
+    Returns a list of simple objects with .combined_text attribute,
+    ordered by chunk id. Returns empty list if no chunks exist.
+    """
+    if not os.path.exists(db_path):
+        return []
+    try:
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.execute("SELECT id, combined_text FROM chunks ORDER BY id")
+        rows = c.fetchall()
+        conn.close()
+    except Exception:
+        return []
+    if not rows:
+        return []
+
+    class _ChunkStub:
+        __slots__ = ("chunk_id", "combined_text")
+        def __init__(self, chunk_id, combined_text):
+            self.chunk_id = chunk_id
+            self.combined_text = combined_text
+
+    return [_ChunkStub(row[0], row[1]) for row in rows]
+
+
 def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progress_callback=None):
     """Build semantic embeddings for conversation chunks.
 
     Uses E5-large with "passage: " prefix. Saves as chat_chunk_embeddings.npy.
     Row index i corresponds to chunk id i+1 (1-indexed).
     Encodes in batches with cancel support between each batch.
+    Supports resume: saves incrementally after each batch, and on restart
+    loads the partial file and continues from where it left off.
     """
     import numpy as np
 
     embeddings_path = db_path.replace(".db", "_chunk_embeddings.npy")
+    total = len(chunks)
+
+    # Check for existing partial/complete embeddings to enable resume
+    start_idx = 0
+    existing_embeddings = None
+    if os.path.exists(embeddings_path):
+        try:
+            existing = np.load(embeddings_path)
+            if existing.shape[0] >= total:
+                if existing.shape[0] == total:
+                    print(f"  Chunk embeddings already complete ({total} chunks), skipping.")
+                    if progress_callback:
+                        progress_callback("embeddings", total, total)
+                    return
+                # More rows than chunks = stale file, rebuild
+                print(f"  Stale embeddings ({existing.shape[0]} rows vs {total} chunks), rebuilding...")
+            else:
+                # Partial file - resume from where we left off
+                start_idx = existing.shape[0]
+                existing_embeddings = existing
+                print(f"  Resuming embeddings from chunk {start_idx}/{total}")
+        except Exception:
+            print("  Corrupted embeddings file, rebuilding...")
 
     texts = [f"passage: {chunk.combined_text}" for chunk in chunks]
 
     model = _get_embedding_model()
 
     batch_size = 32
-    num_batches = (len(texts) + batch_size - 1) // batch_size
-    print(f"  Encoding {len(texts)} chunks ({num_batches} batches) with {EMBEDDING_MODEL_NAME}...")
+    remaining = total - start_idx
+    num_batches = (remaining + batch_size - 1) // batch_size
+    print(f"  Encoding {remaining} chunks ({num_batches} batches) with {EMBEDDING_MODEL_NAME}..." +
+          (f" (resuming from {start_idx})" if start_idx > 0 else ""))
 
-    all_embeddings = []
-    for i in range(0, len(texts), batch_size):
+    all_embeddings = [existing_embeddings] if existing_embeddings is not None else []
+
+    if progress_callback and start_idx > 0:
+        progress_callback("embeddings", start_idx, total)
+
+    for i in range(start_idx, total, batch_size):
         if cancel_event and cancel_event.is_set():
             print("  Embedding cancelled by user.")
             raise EmbeddingCancelled()
@@ -480,18 +621,20 @@ def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progre
         )
         all_embeddings.append(batch_emb)
 
-        done_batches = len(all_embeddings)
-        done_chunks = min(i + batch_size, len(texts))
-        print(f"  Batch {done_batches}/{num_batches} ({done_chunks}/{len(texts)} chunks)")
+        # Incremental save after each batch for resume support
+        combined = np.vstack(all_embeddings)
+        tmp_path = embeddings_path + ".tmp"
+        np.save(tmp_path, combined)
+        os.replace(tmp_path, embeddings_path)
+        _chunk_embedding_cache.pop(db_path, None)
+
+        done_chunks = min(i + batch_size, total)
+        batch_num = (i - start_idx) // batch_size + 1
+        print(f"  Batch {batch_num}/{num_batches} ({done_chunks}/{total} chunks)")
         if progress_callback:
-            progress_callback("embeddings", done_chunks, len(texts))
+            progress_callback("embeddings", done_chunks, total)
 
-    embeddings = np.vstack(all_embeddings)
-
-    np.save(embeddings_path, embeddings)
-    print(f"  Saved chunk embeddings ({embeddings.shape}) to {embeddings_path}")
-
-    # Invalidate cache
+    print(f"  Saved chunk embeddings ({combined.shape}) to {embeddings_path}")
     _chunk_embedding_cache.pop(db_path, None)
 
 

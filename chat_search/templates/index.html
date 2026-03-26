@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsArch - חיפוש בצ'אט WhatsApp</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='32' y2='32'%3E%3Cstop offset='0%25' stop-color='%23075e54'/%3E%3Cstop offset='100%25' stop-color='%2300a884'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='6' fill='url(%23bg)'/%3E%3Cpath d='M16 4.5C9.6 4.5 4.5 9 4.5 14.5c0 3.2 1.6 6 4.1 7.8l-1.4 4.7 5-2.6c1.2.4 2.5.6 3.8.6 6.4 0 11.5-4.5 11.5-10S22.4 4.5 16 4.5z' fill='white' opacity='0.95'/%3E%3Crect x='10' y='10.5' width='8' height='1.2' rx='0.6' fill='%23075e54' opacity='0.8'/%3E%3Crect x='10' y='13.5' width='6' height='1.2' rx='0.6' fill='%23075e54' opacity='0.5'/%3E%3Ccircle cx='20.5' cy='18.5' r='3.5' stroke='%23075e54' stroke-width='1.4' fill='none' opacity='0.85'/%3E%3Cline x1='23' y1='21' x2='25.5' y2='23.5' stroke='%23075e54' stroke-width='1.4' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='32' y2='32'%3E%3Cstop offset='0%25' stop-color='%230D9488'/%3E%3Cstop offset='100%25' stop-color='%236366F1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='6' fill='url(%23bg)'/%3E%3Cpath d='M16 4.5C9.6 4.5 4.5 9 4.5 14.5c0 3.2 1.6 6 4.1 7.8l-1.4 4.7 5-2.6c1.2.4 2.5.6 3.8.6 6.4 0 11.5-4.5 11.5-10S22.4 4.5 16 4.5z' fill='white' opacity='0.95'/%3E%3Crect x='10' y='10.5' width='8' height='1.2' rx='0.6' fill='%230D9488' opacity='0.8'/%3E%3Crect x='10' y='13.5' width='6' height='1.2' rx='0.6' fill='%230D9488' opacity='0.5'/%3E%3Ccircle cx='20.5' cy='18.5' r='3.5' stroke='%236366F1' stroke-width='1.4' fill='none' opacity='0.85'/%3E%3Cline x1='23' y1='21' x2='25.5' y2='23.5' stroke='%236366F1' stroke-width='1.4' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0D9488">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -15,36 +19,36 @@
         }
 
         :root {
-            --bg-primary: #0b141a;
-            --bg-secondary: #111b21;
-            --bg-tertiary: #1f2c33;
-            --bg-hover: #2a3942;
-            --bg-message: #1a2930;
-            --bg-message-focus: #22333d;
-            --bg-context: #151f26;
-            --bg-card: #162027;
-            --text-primary: #e9edef;
-            --text-secondary: #8696a0;
-            --text-muted: #667781;
-            --accent-green: #00a884;
-            --accent-green-dark: #007d63;
-            --accent-blue: #53bdeb;
-            --accent-blue-dark: #3a8bc2;
-            --accent-amber: #f59e0b;
-            --accent-red: #ef4444;
-            --sender-dad: #53bdeb;
-            --sender-dad-bg: rgba(83, 189, 235, 0.12);
-            --sender-su: #00a884;
-            --sender-su-bg: rgba(0, 168, 132, 0.12);
-            --mark-bg: rgba(0, 168, 132, 0.35);
-            --mark-text: #e9edef;
-            --border-color: #2a3942;
-            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.35);
-            --radius: 8px;
-            --radius-lg: 12px;
-            --progress-bg: #1a2730;
-            --progress-fill: #00a884;
+            --bg-primary: #FAFAF8;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F3F4F6;
+            --bg-hover: #E8EAF0;
+            --bg-message: #FFFFFF;
+            --bg-message-focus: #F0F7FF;
+            --bg-context: #F7F7F5;
+            --bg-card: #FFFFFF;
+            --text-primary: #1A1A2E;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --accent-green: #0D9488;
+            --accent-green-dark: #0F766E;
+            --accent-blue: #6366F1;
+            --accent-blue-dark: #4F46E5;
+            --accent-amber: #F59E0B;
+            --accent-red: #EF4444;
+            --sender-dad: #6366F1;
+            --sender-dad-bg: rgba(99, 102, 241, 0.08);
+            --sender-su: #0D9488;
+            --sender-su-bg: rgba(13, 148, 136, 0.08);
+            --mark-bg: rgba(250, 204, 21, 0.4);
+            --mark-text: #1A1A2E;
+            --border-color: #E5E7EB;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+            --radius: 10px;
+            --radius-lg: 14px;
+            --progress-bg: #E5E7EB;
+            --progress-fill: #0D9488;
         }
 
         html { direction: rtl; }
@@ -55,22 +59,25 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* --- Scrollbar --- */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 7px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #C4C8D0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A0A5AE; }
 
         /* --- Header --- */
         .header {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: linear-gradient(180deg, var(--bg-secondary) 0%, #0f1920 100%);
-            border-bottom: 1px solid var(--border-color);
-            padding: 14px 24px;
-            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #0D9488 0%, #6366F1 100%);
+            border-bottom: none;
+            padding: 16px 24px;
+            box-shadow: 0 4px 20px rgba(13, 148, 136, 0.15);
         }
 
         .header-top {
@@ -88,31 +95,50 @@
 
         .header-logo-icon { width: 32px; height: 32px; flex-shrink: 0; }
         .header-title h1 { font-size: 1.15em; font-weight: 700; }
-        .header-title h1 .logo-whats { color: var(--accent-green); }
-        .header-title h1 .logo-arch { color: var(--text-primary); }
+        .header-title h1 .logo-whats { color: #FFFFFF; }
+        .header-title h1 .logo-arch { color: rgba(255, 255, 255, 0.75); }
 
         .chat-selector {
             margin-right: auto;
             padding: 7px 14px;
             font-size: 0.92em;
             min-width: 160px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--accent-green-dark);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: var(--radius);
-            color: var(--accent-green);
+            color: #FFFFFF;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
+            backdrop-filter: blur(4px);
         }
+        .chat-selector option { background: #FFFFFF; color: var(--text-primary); }
 
-        .chat-selector:focus { border-color: var(--accent-green); outline: none; }
+        .chat-selector:focus { border-color: rgba(255, 255, 255, 0.6); outline: none; }
+
+        /* Header inputs on gradient */
+        .header .search-input-wrapper input { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.25); color: #fff; backdrop-filter: blur(4px); }
+        .header .search-input-wrapper input::placeholder { color: rgba(255,255,255,0.6); }
+        .header .search-input-wrapper input:focus { border-color: rgba(255,255,255,0.6); }
+        .header .search-input-wrapper i { color: rgba(255,255,255,0.7); }
+        .header .date-group label { color: rgba(255,255,255,0.8); }
+        .header .date-group input[type="text"] { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.25); color: #fff; backdrop-filter: blur(4px); }
+        .header .date-group input[type="text"]::placeholder { color: rgba(255,255,255,0.6); }
+        .header .date-group input[type="text"]:focus { border-color: rgba(255,255,255,0.6); }
+        .header .date-picker-btn { color: rgba(255,255,255,0.7); }
+        .header .date-picker-btn:hover { color: #fff; }
+        .header .filter-dropdown-btn { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.25); color: #fff; backdrop-filter: blur(4px); }
+        .header .filter-dropdown-btn:hover { border-color: rgba(255,255,255,0.5); }
+        .header .filter-dropdown-btn .filter-count { background: #fff; color: var(--accent-green); }
+        .header .btn-primary { background: #FFFFFF; color: var(--accent-green); }
+        .header .btn-primary:hover { background: rgba(255,255,255,0.9); }
 
         /* --- Tab Navigation --- */
         .tab-nav {
             display: flex;
             gap: 0;
             border-bottom: 1px solid var(--border-color);
-            background: var(--bg-secondary);
+            background: #FFFFFF;
         }
 
         .tab-btn {
@@ -132,7 +158,7 @@
         }
 
         .tab-btn.active { color: var(--accent-green); border-bottom-color: var(--accent-green); }
-        .tab-btn:hover:not(.active) { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+        .tab-btn:hover:not(.active) { color: var(--text-primary); background: var(--bg-tertiary); }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -167,7 +193,7 @@
         }
 
         input, select {
-            background: var(--bg-tertiary);
+            background: #FFFFFF;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             color: var(--text-primary);
@@ -175,16 +201,44 @@
             font-size: 0.92em;
             padding: 10px 12px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input:focus, select:focus { border-color: var(--accent-green); }
+        input:focus, select:focus { border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
         input::placeholder { color: var(--text-muted); }
         input[type="date"] { min-width: 140px; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
 
         .date-group { display: flex; align-items: center; gap: 6px; }
         .date-group label { font-size: 0.85em; color: var(--text-secondary); white-space: nowrap; }
+        .date-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .date-input-wrapper input[type="text"] {
+            padding-right: 12px;
+            padding-left: 32px;
+            width: 130px;
+        }
+        .date-input-wrapper .date-picker-btn {
+            position: absolute;
+            left: 4px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 0.9em;
+        }
+        .date-input-wrapper .date-picker-btn:hover { color: var(--accent-green); }
+        .date-input-wrapper input[type="date"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
 
         .btn {
             padding: 10px 20px;
@@ -248,7 +302,7 @@
             position: absolute;
             top: calc(100% + 4px);
             right: 0;
-            background: var(--bg-secondary);
+            background: #FFFFFF;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 6px;
@@ -256,7 +310,7 @@
             min-width: 220px;
             max-height: 300px;
             overflow-y: auto;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
 
         .filter-dropdown-content.open { display: block; }
@@ -348,14 +402,16 @@
             animation: fadeIn 0.25s ease-out;
         }
 
-        .message-card:hover { background: var(--bg-message-focus); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+        .message-card { box-shadow: var(--shadow); }
+        .message-card:hover { background: #FFFFFF; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); border-color: #D1D5DB; }
 
         .message-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
 
         .sender-badge { padding: 2px 10px; border-radius: 12px; font-size: 0.82em; font-weight: 600; letter-spacing: 0.02em; }
         .sender-badge.dad { background: var(--sender-dad-bg); color: var(--sender-dad); }
         .sender-badge.su { background: var(--sender-su-bg); color: var(--sender-su); }
-        .sender-badge.other { background: rgba(134, 150, 160, 0.15); color: var(--text-secondary); }
+        .sender-badge.other { background: rgba(107, 114, 128, 0.1); color: var(--text-secondary); }
+        .chat-name-badge { font-size: 0.72em; background: rgba(99,102,241,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
 
         .message-time { font-size: 0.8em; color: var(--text-muted); direction: ltr; unicode-bidi: embed; }
         .message-text { font-size: 0.95em; line-height: 1.7; word-wrap: break-word; overflow-wrap: break-word; }
@@ -368,34 +424,34 @@
         .audio-player::-webkit-media-controls-panel { background: var(--bg-tertiary); }
 
         .transcription {
-            margin-top: 8px; padding: 10px 14px; background: var(--bg-tertiary); border-radius: var(--radius);
+            margin-top: 8px; padding: 10px 14px; background: rgba(13, 148, 136, 0.04); border-radius: var(--radius);
             border-right: 3px solid var(--accent-green); font-size: 0.9em; color: var(--text-secondary); line-height: 1.7;
         }
 
         .transcription-label { font-size: 0.78em; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
 
         .visual-description {
-            margin-top: 8px; padding: 10px 14px; background: rgba(83, 189, 235, 0.08); border-radius: var(--radius);
+            margin-top: 8px; padding: 10px 14px; background: rgba(99, 102, 241, 0.04); border-radius: var(--radius);
             border-right: 3px solid var(--accent-blue); font-size: 0.9em; color: var(--text-secondary); line-height: 1.7;
         }
 
-        .visual-description.pdf-text { border-right-color: #e57373; background: rgba(229, 115, 115, 0.08); max-height: 200px; overflow-y: auto; }
+        .visual-description.pdf-text { border-right-color: #E57373; background: rgba(229, 115, 115, 0.04); max-height: 200px; overflow-y: auto; }
 
         /* --- Image --- */
         .image-thumb { max-width: 240px; max-height: 240px; border-radius: var(--radius); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; object-fit: cover; }
-        .image-thumb:hover { transform: scale(1.03); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+        .image-thumb:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 
         /* --- Video Thumbnail --- */
         .video-thumb-container { position: relative; display: inline-block; cursor: pointer; }
         .video-thumb { max-width: 280px; max-height: 200px; border-radius: var(--radius); object-fit: cover; display: block; }
         .video-thumb-overlay {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 52px; height: 52px; background: rgba(0,0,0,0.55); border-radius: 50%;
+            width: 52px; height: 52px; background: rgba(0,0,0,0.45); border-radius: 50%;
             display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.3em;
             transition: background 0.2s, transform 0.2s;
         }
-        .video-thumb-container:hover .video-thumb-overlay { background: rgba(0,168,132,0.7); transform: translate(-50%, -50%) scale(1.08); }
-        .video-thumb-container:hover .video-thumb { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+        .video-thumb-container:hover .video-thumb-overlay { background: rgba(13,148,136,0.75); transform: translate(-50%, -50%) scale(1.08); }
+        .video-thumb-container:hover .video-thumb { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
         .video-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; font-family: inherit; font-size: 0.9em; transition: background 0.2s; }
         .video-trigger:hover { background: var(--bg-hover); }
         .video-trigger i { color: var(--accent-green); font-size: 1.2em; }
@@ -408,7 +464,7 @@
         }
         .pdf-preview-card:hover { background: var(--bg-hover); border-color: var(--text-muted); }
         .pdf-icon-large {
-            width: 48px; height: 48px; background: rgba(229, 115, 115, 0.15); border-radius: 10px;
+            width: 48px; height: 48px; background: rgba(229, 115, 115, 0.1); border-radius: 10px;
             display: flex; align-items: center; justify-content: center; color: #e57373; font-size: 1.4em; flex-shrink: 0;
         }
         .pdf-preview-info { flex: 1; min-width: 0; }
@@ -447,15 +503,16 @@
         }
 
         .mgmt-chat-card {
-            background: var(--bg-secondary);
+            background: #FFFFFF;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 24px;
             margin-bottom: 20px;
-            transition: border-color 0.2s;
+            box-shadow: var(--shadow);
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .mgmt-chat-card:hover { border-color: var(--text-muted); }
+        .mgmt-chat-card:hover { border-color: #D1D5DB; box-shadow: var(--shadow-lg); }
 
         .mgmt-chat-header {
             display: flex;
@@ -471,8 +528,8 @@
         .mgmt-status-badge {
             font-size: 0.82em; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;
         }
-        .mgmt-status-badge.ready { background: rgba(0,168,132,0.15); color: var(--accent-green); }
-        .mgmt-status-badge.not-ready { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+        .mgmt-status-badge.ready { background: rgba(13,148,136,0.08); color: var(--accent-green); }
+        .mgmt-status-badge.not-ready { background: rgba(245,158,11,0.08); color: var(--accent-amber); }
 
         .mgmt-section { margin-bottom: 20px; }
         .mgmt-section-title {
@@ -485,7 +542,7 @@
             display: flex; align-items: center; gap: 14px; padding: 8px 12px; margin-bottom: 4px;
             border-radius: var(--radius); cursor: pointer; transition: background 0.15s;
         }
-        .progress-row:hover { background: rgba(255,255,255,0.03); }
+        .progress-row:hover { background: rgba(0,0,0,0.02); }
         .progress-row-icon { width: 28px; text-align: center; font-size: 0.9em; flex-shrink: 0; }
         .progress-row-label { min-width: 130px; font-size: 0.9em; color: var(--text-secondary); flex-shrink: 0; }
         .progress-bar-container { flex: 1; height: 8px; background: var(--progress-bg); border-radius: 4px; overflow: hidden; min-width: 80px; }
@@ -504,7 +561,7 @@
             display: flex; align-items: center; gap: 8px; padding: 4px 8px; font-size: 0.82em;
             color: var(--text-muted); border-radius: 4px;
         }
-        .file-detail-item:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .file-detail-item:nth-child(even) { background: rgba(0,0,0,0.02); }
         .file-detail-item .file-status { width: 18px; text-align: center; font-size: 0.9em; }
         .file-detail-item .file-status.done { color: var(--accent-green); }
         .file-detail-item .file-status.pending { color: var(--text-muted); }
@@ -525,46 +582,63 @@
         .btn-action:disabled { opacity: 0.45; cursor: not-allowed; }
         .btn-action.running { border-color: var(--accent-amber); color: var(--accent-amber); }
         .btn-stop {
-            padding: 9px 18px; border: 1px solid var(--accent-red); border-radius: var(--radius);
-            background: rgba(239, 68, 68, 0.12); color: var(--accent-red); font-family: inherit;
+            padding: 9px 12px; border: 1px solid var(--accent-red); border-radius: var(--radius);
+            background: rgba(239, 68, 68, 0.06); color: var(--accent-red); font-family: inherit;
             font-size: 0.85em; cursor: pointer; display: inline-flex; align-items: center;
-            gap: 7px; transition: all 0.2s;
+            gap: 5px; transition: all 0.2s;
         }
-        .btn-stop:hover { background: rgba(239, 68, 68, 0.25); }
+        .btn-stop:hover:not(:disabled) { background: rgba(239, 68, 68, 0.12); }
+        .btn-stop:disabled { cursor: not-allowed; }
+        .btn-stop.inactive {
+            border-color: var(--border-color); background: var(--bg-tertiary);
+            color: var(--text-muted); opacity: 0.4;
+        }
+        .task-btn-group {
+            display: inline-flex; align-items: center; gap: 0;
+        }
+        .task-btn-group .btn-action {
+            border-radius: 0 var(--radius) var(--radius) 0;
+            border-left: none;
+        }
+        .task-btn-group .btn-stop {
+            border-radius: var(--radius) 0 0 var(--radius);
+            padding: 9px 10px;
+        }
 
         /* ============================================== */
         /* --- AI Chat FAB & Panel --- */
         /* ============================================== */
         .ai-chat-fab {
             display: none; position: fixed; bottom: 24px; left: 24px; width: 56px; height: 56px;
-            border-radius: 50%; background: linear-gradient(135deg, var(--accent-green), var(--accent-green-dark));
+            border-radius: 50%; background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
             border: none; color: #fff; font-size: 1.4em; cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0, 168, 132, 0.4); z-index: 500;
+            box-shadow: 0 4px 20px rgba(13, 148, 136, 0.35); z-index: 500;
             transition: transform 0.2s, box-shadow 0.2s; align-items: center; justify-content: center;
         }
-        .ai-chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0, 168, 132, 0.5); }
-        .ai-chat-fab.active { background: var(--bg-tertiary); border: 1px solid var(--border-color); box-shadow: var(--shadow); }
+        .ai-chat-fab .fab-logo { width: 30px; height: 30px; }
+        .ai-chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(13, 148, 136, 0.45); }
+        .ai-chat-fab.active { background: #FFFFFF; border: 1px solid var(--border-color); color: var(--text-secondary); box-shadow: var(--shadow-lg); }
 
         .ai-chat-panel {
             display: none; position: fixed; bottom: 92px; left: 24px; width: 420px; max-width: calc(100vw - 48px);
-            height: 520px; max-height: calc(100vh - 120px); background: var(--bg-secondary);
+            height: 520px; max-height: calc(100vh - 120px); background: #FFFFFF;
             border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); z-index: 499; flex-direction: column; overflow: hidden;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.04); z-index: 499; flex-direction: column; overflow: hidden;
         }
         .ai-chat-panel.active { display: flex; }
 
-        .ai-chat-header { padding: 14px 16px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .ai-chat-header { padding: 14px 16px; background: linear-gradient(135deg, rgba(13,148,136,0.06), rgba(99,102,241,0.06)); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .ai-chat-header i { color: var(--accent-green); }
         .ai-chat-header span { font-weight: 600; font-size: 0.95em; }
-        .ai-provider-badge { margin-right: auto; font-size: 0.72em; padding: 2px 8px; border-radius: 10px; background: rgba(0, 168, 132, 0.15); color: var(--accent-green); }
+        .ai-provider-badge { margin-right: auto; font-size: 0.72em; padding: 2px 8px; border-radius: 10px; background: rgba(13,148,136,0.08); color: var(--accent-green); }
 
         .ai-chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         .ai-msg { max-width: 88%; padding: 10px 14px; border-radius: var(--radius-lg); font-size: 0.9em; line-height: 1.7; word-wrap: break-word; overflow-wrap: break-word; }
-        .ai-msg.user { align-self: flex-start; background: var(--accent-green-dark); color: #fff; border-bottom-right-radius: 4px; }
+        .ai-msg.user { align-self: flex-start; background: var(--accent-green); color: #fff; border-bottom-right-radius: 4px; }
         .ai-msg.assistant { align-self: flex-end; background: var(--bg-tertiary); color: var(--text-primary); border-bottom-left-radius: 4px; }
-        .ai-sources { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.82em; color: var(--text-secondary); }
-        .ai-source-link { display: inline-block; background: rgba(0, 168, 132, 0.15); color: var(--accent-green); padding: 2px 8px; border-radius: 10px; margin: 2px 4px 2px 0; cursor: pointer; transition: background 0.2s; font-size: 0.9em; border: none; font-family: inherit; }
-        .ai-source-link:hover { background: rgba(0, 168, 132, 0.3); }
+        .ai-sources { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.82em; color: var(--text-secondary); }
+        .ai-source-link { display: inline-block; background: rgba(13,148,136,0.08); color: var(--accent-green); padding: 2px 8px; border-radius: 10px; margin: 2px 4px 2px 0; cursor: pointer; transition: background 0.2s; font-size: 0.9em; border: none; font-family: inherit; }
+        .ai-source-link:hover { background: rgba(13,148,136,0.15); }
 
         .ai-chat-input-bar { padding: 12px 16px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; flex-shrink: 0; }
         .ai-chat-input-bar input { flex: 1; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-primary); font-family: inherit; font-size: 0.9em; outline: none; }
@@ -586,13 +660,25 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* --- Settings Screen --- */
+        .settings-field { margin-bottom: 8px; }
+        .settings-label { display: block; margin-bottom: 6px; }
+        .settings-label-text { font-size: 0.92em; font-weight: 600; color: var(--text-primary); }
+        .settings-label-hint { display: block; font-size: 0.8em; color: var(--text-muted); margin-top: 2px; }
+        .settings-input-row { display: flex; gap: 8px; align-items: center; }
+        .settings-input { flex: 1; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); color: var(--text-primary); font-family: monospace; font-size: 0.9em; outline: none; transition: border-color 0.2s; }
+        .settings-input:focus { border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .settings-status { font-size: 0.82em; margin-top: 6px; display: flex; align-items: center; gap: 5px; }
+        .settings-status.configured { color: var(--accent-green); }
+        .settings-status.not-configured { color: var(--text-muted); }
+
         /* --- Responsive --- */
         @media (max-width: 640px) {
             .header { padding: 12px 14px; }
             .search-bar { gap: 8px; }
             .search-input-wrapper { min-width: 100%; }
             .date-group { flex: 1; min-width: 0; }
-            .date-group input[type="date"] { min-width: 0; flex: 1; }
+            .date-group input[type="text"] { min-width: 0; flex: 1; }
             .btn-primary { flex: 1; justify-content: center; }
             .stats-banner { padding: 10px 14px; gap: 8px; font-size: 0.82em; }
             .container { padding: 10px 10px 30px; }
@@ -605,6 +691,101 @@
             .progress-row-label { min-width: 90px; font-size: 0.82em; }
             .file-detail-list { padding-left: 30px; }
         }
+        /* Settings - Model Cards */
+        .model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+        .model-card { position: relative; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all 0.2s; }
+        .model-card:hover { border-color: var(--text-muted); background: var(--bg-hover); }
+        .model-card.selected { border-color: var(--accent-green); background: rgba(13,148,136,0.06); box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
+        .model-card .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .provider-dot { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8em; color: #fff; flex-shrink: 0; }
+        .provider-dot.gemini { background: #4285f4; }
+        .provider-dot.openai { background: #10a37f; }
+        .provider-dot.anthropic { background: #d4a27f; }
+        .provider-dot.ollama { background: #a970ff; }
+        .model-card .card-name { font-size: 0.9em; font-weight: 600; }
+        .model-card .card-provider { font-size: 0.75em; color: var(--text-muted); }
+        .model-card .card-badges { display: flex; gap: 4px; margin-right: auto; }
+        .model-badge { font-size: 0.68em; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+        .model-badge.recommended { background: rgba(99,102,241,0.12); color: var(--accent-blue); }
+        .model-badge.free { background: rgba(13,148,136,0.12); color: var(--accent-green); }
+        .model-badge.best { background: rgba(245,158,11,0.12); color: var(--accent-amber); }
+        .model-card .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; padding-top: 8px; border-top: 1px solid var(--border-color); font-size: 0.78em; }
+        .model-card .detail-label { color: var(--text-muted); }
+        .model-card .detail-value { font-weight: 500; }
+        .model-card .check-mark { position: absolute; top: 8px; left: 8px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; }
+        .model-card.selected .check-mark { background: var(--accent-green); border-color: var(--accent-green); }
+        .model-card.selected .check-mark i { color: #fff; font-size: 0.6em; }
+        .cost-calc { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 0.88em; }
+        .cost-calc .cost-amount { font-weight: 700; color: var(--accent-green); margin-right: auto; direction: ltr; }
+        .hw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 16px; }
+        .hw-stat { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 14px; }
+        .hw-stat .hw-label { font-size: 0.72em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .hw-stat .hw-value { font-size: 0.95em; font-weight: 700; margin-top: 4px; }
+        .hw-stat .hw-sub { font-size: 0.75em; color: var(--text-secondary); margin-top: 2px; }
+        .hw-meter { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+        .hw-meter-fill { height: 100%; border-radius: 3px; }
+        .hw-meter-fill.low { background: var(--accent-red); width: 25%; }
+        .hw-meter-fill.medium { background: var(--accent-amber); width: 55%; }
+        .hw-meter-fill.good { background: var(--accent-green); width: 80%; }
+        .hw-meter-fill.excellent { background: var(--accent-green); width: 100%; }
+        .hw-recommendation { padding: 12px 16px; border-radius: var(--radius); border: 1px solid var(--accent-green); background: rgba(13,148,136,0.05); font-size: 0.85em; line-height: 1.6; }
+        .section-title { font-size: 1em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .section-divider { height: 1px; background: var(--border-color); margin: 24px 0; }
+        .receipt-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 0.9em; }
+        .receipt-row:last-child { border-bottom: none; }
+        .receipt-total { display: flex; justify-content: space-between; padding: 14px 0; font-weight: 700; font-size: 1.05em; border-top: 2px solid var(--accent-green); margin-top: 8px; }
+        .receipt-total .total-amount { color: var(--accent-green); direction: ltr; }
+        .perf-tag { font-size: 0.68em; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+        .perf-tag.slow { background: rgba(239,68,68,0.1); color: var(--accent-red); }
+        .perf-tag.medium { background: rgba(245,158,11,0.1); color: var(--accent-amber); }
+        .perf-tag.ok { background: rgba(13,148,136,0.1); color: var(--accent-green); }
+        .api-warning { display: none; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 10px; background: rgba(239,68,68,0.08); border-radius: 6px; font-size: 0.78em; color: var(--accent-red); }
+        .api-warning.show { display: flex; }
+
+        /* --- Result type badges --- */
+        .type-badge { font-size: 0.75em; margin-right: 3px; opacity: 0.7; cursor: help; }
+
+        /* --- Source citation modal --- */
+        .source-modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; }
+        .source-modal-box { background:var(--bg-secondary); border-radius:var(--radius-lg); padding:24px; max-width:700px; width:90%; max-height:80vh; overflow-y:auto; position:relative; box-shadow:var(--shadow-lg); }
+        .source-modal-close { position:absolute; top:10px; left:10px; background:none; border:none; font-size:1.5em; cursor:pointer; color:var(--text-muted); }
+        .source-modal-close:hover { color:var(--text-primary); }
+        .source-link { color:var(--accent-blue); text-decoration:underline; cursor:pointer; font-weight:600; }
+        .source-link:hover { color:var(--accent-blue-dark); }
+
+        /* --- Why this answer button --- */
+        .why-btn { background:none; border:1px solid var(--border-color); border-radius:var(--radius); padding:4px 12px; font-size:0.78em; color:var(--text-muted); cursor:pointer; margin-top:8px; font-family:inherit; transition:all 0.2s; }
+        .why-btn:hover { border-color:var(--accent-green); color:var(--accent-green); }
+
+        /* --- Gallery --- */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
+        .gallery-item { position: relative; border-radius: var(--radius); overflow: hidden; cursor: pointer; aspect-ratio: 1; background: var(--bg-tertiary); }
+        .gallery-item img, .gallery-item video { width: 100%; height: 100%; object-fit: cover; }
+        .gallery-item:hover { opacity: 0.85; }
+        .gallery-item .gallery-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 8px; color: #fff; font-size: 0.72em; line-height: 1.3; display: none; }
+        .gallery-item:hover .gallery-overlay { display: block; }
+        .gallery-item .video-badge { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.7em; padding: 2px 6px; border-radius: 4px; }
+        .gallery-filter.active { background: var(--accent-green); color: #fff; border-color: var(--accent-green); }
+
+        /* --- Analytics --- */
+        .analytics-section { margin-bottom: 24px; }
+        .analytics-section h3 { font-size: 0.95em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .bar-chart { display: flex; flex-direction: column; gap: 6px; }
+        .bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.85em; }
+        .bar-label { min-width: 100px; text-align: left; color: var(--text-secondary); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bar-fill { height: 24px; background: linear-gradient(90deg, var(--accent-green), var(--accent-blue)); border-radius: 4px; min-width: 2px; transition: width 0.5s ease; display: flex; align-items: center; padding-right: 8px; }
+        .bar-value { font-size: 0.78em; font-weight: 600; color: #fff; margin-right: auto; }
+        .hour-chart { display: flex; align-items: flex-end; gap: 2px; height: 100px; margin-top: 8px; }
+        .hour-bar { flex: 1; background: var(--accent-green); border-radius: 2px 2px 0 0; min-height: 2px; transition: height 0.5s ease; position: relative; }
+        .hour-bar:hover { opacity: 0.8; }
+        .hour-bar .hour-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-secondary); font-size: 0.7em; padding: 2px 6px; border-radius: 4px; white-space: nowrap; margin-bottom: 4px; }
+        .hour-bar:hover .hour-tooltip { display: block; }
+        .hour-labels { display: flex; gap: 2px; font-size: 0.65em; color: var(--text-muted); margin-top: 4px; }
+        .hour-labels span { flex: 1; text-align: center; }
+        .busiest-day { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.85em; }
+        .busiest-day:last-child { border-bottom: none; }
+        .busiest-day .day-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 0.78em; font-weight: 700; flex-shrink: 0; }
+        .busiest-day .day-rank.top { background: var(--accent-green); color: #fff; }
     </style>
 </head>
 <body>
@@ -614,13 +795,12 @@
         <div class="header-top">
             <div class="header-title">
                 <svg class="header-logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs><linearGradient id="headerBubbleGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#00d4a4"/><stop offset="100%" stop-color="#00a884"/></linearGradient></defs>
-                    <path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#headerBubbleGrad)" opacity="0.95"/>
-                    <rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/>
-                    <rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/>
-                    <rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/>
-                    <circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/>
-                    <line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+                    <path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="white" opacity="0.9"/>
+                    <rect x="30" y="30" width="28" height="3" rx="1.5" fill="#0D9488" opacity="0.8"/>
+                    <rect x="30" y="38" width="22" height="3" rx="1.5" fill="#0D9488" opacity="0.5"/>
+                    <rect x="30" y="46" width="25" height="3" rx="1.5" fill="#0D9488" opacity="0.4"/>
+                    <circle cx="62" cy="56" r="12" stroke="#6366F1" stroke-width="3.5" fill="none" opacity="0.95"/>
+                    <line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
                 </svg>
                 <h1><span class="logo-whats">Whats</span><span class="logo-arch">Arch</span></h1>
             </div>
@@ -634,19 +814,20 @@
                 <input type="text" id="searchQuery" placeholder="חיפוש הודעות..." autocomplete="off">
             </div>
             <div class="filter-dropdown" id="typeDropdown">
-                <button class="filter-dropdown-btn" onclick="toggleDropdown('typeDropdown')">
+                <button class="filter-dropdown-btn" onclick="toggleDropdown('typeDropdown', event)">
                     <i class="fas fa-filter"></i> סוג
                     <span class="filter-count" id="typeFilterCount" style="display:none;"></span>
                 </button>
                 <div class="filter-dropdown-content" id="typeDropdownContent">
                     <label class="filter-option"><input type="checkbox" value="text" checked onchange="onFilterChange()"> הודעות טקסט</label>
                     <label class="filter-option"><input type="checkbox" value="transcription" checked onchange="onFilterChange()"> הקלטות מתומללות</label>
-                    <label class="filter-option"><input type="checkbox" value="visual" checked onchange="onFilterChange()"> תיאורי תמונות/וידאו</label>
+                    <label class="filter-option"><input type="checkbox" value="image" checked onchange="onFilterChange()"> תמונות</label>
+                    <label class="filter-option"><input type="checkbox" value="video" checked onchange="onFilterChange()"> סרטונים</label>
                     <label class="filter-option"><input type="checkbox" value="pdf" checked onchange="onFilterChange()"> תוכן PDF</label>
                 </div>
             </div>
             <div class="filter-dropdown" id="senderDropdown">
-                <button class="filter-dropdown-btn" onclick="toggleDropdown('senderDropdown')">
+                <button class="filter-dropdown-btn" onclick="toggleDropdown('senderDropdown', event)">
                     <i class="fas fa-user"></i> שולחים
                     <span class="filter-count" id="senderFilterCount" style="display:none;"></span>
                 </button>
@@ -654,11 +835,19 @@
             </div>
             <div class="date-group">
                 <label for="dateFrom">מ-</label>
-                <input type="date" id="dateFrom">
+                <div class="date-input-wrapper">
+                    <input type="text" id="dateFrom" placeholder="dd/mm/yyyy" maxlength="10" dir="ltr">
+                    <button type="button" class="date-picker-btn" onclick="document.getElementById('dateFromPicker').showPicker()"><i class="fas fa-calendar-alt"></i></button>
+                    <input type="date" id="dateFromPicker" tabindex="-1">
+                </div>
             </div>
             <div class="date-group">
                 <label for="dateTo">עד</label>
-                <input type="date" id="dateTo">
+                <div class="date-input-wrapper">
+                    <input type="text" id="dateTo" placeholder="dd/mm/yyyy" maxlength="10" dir="ltr">
+                    <button type="button" class="date-picker-btn" onclick="document.getElementById('dateToPicker').showPicker()"><i class="fas fa-calendar-alt"></i></button>
+                    <input type="date" id="dateToPicker" tabindex="-1">
+                </div>
             </div>
             <button class="btn btn-primary" id="searchBtn" onclick="performSearch(true)">
                 <i class="fas fa-search"></i> חיפוש
@@ -674,6 +863,15 @@
         <button class="tab-btn" data-tab="management" onclick="switchTab('management')">
             <i class="fas fa-cogs"></i> ניהול
         </button>
+        <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
+            <i class="fas fa-key"></i> הגדרות
+        </button>
+        <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">
+            <i class="fas fa-images"></i> גלריה
+        </button>
+        <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
+            <i class="fas fa-chart-bar"></i> אנליטיקס
+        </button>
     </nav>
 
     <!-- ============ SEARCH TAB ============ -->
@@ -685,6 +883,8 @@
         <main class="container">
             <div class="results-info" id="resultsInfo" style="display:none;">
                 <span id="resultsCount"></span>
+                <button class="btn btn-secondary btn-sm" onclick="exportResults('csv')" title="ייצוא CSV" style="margin-right:8px;"><i class="fas fa-file-csv"></i></button>
+                <button class="btn btn-secondary btn-sm" onclick="exportResults('json')" title="ייצוא JSON"><i class="fas fa-file-code"></i></button>
             </div>
             <div class="spinner-overlay" id="spinner"><div class="spinner"></div></div>
             <div class="empty-state" id="emptyInitial">
@@ -713,6 +913,131 @@
         </div>
     </div>
 
+    <!-- ============ SETTINGS TAB ============ -->
+    <div id="settingsTab" class="tab-content">
+        <div class="management-container">
+            <!-- API Keys -->
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-key" style="color:var(--accent-green);"></i> מפתחות API</span>
+                </div>
+                <p style="font-size:0.85em;color:var(--text-secondary);margin-bottom:16px;">המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.</p>
+
+                <div class="settings-field">
+                    <label class="settings-label"><span class="settings-label-text">Anthropic API Key</span></label>
+                    <div class="settings-input-row">
+                        <input type="password" id="anthropicKeyInput" class="settings-input" placeholder="sk-ant-..." dir="ltr" autocomplete="off">
+                        <button class="btn btn-secondary btn-sm" onclick="toggleKeyVisibility('anthropicKeyInput', this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <div class="settings-status" id="anthropicStatus"></div>
+                </div>
+                <div class="settings-field" style="margin-top:16px;">
+                    <label class="settings-label"><span class="settings-label-text">OpenAI API Key</span></label>
+                    <div class="settings-input-row">
+                        <input type="password" id="openaiKeyInput" class="settings-input" placeholder="sk-..." dir="ltr" autocomplete="off">
+                        <button class="btn btn-secondary btn-sm" onclick="toggleKeyVisibility('openaiKeyInput', this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <div class="settings-status" id="openaiStatus"></div>
+                </div>
+                <div class="settings-field" style="margin-top:16px;">
+                    <label class="settings-label"><span class="settings-label-text">Google Gemini API Key</span></label>
+                    <div class="settings-input-row">
+                        <input type="password" id="geminiKeyInput" class="settings-input" placeholder="AIza..." dir="ltr" autocomplete="off">
+                        <button class="btn btn-secondary btn-sm" onclick="toggleKeyVisibility('geminiKeyInput', this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <div class="settings-status" id="geminiStatus"></div>
+                </div>
+            </div>
+
+            <!-- Hardware Info -->
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-microchip" style="color:var(--accent-blue);"></i> זיהוי חומרה</span>
+                    <span style="font-size:0.75em;color:var(--text-muted);">זוהה אוטומטית</span>
+                </div>
+                <div id="hwInfo"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-cogs" style="color:var(--accent-blue);"></i> בחירת מודלים</span>
+                </div>
+
+                <div class="section-title">📷 תיאור תמונות</div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;">AI "מסתכל" על כל תמונה וכותב תיאור שלה — כך אפשר למצוא תמונות בחיפוש.</p>
+                <div class="model-grid" id="models-vision"></div>
+                <div class="cost-calc" id="cost-vision"></div>
+
+                <div class="section-divider"></div>
+
+                <div class="section-title">🎬 תיאור סרטונים</div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;">AI צופה בפריימים מהסרטון ומתאר מה קורה. האודיו מתומלל לוקאלית (חינם).</p>
+                <div class="model-grid" id="models-video"></div>
+                <div class="cost-calc" id="cost-video"></div>
+
+                <div class="section-divider"></div>
+
+                <div class="section-title">💬 צ'אט AI — תשאול חכם</div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;">שאלות על השיחה בשפה טבעית עם תשובות מבוססות תוכן הצ'אט.</p>
+                <div class="model-grid" id="models-rag"></div>
+                <div class="cost-calc" id="cost-rag"></div>
+            </div>
+
+            <!-- Cost Summary -->
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-receipt" style="color:var(--accent-green);"></i> סיכום עלויות</span>
+                </div>
+                <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+                    <label style="font-size:0.88em;font-weight:600;">חישוב עבור:</label>
+                    <select id="costChatSelector" style="flex:1;max-width:300px;font-size:0.88em;padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);font-family:inherit;cursor:pointer;" onchange="onCostChatChange()">
+                        <option value="__all__">כל הצ'אטים</option>
+                    </select>
+                </div>
+                <div id="costSummary"></div>
+                <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
+                    <button class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> שמור הגדרות
+                    </button>
+                    <span id="settingsSaveStatus" style="font-size:0.85em;display:none;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ GALLERY TAB ============ -->
+    <div id="galleryTab" class="tab-content">
+        <div class="management-container">
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-images" style="color:var(--accent-blue);"></i> גלריית מדיה</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-secondary btn-sm gallery-filter active" data-type="all" onclick="filterGallery('all', this)">הכל</button>
+                        <button class="btn btn-secondary btn-sm gallery-filter" data-type="image" onclick="filterGallery('image', this)">תמונות</button>
+                        <button class="btn btn-secondary btn-sm gallery-filter" data-type="video" onclick="filterGallery('video', this)">סרטונים</button>
+                    </div>
+                </div>
+                <div id="galleryGrid" class="gallery-grid"></div>
+                <div id="galleryLoadMore" style="text-align:center;padding:20px;display:none;">
+                    <button class="btn btn-secondary" onclick="loadMoreGallery()">טען עוד</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ ANALYTICS TAB ============ -->
+    <div id="analyticsTab" class="tab-content">
+        <div class="management-container">
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-chart-bar" style="color:var(--accent-green);"></i> אנליטיקס</span>
+                </div>
+                <div id="analyticsContent"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Lightbox -->
     <div class="lightbox" id="lightbox" onclick="closeLightbox()">
         <button class="lightbox-close" onclick="closeLightbox()" aria-label="סגור"><i class="fas fa-times"></i></button>
@@ -720,13 +1045,13 @@
     </div>
 
     <!-- AI Chat FAB -->
-    <button class="ai-chat-fab" id="aiChatFab" onclick="toggleAiChat()" title="עוזר AI"><i class="fas fa-robot"></i></button>
+    <button class="ai-chat-fab" id="aiChatFab" onclick="toggleAiChat()" title="עוזר AI"><svg class="fab-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="white" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="#0D9488" opacity="0.8"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="#0D9488" opacity="0.5"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="#0D9488" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="#6366F1" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg></button>
 
     <!-- AI Chat Panel -->
     <div class="ai-chat-panel" id="aiChatPanel">
         <div class="ai-chat-header">
-            <i class="fas fa-robot"></i>
-            <span>עוזר AI</span>
+            <svg style="width:22px;height:22px;flex-shrink:0;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="#0D9488" opacity="0.9"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg>
+            <span>WhatsArch AI</span>
             <span class="ai-provider-badge" id="aiProviderBadge"></span>
         </div>
         <div class="ai-chat-messages" id="aiChatMessages">
@@ -751,6 +1076,10 @@
         let activeTab = 'search';
         let managementLoaded = false;
         let progressPollers = {};
+        let galleryPage = 1;
+        let galleryType = 'all';
+        let galleryLoaded = false;
+        let analyticsLoaded = false;
 
         // ===================== DOM Refs =====================
         const $query = document.getElementById('searchQuery');
@@ -782,8 +1111,25 @@
                 debounceTimer = setTimeout(() => performSearch(true), 300);
             });
 
-            $dateFrom.addEventListener('change', () => performSearch(true));
-            $dateTo.addEventListener('change', () => performSearch(true));
+            // Auto-format date inputs as dd/mm/yyyy + sync with native picker
+            function setupDateInput(textEl, pickerEl) {
+                textEl.addEventListener('input', function() {
+                    let v = this.value.replace(/[^\d]/g, '');
+                    if (v.length > 8) v = v.slice(0, 8);
+                    if (v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
+                    else if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+                    this.value = v;
+                    if (v.length === 10) performSearch(true);
+                });
+                pickerEl.addEventListener('change', function() {
+                    if (!this.value) return;
+                    const [y, m, d] = this.value.split('-');
+                    textEl.value = d + '/' + m + '/' + y;
+                    performSearch(true);
+                });
+            }
+            setupDateInput($dateFrom, document.getElementById('dateFromPicker'));
+            setupDateInput($dateTo, document.getElementById('dateToPicker'));
 
             $chatSelector.addEventListener('change', () => {
                 // Clear progress pollers from previous chat
@@ -795,7 +1141,11 @@
                 showState('initial');
                 loadStats();
                 managementLoaded = false;
+                galleryLoaded = false;
+                analyticsLoaded = false;
                 if (activeTab === 'management') loadManagementData();
+                if (activeTab === 'gallery') { loadGallery(); galleryLoaded = true; }
+                if (activeTab === 'analytics') { loadAnalytics(); analyticsLoaded = true; }
             });
 
             // Clean up pollers on page unload
@@ -822,6 +1172,8 @@
         }
 
         // ===================== Tab Navigation =====================
+        let settingsLoaded = false;
+
         function switchTab(tabName) {
             activeTab = tabName;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
@@ -835,10 +1187,22 @@
             if (tabName === 'management' && !managementLoaded) {
                 loadManagementData();
             }
+            if (tabName === 'settings' && !settingsLoaded) {
+                loadSettings();
+                settingsLoaded = true;
+            }
+            if (tabName === 'gallery' && !galleryLoaded) {
+                loadGallery();
+                galleryLoaded = true;
+            }
+            if (tabName === 'analytics' && !analyticsLoaded) {
+                loadAnalytics();
+                analyticsLoaded = true;
+            }
         }
 
         // ===================== Filter Dropdowns =====================
-        function toggleDropdown(id) {
+        function toggleDropdown(id, evt) {
             const dd = document.getElementById(id);
             const content = dd.querySelector('.filter-dropdown-content');
             const wasOpen = content.classList.contains('open');
@@ -847,7 +1211,7 @@
             if (!wasOpen) {
                 content.classList.add('open');
                 // Prevent the document click handler from immediately closing it
-                event.stopPropagation();
+                if (evt) evt.stopPropagation();
             }
         }
 
@@ -868,7 +1232,7 @@
         function updateTypeFilterCount() {
             const types = getSelectedTypes();
             const el = document.getElementById('typeFilterCount');
-            if (types.length < 4 && types.length > 0) {
+            if (types.length < 5 && types.length > 0) {
                 el.textContent = types.length;
                 el.style.display = 'inline';
             } else {
@@ -894,6 +1258,14 @@
                 chatsData = await res.json();
 
                 $chatSelector.innerHTML = '';
+                // Add cross-chat search option
+                const readyCount = chatsData.filter(c => c.ready).length;
+                if (readyCount > 1) {
+                    const allOpt = document.createElement('option');
+                    allOpt.value = '__all__';
+                    allOpt.textContent = '\uD83D\uDD0D \u05DB\u05DC \u05D4\u05E6\'\u05D0\u05D8\u05D9\u05DD';
+                    $chatSelector.appendChild(allOpt);
+                }
                 chatsData.forEach(chat => {
                     const opt = document.createElement('option');
                     opt.value = chat.name;
@@ -920,8 +1292,17 @@
         // ===================== Stats =====================
         async function loadStats() {
             if (!currentChat) return;
+            if (currentChat === '__all__') {
+                $statsBanner.innerHTML = '<span class="stat-chip"><i class="fas fa-search"></i> \u05D7\u05D9\u05E4\u05D5\u05E9 \u05D1\u05DB\u05DC \u05D4\u05E6\'\u05D0\u05D8\u05D9\u05DD</span>';
+                document.getElementById('aiChatFab').style.display = 'none';
+                if (aiChatOpen) toggleAiChat();
+                return;
+            }
+            // Re-show AI chat fab when switching back from __all__
+            initAiChat();
             try {
                 const res = await fetch('/api/stats?chat=' + encodeURIComponent(currentChat));
+                if (!res.ok) throw new Error('Stats request failed');
                 statsData = await res.json();
                 renderStats(statsData);
                 populateSenderFilter(statsData.senders);
@@ -969,8 +1350,13 @@
             const q = $query.value.trim();
             const senders = getSelectedSenders();
             const types = getSelectedTypes();
-            const from = $dateFrom.value;
-            const to = $dateTo.value;
+            // Convert dd/mm/yyyy to YYYY-MM-DD for API
+            function dateToISO(v) {
+                const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                return m ? m[3] + '-' + m[2] + '-' + m[1] : '';
+            }
+            const from = dateToISO($dateFrom.value);
+            const to = dateToISO($dateTo.value);
 
             if (!q && senders.length === 0 && !from && !to) {
                 showState('initial');
@@ -986,16 +1372,18 @@
             showState('loading');
 
             const params = new URLSearchParams();
-            params.set('chat', currentChat);
+            if (currentChat !== '__all__') params.set('chat', currentChat);
             if (q) params.set('q', q);
             if (senders.length > 0) params.set('sender', senders.join(','));
             if (from) params.set('from', from);
             if (to) params.set('to', to);
-            if (types.length > 0 && types.length < 4) params.set('type', types.join(','));
+            if (types.length > 0 && types.length < 5) params.set('type', types.join(','));
             params.set('page', currentPage);
 
+            const searchEndpoint = currentChat === '__all__' ? '/api/search/all?' : '/api/search?';
             try {
-                const res = await fetch('/api/search?' + params.toString());
+                const res = await fetch(searchEndpoint + params.toString());
+                if (!res.ok) throw new Error('Search request failed');
                 const data = await res.json();
 
                 totalResults = data.total;
@@ -1023,6 +1411,27 @@
 
         function loadMore() { currentPage++; performSearch(false); }
 
+        function exportResults(format) {
+            const q = $query.value.trim();
+            if (!q) return;
+            const senders = getSelectedSenders();
+            const types = getSelectedTypes();
+            function dateToISO(v) {
+                const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                return m ? m[3] + '-' + m[2] + '-' + m[1] : '';
+            }
+            const params = new URLSearchParams({
+                q: q,
+                chat: currentChat || '__all__',
+                format: format,
+                sender: senders.join(','),
+                from: dateToISO($dateFrom.value),
+                to: dateToISO($dateTo.value),
+                type: types.length > 0 && types.length < 5 ? types.join(',') : 'all',
+            });
+            window.open('/api/export?' + params.toString(), '_blank');
+        }
+
         function showState(state) {
             $spinner.classList.remove('active');
             $emptyInitial.style.display = 'none';
@@ -1043,7 +1452,9 @@
             const card = document.createElement('div');
             card.className = 'message-card';
             card.dataset.id = msg.id;
+            if (msg.chat_name) card.dataset.chatName = msg.chat_name;
 
+            const chatForMedia = msg.chat_name || currentChat;
             const cls = senderClass(msg.sender);
             const timeStr = formatDateTime(msg.datetime);
             const textContent = highlightInText(msg.text || '', $query.value.trim());
@@ -1052,14 +1463,14 @@
             let mediaHtml = '';
 
             if (msg.media_type === 'audio' && msg.attachment) {
-                const audioSrc = '/media/' + encodeURIComponent(currentChat) + '/' + encodeURIComponent(msg.attachment);
+                const audioSrc = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 mediaHtml = `
                     <div class="media-container">
                         <audio class="audio-player" controls preload="none" src="${audioSrc}">הדפדפן לא תומך בנגן שמע</audio>
                         ${msg.transcription ? `<div class="transcription"><div class="transcription-label"><i class="fas fa-closed-captioning"></i> תמלול</div>${transcriptionContent}</div>` : ''}
                     </div>`;
             } else if (msg.media_type === 'image' && msg.attachment) {
-                const src = '/media/' + encodeURIComponent(currentChat) + '/' + encodeURIComponent(msg.attachment);
+                const src = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 const descHtml = msg.visual_description
                     ? `<div class="visual-description"><div class="transcription-label"><i class="fas fa-eye"></i> תיאור תמונה</div>${highlightInText(msg.visual_description, $query.value.trim())}</div>` : '';
                 mediaHtml = `
@@ -1068,24 +1479,28 @@
                         ${descHtml}
                     </div>`;
             } else if (msg.media_type === 'video' && msg.attachment) {
-                const videoSrc = '/media/' + encodeURIComponent(currentChat) + '/' + encodeURIComponent(msg.attachment);
-                const thumbSrc = '/api/thumbnail/' + encodeURIComponent(currentChat) + '/' + encodeURIComponent(msg.attachment);
+                const videoSrc = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
+                const thumbSrc = '/api/thumbnail/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 const descHtml = msg.visual_description
                     ? `<div class="visual-description"><div class="transcription-label"><i class="fas fa-film"></i> תיאור וידאו</div>${highlightInText(msg.visual_description, $query.value.trim())}</div>` : '';
                 const videoTransHtml = msg.video_transcription
                     ? `<div class="transcription"><div class="transcription-label"><i class="fas fa-closed-captioning"></i> תמלול וידאו</div>${highlightInText(msg.video_transcription, $query.value.trim())}</div>` : '';
                 mediaHtml = `
-                    <div class="media-container" id="video-container-${msg.id}">
-                        <div class="video-thumb-container" onclick="playVideo('${msg.id}', '${videoSrc}')">
+                    <div class="media-container" id="video-container-${msg.id}" data-src="${videoSrc}">
+                        <div class="video-thumb-container" onclick="playVideo(${parseInt(msg.id)})">
                             <img class="video-thumb" src="${thumbSrc}" alt="תמונת וידאו" loading="lazy"
-                                 onerror="this.parentElement.outerHTML='<button class=\\'video-trigger\\' onclick=\\'playVideo(${msg.id}, &quot;${videoSrc}&quot;)\\'><i class=\\'fas fa-play-circle\\'></i> הפעל סרטון</button>'">
+                                 onerror="this.onerror=null;var b=document.createElement('button');b.className='video-trigger';b.innerHTML='<i class=fas>&#xf144;</i> הפעל סרטון';var id=${parseInt(msg.id)};b.onclick=function(){playVideo(id)};this.parentElement.replaceChildren(b)">
                             <div class="video-thumb-overlay"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="video-player-wrap" style="display:none">
+                            <video class="video-player" controls preload="metadata"></video>
+                            <button class="video-trigger" onclick="collapseVideo(${msg.id})" style="margin-top:6px"><i class="fas fa-compress"></i> מזער סרטון</button>
                         </div>
                         ${descHtml}
                         ${videoTransHtml}
                     </div>`;
             } else if (msg.media_type === 'pdf' && msg.attachment) {
-                const pdfSrc = '/media/' + encodeURIComponent(currentChat) + '/' + encodeURIComponent(msg.attachment);
+                const pdfSrc = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 const previewText = msg.pdf_text ? escapeHtml(msg.pdf_text.substring(0, 200)) : '';
                 const pdfTextHtml = msg.pdf_text
                     ? `<div class="visual-description pdf-text"><div class="transcription-label"><i class="fas fa-file-pdf"></i> תוכן PDF</div>${highlightInText(msg.pdf_text.substring(0, 500), $query.value.trim())}${msg.pdf_text.length > 500 ? '<span style="color:var(--text-muted);">...</span>' : ''}</div>` : '';
@@ -1102,15 +1517,25 @@
                     </div>`;
             }
 
+            // Build type badges
+            let typeBadges = '';
+            if (msg.has_transcription) typeBadges += '<span class="type-badge" title="תמלול קולי">🎙️</span>';
+            if (msg.has_visual) typeBadges += '<span class="type-badge" title="תיאור תמונה/וידאו">🖼️</span>';
+            if (msg.has_video_transcription) typeBadges += '<span class="type-badge" title="תמלול וידאו">🎬</span>';
+            if (msg.has_pdf) typeBadges += '<span class="type-badge" title="טקסט PDF">📄</span>';
+            if (msg.media_type) typeBadges += '<span class="type-badge" title="' + escapeHtml(msg.media_type) + '">' + (msg.media_type === 'audio' ? '🔊' : msg.media_type === 'image' ? '📷' : msg.media_type === 'video' ? '🎥' : '📎') + '</span>';
+
             card.innerHTML = `
                 <div class="message-header">
                     <span class="sender-badge ${cls}">${escapeHtml(msg.sender)}</span>
+                    ${msg.chat_name ? '<span class="chat-name-badge">' + escapeHtml(msg.chat_name) + '</span>' : ''}
                     <span class="message-time">${timeStr}</span>
+                    ${typeBadges ? '<span class="type-badges">' + typeBadges + '</span>' : ''}
                 </div>
                 ${textContent ? `<div class="message-text">${textContent}</div>` : ''}
                 ${mediaHtml}
                 <div class="message-actions">
-                    <button class="btn btn-secondary btn-sm" onclick="toggleContext(this, ${msg.id})">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleContext(this, ${msg.id}, ${msg.chat_name ? "'" + escapeHtml(msg.chat_name).replace(/'/g, "\\'") + "'" : 'null'})">
                         <i class="fas fa-comments"></i> הצג הקשר
                     </button>
                 </div>
@@ -1121,7 +1546,7 @@
         }
 
         // ===================== Context =====================
-        async function toggleContext(btn, messageId) {
+        async function toggleContext(btn, messageId, chatName) {
             const $ctx = document.getElementById('context-' + messageId);
 
             if ($ctx.style.display !== 'none') {
@@ -1133,8 +1558,10 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> טוען...';
             btn.disabled = true;
 
+            const contextChat = chatName || currentChat;
             try {
-                const res = await fetch(`/api/context/${messageId}?chat=${encodeURIComponent(currentChat)}&before=5&after=5`);
+                const res = await fetch(`/api/context/${messageId}?chat=${encodeURIComponent(contextChat)}&before=5&after=5`);
+                if (!res.ok) throw new Error('Context request failed');
                 const data = await res.json();
 
                 let html = '<div class="context-title"><i class="fas fa-stream"></i> הודעות סביב</div>';
@@ -1170,13 +1597,27 @@
         }
 
         // ===================== Video =====================
-        function playVideo(msgId, src) {
+        function playVideo(msgId) {
             const container = document.getElementById('video-container-' + msgId);
             if (!container) return;
-            // Keep description/transcription boxes
-            const descriptions = container.querySelectorAll('.visual-description, .transcription');
-            const descHtml = Array.from(descriptions).map(d => d.outerHTML).join('');
-            container.innerHTML = `<video class="video-player" controls autoplay preload="metadata"><source src="${src}">הדפדפן לא תומך בנגן וידאו</video>${descHtml}`;
+            const src = container.dataset.src;
+            const thumb = container.querySelector('.video-thumb-container, .video-trigger');
+            const wrap = container.querySelector('.video-player-wrap');
+            const video = wrap.querySelector('video');
+            if (thumb) thumb.style.display = 'none';
+            video.src = src;
+            video.play();
+            wrap.style.display = '';
+        }
+        function collapseVideo(msgId) {
+            const container = document.getElementById('video-container-' + msgId);
+            if (!container) return;
+            const thumb = container.querySelector('.video-thumb-container, .video-trigger');
+            const wrap = container.querySelector('.video-player-wrap');
+            const video = wrap.querySelector('video');
+            video.pause(); video.src = '';
+            wrap.style.display = 'none';
+            if (thumb) thumb.style.display = '';
         }
 
         // ===================== Lightbox =====================
@@ -1207,6 +1648,145 @@
             if (!dateStr) return '';
             try { return new Date(dateStr).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }); }
             catch { return dateStr; }
+        }
+
+        // ===================== Gallery =====================
+        async function loadGallery(reset = true) {
+            if (!currentChat || currentChat === '__all__') {
+                document.getElementById('galleryGrid').innerHTML = '<p style="color:var(--text-muted);padding:20px;">בחר צ\'אט ספציפי לצפייה בגלריה</p>';
+                return;
+            }
+            if (reset) galleryPage = 1;
+
+            const grid = document.getElementById('galleryGrid');
+            if (reset) grid.innerHTML = '';
+
+            try {
+                const res = await fetch(`/api/media/list?chat=${encodeURIComponent(currentChat)}&type=${galleryType}&page=${galleryPage}`);
+                if (!res.ok) return;
+                const data = await res.json();
+
+                data.files.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+
+                    if (file.type === 'image') {
+                        const img = document.createElement('img');
+                        img.src = file.url;
+                        img.alt = '';
+                        img.loading = 'lazy';
+                        img.onclick = () => openLightbox(file.url);
+                        item.appendChild(img);
+                    } else {
+                        const thumb = document.createElement('img');
+                        thumb.src = file.thumbnail_url;
+                        thumb.alt = '';
+                        thumb.loading = 'lazy';
+                        item.appendChild(thumb);
+                        const badge = document.createElement('span');
+                        badge.className = 'video-badge';
+                        badge.innerHTML = '<i class="fas fa-play"></i>';
+                        item.appendChild(badge);
+                        item.onclick = () => window.open(file.url, '_blank');
+                    }
+
+                    if (file.description) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'gallery-overlay';
+                        overlay.textContent = typeof file.description === 'string' ? file.description.slice(0, 100) : '';
+                        item.appendChild(overlay);
+                    }
+
+                    grid.appendChild(item);
+                });
+
+                // Show/hide load more
+                const loadMore = document.getElementById('galleryLoadMore');
+                loadMore.style.display = (data.page * data.per_page < data.total) ? 'block' : 'none';
+            } catch(e) {
+                console.error('loadGallery error:', e);
+            }
+        }
+
+        function loadMoreGallery() {
+            galleryPage++;
+            loadGallery(false);
+        }
+
+        function filterGallery(type, btn) {
+            galleryType = type;
+            document.querySelectorAll('.gallery-filter').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadGallery(true);
+        }
+
+        // ===================== Analytics =====================
+        async function loadAnalytics() {
+            if (!currentChat || currentChat === '__all__') {
+                document.getElementById('analyticsContent').innerHTML = '<p style="color:var(--text-muted);padding:20px;">בחר צ\'אט ספציפי לצפייה באנליטיקס</p>';
+                return;
+            }
+
+            const container = document.getElementById('analyticsContent');
+            container.innerHTML = '<div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div>';
+
+            try {
+                const res = await fetch(`/api/analytics?chat=${encodeURIComponent(currentChat)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+
+                let html = '';
+
+                // Top senders bar chart
+                if (data.senders && data.senders.length > 0) {
+                    const maxCount = data.senders[0].count;
+                    html += '<div class="analytics-section"><h3><i class="fas fa-users" style="color:var(--accent-blue);"></i> שולחים מובילים</h3><div class="bar-chart">';
+                    data.senders.slice(0, 10).forEach(s => {
+                        const pct = Math.max(5, (s.count / maxCount) * 100);
+                        html += `<div class="bar-row"><span class="bar-label">${escapeHtml(s.sender)}</span><div class="bar-fill" style="width:${pct}%"><span class="bar-value">${s.count.toLocaleString()}</span></div></div>`;
+                    });
+                    html += '</div></div>';
+                }
+
+                // Hourly activity chart
+                if (data.hourly && data.hourly.length > 0) {
+                    const maxHour = Math.max(...data.hourly.map(h => h.count));
+                    html += '<div class="analytics-section"><h3><i class="fas fa-clock" style="color:var(--accent-green);"></i> פעילות לפי שעה</h3><div class="hour-chart">';
+                    for (let h = 0; h < 24; h++) {
+                        const entry = data.hourly.find(x => x.hour === h);
+                        const count = entry ? entry.count : 0;
+                        const pct = maxHour > 0 ? (count / maxHour) * 100 : 0;
+                        html += `<div class="hour-bar" style="height:${Math.max(2, pct)}%"><span class="hour-tooltip">${h}:00 — ${count.toLocaleString()} הודעות</span></div>`;
+                    }
+                    html += '</div><div class="hour-labels">';
+                    for (let h = 0; h < 24; h += 3) html += `<span>${h}</span>`;
+                    html += '</div></div>';
+                }
+
+                // Busiest days
+                if (data.busiest_days && data.busiest_days.length > 0) {
+                    html += '<div class="analytics-section"><h3><i class="fas fa-calendar-alt" style="color:var(--accent-blue);"></i> הימים הפעילים ביותר</h3>';
+                    data.busiest_days.forEach((d, i) => {
+                        html += `<div class="busiest-day"><span class="day-rank ${i < 3 ? 'top' : ''}">${i + 1}</span><span>${escapeHtml(d.date)}</span><span style="margin-right:auto;font-weight:600;">${d.count.toLocaleString()} הודעות</span></div>`;
+                    });
+                    html += '</div>';
+                }
+
+                // Media breakdown
+                if (data.media && data.media.length > 0) {
+                    html += '<div class="analytics-section"><h3><i class="fas fa-paperclip" style="color:var(--accent-green);"></i> פירוט מדיה</h3>';
+                    data.media.forEach(m => {
+                        const icons = {audio: 'fa-microphone', image: 'fa-camera', video: 'fa-video', document: 'fa-file'};
+                        const icon = icons[m.type] || 'fa-file';
+                        html += `<div class="busiest-day"><span><i class="fas ${icon}"></i></span><span>${escapeHtml(m.type)}</span><span style="margin-right:auto;font-weight:600;">${m.count.toLocaleString()}</span></div>`;
+                    });
+                    html += '</div>';
+                }
+
+                container.innerHTML = html || '<p style="color:var(--text-muted);">אין נתונים זמינים</p>';
+            } catch(e) {
+                container.innerHTML = '<p style="color:var(--accent-red, #ff6b6b);">שגיאה בטעינת אנליטיקס</p>';
+            }
         }
 
         function escapeHtml(str) {
@@ -1270,7 +1850,7 @@
             return `
             <div class="mgmt-chat-card" id="${cardId}">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><svg style="width:18px;height:18px;vertical-align:middle;margin-left:4px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cardGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#00d4a4"/><stop offset="100%" stop-color="#00a884"/></linearGradient></defs><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#cardGrad)" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg> ${safeName}</span>
+                    <span class="mgmt-chat-name"><svg style="width:18px;height:18px;vertical-align:middle;margin-left:4px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cardGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#0D9488"/><stop offset="100%" stop-color="#6366F1"/></linearGradient></defs><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#cardGrad)" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg> ${safeName}</span>
                     ${status.index.exists
                         ? `<span class="mgmt-status-badge ready"><i class="fas fa-check-circle"></i> מאונדקס (${status.index.message_count.toLocaleString('he-IL')} הודעות)</span>`
                         : `<span class="mgmt-status-badge not-ready"><i class="fas fa-exclamation-triangle"></i> לא מאונדקס</span>`
@@ -1349,11 +1929,21 @@
         }
 
         function renderEmbeddingsRow(embeddings) {
-            const color = embeddings.exists ? 'var(--accent-green)' : 'var(--text-muted)';
+            const isComplete = embeddings.exists && embeddings.total > 0 && embeddings.done >= embeddings.total;
+            const isPartial = embeddings.exists && embeddings.total > 0 && embeddings.done < embeddings.total;
+            const color = isComplete ? 'var(--accent-green)' : isPartial ? 'var(--accent-amber)' : 'var(--text-muted)';
+            let statusText;
+            if (isComplete) {
+                statusText = `<i class="fas fa-check-circle"></i> קיים (${embeddings.done.toLocaleString()} צ'אנקים)`;
+            } else if (isPartial) {
+                statusText = `<i class="fas fa-pause-circle"></i> חלקי (${embeddings.done.toLocaleString()}/${embeddings.total.toLocaleString()})`;
+            } else {
+                statusText = '<i class="fas fa-times-circle"></i> לא נבנה';
+            }
             return `<div class="progress-row" style="cursor:default;">
                 <span class="progress-row-icon" style="color:${color};"><i class="fas fa-brain"></i></span>
                 <span class="progress-row-label">חיפוש חכם (AI)</span>
-                <span style="font-size:0.85em;color:${color};">${embeddings.exists ? '<i class="fas fa-check-circle"></i> קיים' : '<i class="fas fa-times-circle"></i> לא נבנה'}</span>
+                <span style="font-size:0.85em;color:${color};">${statusText}</span>
             </div>`;
         }
 
@@ -1363,10 +1953,12 @@
             const disabled = isAnyRunning && !isThisRunning ? 'disabled' : '';
             const cls = isThisRunning ? 'btn-action running' : 'btn-action';
             const iconHtml = isThisRunning ? '<i class="fas fa-spinner fa-spin"></i>' : `<i class="fas ${icon}"></i>`;
-            let html = `<button class="${cls}" ${disabled} onclick="startProcessing('${escapeHtml(chatName)}', '${task}')" data-task="${task}">${iconHtml} ${label}</button>`;
-            if (isThisRunning) {
-                html += `<button class="btn-stop" onclick="stopProcessing('${escapeHtml(chatName)}')" data-role="stop"><i class="fas fa-stop"></i> עצור</button>`;
-            }
+            const stopDisabled = !isThisRunning;
+            const stopCls = isThisRunning ? 'btn-stop' : 'btn-stop inactive';
+            let html = `<div class="task-btn-group" data-task-group="${task}">`;
+            html += `<button class="${cls}" ${disabled} onclick="startProcessing('${escapeHtml(chatName)}', '${task}')" data-task="${task}">${iconHtml} ${label}</button>`;
+            html += `<button class="${stopCls}" ${stopDisabled ? 'disabled' : ''} onclick="stopProcessing('${escapeHtml(chatName)}')" data-task="${task}"><i class="fas fa-stop"></i></button>`;
+            html += `</div>`;
             return html;
         }
 
@@ -1403,21 +1995,20 @@
                 const cardId = 'mgmt-' + chatName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
                 const actions = document.getElementById(cardId + '-actions');
                 if (actions) {
-                    actions.querySelectorAll('.btn-action').forEach(btn => {
+                    actions.querySelectorAll('.task-btn-group').forEach(group => {
+                        const btn = group.querySelector('.btn-action');
+                        const stopBtn = group.querySelector('.btn-stop');
                         if (btn.dataset.task === task) {
                             btn.classList.add('running');
                             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מעבד...';
+                            if (stopBtn) {
+                                stopBtn.disabled = false;
+                                stopBtn.classList.remove('inactive');
+                            }
                         } else {
                             btn.disabled = true;
                         }
                     });
-                    // Add stop button
-                    const stopBtn = document.createElement('button');
-                    stopBtn.className = 'btn-stop';
-                    stopBtn.setAttribute('data-role', 'stop');
-                    stopBtn.onclick = () => stopProcessing(chatName);
-                    stopBtn.innerHTML = '<i class="fas fa-stop"></i> עצור';
-                    actions.appendChild(stopBtn);
                 }
 
                 startProgressPolling(chatName);
@@ -1444,6 +2035,11 @@
                     if (stopBtn) {
                         stopBtn.disabled = true;
                         stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> עוצר...';
+                    }
+                    // Update the running button text too
+                    const runningBtn = actions.querySelector('.btn-action.running');
+                    if (runningBtn) {
+                        runningBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> עוצר...';
                     }
                 }
             } catch (err) {
@@ -1492,7 +2088,19 @@
             if (!actions) return;
             const runningBtn = actions.querySelector('.btn-action.running');
             if (runningBtn && taskInfo.total > 0) {
-                runningBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${taskInfo.processed}/${taskInfo.total}`;
+                let progressText = `${taskInfo.processed}/${taskInfo.total}`;
+                if (taskInfo.eta_seconds != null && taskInfo.eta_seconds > 0) {
+                    let etaText = '';
+                    if (taskInfo.eta_seconds > 3600) {
+                        etaText = Math.round(taskInfo.eta_seconds / 3600) + ' שעות';
+                    } else if (taskInfo.eta_seconds > 60) {
+                        etaText = Math.round(taskInfo.eta_seconds / 60) + ' דקות';
+                    } else {
+                        etaText = taskInfo.eta_seconds + ' שניות';
+                    }
+                    progressText += ' — נותרו ~' + etaText;
+                }
+                runningBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progressText}`;
             }
         }
 
@@ -1541,8 +2149,15 @@
             } else {
                 $panel.classList.remove('active');
                 $fab.classList.remove('active');
-                $fab.innerHTML = '<i class="fas fa-robot"></i>';
+                $fab.innerHTML = '<svg class="fab-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="white" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="#0D9488" opacity="0.8"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="#0D9488" opacity="0.5"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="#0D9488" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="#6366F1" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg>';
             }
+        }
+
+        function formatAiText(text) {
+            return escapeHtml(text)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/\[#(\d+)\]/g, '<a href="javascript:void(0)" onclick="showSourceMessage($1)" class="source-link">[#$1]</a>');
         }
 
         async function sendAiMessage() {
@@ -1554,40 +2169,164 @@
 
             addAiMessage('user', question);
             $input.value = '';
-            aiHistory.push({ role: 'user', content: question });
 
             aiIsLoading = true;
             document.getElementById('aiSendBtn').disabled = true;
             const typingEl = showTypingIndicator();
 
             try {
-                const res = await fetch('/api/ai/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat: currentChat, question: question, history: aiHistory.slice(-4) })
-                });
-                const data = await res.json();
-                typingEl.remove();
-
-                if (data.error) { addAiMessage('assistant', data.error); }
-                else { addAiMessage('assistant', data.answer, data.sources); aiHistory.push({ role: 'assistant', content: data.answer }); }
-
-                if (aiHistory.length > 20) aiHistory = aiHistory.slice(-20);
-            } catch (err) {
-                typingEl.remove();
-                addAiMessage('assistant', 'שגיאה בתקשורת עם השרת. נסו שוב.');
+                await sendAiMessageStreaming(question, typingEl);
+            } catch (streamErr) {
+                // Fallback to non-streaming endpoint
+                try {
+                    await sendAiMessageFallback(question, typingEl);
+                } catch (fallbackErr) {
+                    typingEl.remove();
+                    addAiMessage('assistant', 'שגיאה בתקשורת עם השרת. נסו שוב.');
+                }
             }
 
+            if (aiHistory.length > 20) aiHistory = aiHistory.slice(-20);
             aiIsLoading = false;
             document.getElementById('aiSendBtn').disabled = false;
         }
 
-        function addAiMessage(role, text, sources) {
+        async function sendAiMessageStreaming(question, typingEl) {
+            const res = await fetch('/api/ai/chat/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat: currentChat, question: question, history: aiHistory.slice(-4) })
+            });
+
+            if (!res.ok) throw new Error('Stream request failed');
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let fullAnswer = '';
+            let metadata = null;
+            let messageDiv = null;
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                // Keep the last potentially incomplete line in the buffer
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const data = line.slice(6);
+
+                    if (data === '[DONE]') continue;
+
+                    // First SSE message is metadata JSON
+                    if (!metadata) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.type === 'metadata') {
+                                metadata = parsed;
+                                lastRagDebug = parsed.debug || null;
+                                // Remove typing indicator and create the streaming message element
+                                typingEl.remove();
+                                messageDiv = addAiMessage('assistant', '', null, false, true);
+                                continue;
+                            }
+                        } catch(e) {
+                            // Not JSON metadata, treat as error JSON or text
+                            try {
+                                const errParsed = JSON.parse(data);
+                                if (errParsed.error) {
+                                    typingEl.remove();
+                                    addAiMessage('assistant', errParsed.error);
+                                    return;
+                                }
+                            } catch(e2) {}
+                        }
+                    }
+
+                    // Text chunk from LLM
+                    fullAnswer += data;
+                    if (messageDiv) {
+                        const textEl = messageDiv.querySelector('.ai-msg-text');
+                        if (textEl) {
+                            textEl.innerHTML = formatAiText(fullAnswer);
+                            const $messages = document.getElementById('aiChatMessages');
+                            $messages.scrollTop = $messages.scrollHeight;
+                        }
+                    }
+                }
+            }
+
+            // If we never got metadata (edge case), remove typing indicator
+            if (!metadata) {
+                typingEl.remove();
+                if (fullAnswer) {
+                    addAiMessage('assistant', fullAnswer);
+                } else {
+                    throw new Error('No response received');
+                }
+            }
+
+            // After streaming completes, add sources and why button
+            if (metadata && messageDiv) {
+                if (metadata.sources && metadata.sources.length > 0) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'ai-sources';
+                    sourcesDiv.innerHTML = '<div style="margin-bottom:4px;">מקורות:</div>' +
+                        metadata.sources.slice(0, 8).map(s => {
+                            const time = formatDateTime(s.datetime);
+                            return '<span class="ai-source-link" onclick="showSourceMessage(' + s.message_id + ')" title="' + escapeHtml(s.preview) + '">' + escapeHtml(s.sender) + ' - ' + time + '</span>';
+                        }).join(' ');
+                    messageDiv.appendChild(sourcesDiv);
+                }
+
+                if (lastRagDebug) {
+                    const whyBtn = document.createElement('button');
+                    whyBtn.className = 'why-btn';
+                    whyBtn.onclick = showRagDebug;
+                    whyBtn.textContent = '\uD83D\uDD0D למה התשובה הזו?';
+                    messageDiv.appendChild(whyBtn);
+                }
+            }
+
+            aiHistory.push({ role: 'user', content: question });
+            aiHistory.push({ role: 'assistant', content: fullAnswer });
+        }
+
+        async function sendAiMessageFallback(question, typingEl) {
+            const res = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat: currentChat, question: question, history: aiHistory.slice(-4) })
+            });
+            if (!res.ok && res.status !== 503) throw new Error('AI request failed');
+            const data = await res.json();
+            typingEl.remove();
+
+            if (data.error) { addAiMessage('assistant', data.error); }
+            else {
+                lastRagDebug = data.debug || null;
+                addAiMessage('assistant', data.answer, data.sources, true);
+                aiHistory.push({ role: 'user', content: question });
+                aiHistory.push({ role: 'assistant', content: data.answer });
+            }
+        }
+
+        let lastRagDebug = null;
+
+        function addAiMessage(role, text, sources, showWhyBtn, returnEl) {
             const $messages = document.getElementById('aiChatMessages');
             const div = document.createElement('div');
             div.className = 'ai-msg ' + role;
-            let html = escapeHtml(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>').replace(/\[#(\d+)\]/g, '<span class="ai-source-link" onclick="showAiSource($1)">[#$1]</span>');
-            div.innerHTML = html;
+
+            // Wrap text in a span so streaming can update it
+            const textSpan = document.createElement('span');
+            textSpan.className = 'ai-msg-text';
+            textSpan.innerHTML = formatAiText(text);
+            div.appendChild(textSpan);
 
             if (sources && sources.length > 0) {
                 const sourcesDiv = document.createElement('div');
@@ -1595,12 +2334,23 @@
                 sourcesDiv.innerHTML = '<div style="margin-bottom:4px;">מקורות:</div>' +
                     sources.slice(0, 8).map(s => {
                         const time = formatDateTime(s.datetime);
-                        return '<span class="ai-source-link" onclick="showAiSource(' + s.message_id + ')" title="' + escapeHtml(s.preview) + '">' + escapeHtml(s.sender) + ' - ' + time + '</span>';
+                        return '<span class="ai-source-link" onclick="showSourceMessage(' + s.message_id + ')" title="' + escapeHtml(s.preview) + '">' + escapeHtml(s.sender) + ' - ' + time + '</span>';
                     }).join(' ');
                 div.appendChild(sourcesDiv);
             }
+
+            if (showWhyBtn && lastRagDebug) {
+                const whyBtn = document.createElement('button');
+                whyBtn.className = 'why-btn';
+                whyBtn.onclick = showRagDebug;
+                whyBtn.textContent = '\uD83D\uDD0D למה התשובה הזו?';
+                div.appendChild(whyBtn);
+            }
+
             $messages.appendChild(div);
             $messages.scrollTop = $messages.scrollHeight;
+
+            if (returnEl) return div;
         }
 
         function showTypingIndicator() {
@@ -1643,6 +2393,456 @@
                 document.getElementById('aiChatMessages').scrollTop = document.getElementById('aiChatMessages').scrollHeight;
             } catch (err) {}
         }
+
+        // ===================== Source Citation Modal =====================
+        function showModal(contentHtml) {
+            let modal = document.getElementById('sourceModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'sourceModal';
+                modal.className = 'source-modal-overlay';
+                modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = '<div class="source-modal-box">' +
+                '<button class="source-modal-close" onclick="document.getElementById(\'sourceModal\').style.display=\'none\'">&times;</button>' +
+                contentHtml + '</div>';
+            modal.style.display = 'flex';
+        }
+
+        async function showSourceMessage(messageId) {
+            try {
+                const res = await fetch('/api/context/' + messageId + '?chat=' + encodeURIComponent(currentChat) + '&before=5&after=5');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                let html = '<div class="source-modal-content">';
+                html += '<h3 style="margin-bottom:12px;">\u05d4\u05e7\u05e9\u05e8 \u05d4\u05d5\u05d3\u05e2\u05d4 #' + messageId + '</h3>';
+                data.messages.forEach(m => {
+                    const isFocus = m.id === data.focus_id;
+                    const cls = senderClass(m.sender);
+                    html += '<div class="context-msg' + (isFocus ? ' focused' : '') + '" style="padding:6px 10px;margin:3px 0;border-radius:6px;' + (isFocus ? 'background:var(--bg-hover);border-right:3px solid var(--accent-green);' : '') + '">';
+                    html += '<strong class="' + cls + '">' + escapeHtml(m.sender) + '</strong> <span style="color:var(--text-muted);font-size:0.82em;">' + escapeHtml(m.datetime || '').slice(0,16) + '</span>';
+                    html += '<div>' + escapeHtml(m.text || '') + '</div>';
+                    if (m.transcription) html += '<div style="color:var(--accent-green);font-size:0.85em;">[\u05ea\u05de\u05dc\u05d5\u05dc: ' + escapeHtml(m.transcription).slice(0,200) + ']</div>';
+                    if (m.visual_description) html += '<div style="color:var(--accent-blue);font-size:0.85em;">[\u05ea\u05d9\u05d0\u05d5\u05e8: ' + escapeHtml(m.visual_description).slice(0,200) + ']</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+
+                showModal(html);
+            } catch(e) {
+                console.error('showSourceMessage error:', e);
+            }
+        }
+
+        function showRagDebug() {
+            if (!lastRagDebug) return;
+            let html = '<div class="source-modal-content">';
+            html += '<h3 style="margin-bottom:12px;">\uD83D\uDD0D \u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05dc\u05d9\u05e4\u05ea \u05de\u05d9\u05d3\u05e2 (RAG)</h3>';
+            html += '<p style="font-size:0.85em;color:var(--text-secondary);margin-bottom:16px;">\u05e0\u05e9\u05dc\u05e4\u05d5 ' + lastRagDebug.chunks_retrieved + ' \u05e7\u05d8\u05e2\u05d9 \u05e9\u05d9\u05d7\u05d4 \u05e8\u05dc\u05d5\u05d5\u05e0\u05d8\u05d9\u05d9\u05dd:</p>';
+
+            (lastRagDebug.chunks_detail || []).forEach((chunk, i) => {
+                html += '<div style="padding:10px;margin-bottom:8px;background:var(--bg-tertiary);border-radius:var(--radius);border-right:3px solid var(--accent-green);">';
+                html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
+                html += '<strong>\u05e7\u05d8\u05e2 #' + (i+1) + '</strong>';
+                html += '<span style="font-size:0.82em;color:var(--accent-green);font-weight:700;">\u05e0\u05d9\u05e7\u05d5\u05d3: ' + (chunk.score || 0).toFixed(1) + '</span>';
+                html += '</div>';
+                html += '<div style="font-size:0.82em;color:var(--text-muted);">\u05d4\u05d5\u05d3\u05e2\u05d5\u05ea ' + chunk.start_message_id + '-' + chunk.end_message_id + ' | ' + (chunk.message_count || '?') + ' \u05d4\u05d5\u05d3\u05e2\u05d5\u05ea | ' + escapeHtml(chunk.senders || '') + '</div>';
+                if (chunk.thread_id) html += '<div style="font-size:0.78em;color:var(--accent-blue);">\u05e9\u05e8\u05e9\u05d5\u05e8 #' + chunk.thread_id + '</div>';
+                html += '<div style="font-size:0.82em;margin-top:6px;color:var(--text-secondary);white-space:pre-wrap;max-height:100px;overflow:hidden;">' + escapeHtml(chunk.preview || '') + '</div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            showModal(html);
+        }
+
+        // ============================================================
+        // SETTINGS
+        // ============================================================
+        let settingsData = {};
+        let hardwareData = {};
+        let modelsData = {};
+        let mediaCountsForSettings = { images: 0, videos: 0 };
+        let mediaCountsPerChat = {}; // chat_name -> {images, videos}
+        let mediaCountsAll = { images: 0, videos: 0 };
+
+        async function loadSettings() {
+            try {
+                // Load settings, hardware, and models in parallel
+                const [settingsRes, hwRes, modelsRes, chatsRes] = await Promise.all([
+                    fetch('/api/settings'),
+                    fetch('/api/hardware'),
+                    fetch('/api/models'),
+                    fetch('/api/chats'),
+                ]);
+
+                if (settingsRes.ok) {
+                    const data = await settingsRes.json();
+                    settingsData = data.settings || {};
+                    renderApiKeyStatus(data.api_keys || {});
+                }
+
+                if (hwRes.ok) {
+                    const data = await hwRes.json();
+                    hardwareData = data;
+                    renderHardware(data.hardware, data.performance);
+                }
+
+                if (modelsRes.ok) {
+                    modelsData = await modelsRes.json();
+                    renderModelCards('vision', modelsData.vision || []);
+                    renderModelCards('video', modelsData.video || []);
+                    renderModelCards('rag', modelsData.rag || []);
+                }
+
+                // Build cost chat selector and load media counts per chat
+                let chatNames = [];
+                if (chatsRes.ok) {
+                    const chats = await chatsRes.json();
+                    chatNames = chats.filter(c => c.ready).map(c => c.name);
+                }
+
+                const selector = document.getElementById('costChatSelector');
+                if (selector) {
+                    selector.innerHTML = '<option value="__all__">\u05db\u05dc \u05d4\u05e6\u05f3\u05d0\u05d8\u05d9\u05dd</option>';
+                    chatNames.forEach(name => {
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = name;
+                        if (name === currentChat) opt.selected = true;
+                        selector.appendChild(opt);
+                    });
+                    // Default to current chat if one is selected
+                    if (currentChat && selector.value === '__all__') {
+                        selector.value = currentChat;
+                    }
+                }
+
+                // Load media counts for all ready chats in parallel
+                mediaCountsAll = { images: 0, videos: 0 };
+                mediaCountsPerChat = {};
+                const statusPromises = chatNames.map(name =>
+                    fetch(`/api/process/status?chat=${encodeURIComponent(name)}`)
+                        .then(r => r.ok ? r.json() : null)
+                        .then(data => {
+                            if (data) {
+                                const counts = { images: (data.images && data.images.total) || 0, videos: (data.videos && data.videos.total) || 0 };
+                                mediaCountsPerChat[name] = counts;
+                                mediaCountsAll.images += counts.images;
+                                mediaCountsAll.videos += counts.videos;
+                            }
+                        })
+                        .catch(() => {})
+                );
+                await Promise.all(statusPromises);
+
+                // Set initial media counts based on selector
+                onCostChatChange();
+
+                updateCostCalculators();
+                updateCostSummary();
+            } catch (err) {
+                console.error('loadSettings error:', err);
+            }
+        }
+
+        function renderApiKeyStatus(keys) {
+            const fields = [
+                { id: 'anthropicStatus', configured: keys.anthropic_configured, preview: keys.anthropic_preview, required: true },
+                { id: 'openaiStatus', configured: keys.openai_configured, preview: keys.openai_preview },
+                { id: 'geminiStatus', configured: keys.gemini_configured, preview: keys.gemini_preview },
+            ];
+            fields.forEach(f => {
+                const el = document.getElementById(f.id);
+                if (!el) return;
+                if (f.configured) {
+                    el.className = 'settings-status configured';
+                    el.innerHTML = '<i class="fas fa-check-circle"></i> מוגדר (' + escapeHtml(f.preview || '') + ')';
+                } else {
+                    el.className = 'settings-status not-configured';
+                    el.innerHTML = '<i class="fas fa-minus-circle"></i> לא מוגדר' + (f.required ? '' : ' (אופציונלי)');
+                }
+            });
+        }
+
+        function renderHardware(hw, perf) {
+            const container = document.getElementById('hwInfo');
+            if (!container || !hw) return;
+
+            container.innerHTML = `
+                <div class="hw-grid">
+                    <div class="hw-stat">
+                        <div class="hw-label">מעבד (CPU)</div>
+                        <div class="hw-value">${escapeHtml(hw.cpu || 'לא ידוע')}</div>
+                        <div class="hw-sub">${hw.cpu_cores || '?'} ליבות</div>
+                    </div>
+                    <div class="hw-stat">
+                        <div class="hw-label">זיכרון (RAM)</div>
+                        <div class="hw-value">${hw.ram_gb || '?'} GB</div>
+                        <div class="hw-sub">${hw.ram_available_gb || '?'} GB זמין</div>
+                    </div>
+                    <div class="hw-stat">
+                        <div class="hw-label">כרטיס מסך (GPU)</div>
+                        <div class="hw-value" style="color:${hw.gpu_dedicated ? 'var(--accent-green)' : 'var(--accent-amber)'}">${escapeHtml(hw.gpu || 'לא ידוע')}</div>
+                        <div class="hw-sub">${hw.gpu_dedicated ? 'ייעודי' : 'משולב'}</div>
+                    </div>
+                    <div class="hw-stat">
+                        <div class="hw-label">מכשיר</div>
+                        <div class="hw-value">${escapeHtml(hw.device_name || 'לא ידוע')}</div>
+                        <div class="hw-sub">${escapeHtml(hw.os || '')}</div>
+                    </div>
+                </div>
+                ${perf ? `
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.85em;font-weight:600;margin-bottom:6px;">ביצועי Ollama (מודלים לוקאליים):</div>
+                    <div class="hw-meter"><div class="hw-meter-fill ${perf.overall_rating}"></div></div>
+                </div>
+                <div class="hw-recommendation">
+                    💡 ${escapeHtml(perf.recommendation_text || '')}
+                </div>` : ''}
+            `;
+        }
+
+        function renderModelCards(task, models) {
+            const container = document.getElementById(`models-${task}`);
+            if (!container) return;
+
+            // Determine which model is currently selected
+            const providerKey = task === 'rag' ? 'rag_provider' : task + '_provider';
+            const modelKey = task === 'rag' ? 'rag_model' : task + '_model';
+            const selectedProvider = settingsData[providerKey] || 'anthropic';
+            const selectedModel = settingsData[modelKey] || '';
+
+            let html = '';
+            models.forEach((m, i) => {
+                const isSelected = m.provider === selectedProvider && (m.model === selectedModel || !selectedModel);
+                const costKey = task === 'rag' ? 'cost_per_query' : (task === 'video' ? 'cost_per_minute' : 'cost_per_image');
+                const cost = m[costKey];
+                const costLabel = task === 'rag' ? '/שאלה' : (task === 'video' ? '/דקה' : '/תמונה');
+
+                const stars = '★'.repeat(m.hebrew_quality || 3) + '☆'.repeat(5 - (m.hebrew_quality || 3));
+                const speedClass = m.speed === 'fast' ? 'color:var(--accent-green)' : 'color:var(--accent-amber)';
+                const speedText = m.speed === 'fast' ? '⚡ מהיר' : '🐌 איטי';
+
+                let badgeHtml = '';
+                if (m.badge === 'recommended') badgeHtml = '<span class="model-badge recommended">מומלץ</span>';
+                else if (m.badge === 'free') badgeHtml = '<span class="model-badge free">חינם</span>';
+                else if (m.badge === 'best') badgeHtml = '<span class="model-badge best">הכי טוב</span>';
+
+                // Add perf tag for ollama if we have hardware data
+                let perfTagHtml = '';
+                if (m.provider === 'ollama' && hardwareData.performance) {
+                    const rating = hardwareData.performance.overall_rating;
+                    if (rating === 'low' || rating === 'medium') {
+                        const cls = m.speed === 'slow' ? 'slow' : 'medium';
+                        perfTagHtml = `<span class="perf-tag ${cls}">⚠ ${rating === 'low' ? 'איטי' : 'סביר'} על המחשב</span>`;
+                    } else {
+                        perfTagHtml = '<span class="perf-tag ok">מתאים למחשב</span>';
+                    }
+                }
+
+                html += `
+                <div class="model-card ${isSelected ? 'selected' : ''}" data-provider="${m.provider}" data-model="${m.model}" onclick="selectModel('${task}', '${m.provider}', '${m.model}', this)">
+                    <div class="check-mark"><i class="fas fa-check"></i></div>
+                    <div class="card-top">
+                        <div class="provider-dot ${m.provider}">${m.provider[0].toUpperCase()}</div>
+                        <div>
+                            <div class="card-name">${escapeHtml(m.display)}</div>
+                            <div class="card-provider">${escapeHtml(m.provider)}</div>
+                        </div>
+                        <div class="card-badges">${badgeHtml} ${perfTagHtml}</div>
+                    </div>
+                    <div class="card-details">
+                        <div><span class="detail-label">עלות:</span> <span class="detail-value" style="${cost === 0 ? 'color:var(--accent-green);font-weight:700' : ''}">${cost === 0 ? 'חינם' : '$' + cost + costLabel}</span></div>
+                        <div><span class="detail-label">מהירות:</span> <span class="detail-value" style="${speedClass}">${speedText}</span></div>
+                        <div><span class="detail-label">עברית:</span> <span style="color:var(--accent-amber);font-size:0.8em;">${stars}</span></div>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function selectModel(task, provider, model, cardEl) {
+            // Update visual selection
+            const grid = cardEl.parentElement;
+            grid.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+            cardEl.classList.add('selected');
+
+            // Update settings
+            const providerKey = task === 'rag' ? 'rag_provider' : task + '_provider';
+            const modelKey = task === 'rag' ? 'rag_model' : task + '_model';
+            settingsData[providerKey] = provider;
+            settingsData[modelKey] = model;
+
+            updateCostCalculators();
+            updateCostSummary();
+        }
+
+        function updateCostCalculators() {
+            // Vision
+            const visionModel = (modelsData.vision || []).find(m => m.provider === settingsData.vision_provider && m.model === settingsData.vision_model);
+            const visionCost = visionModel ? visionModel.cost_per_image * mediaCountsForSettings.images : 0;
+            const visionEl = document.getElementById('cost-vision');
+            if (visionEl) {
+                const count = mediaCountsForSettings.images;
+                visionEl.innerHTML = `📷 יש לך <strong>${count}</strong> תמונות — עלות: <span class="cost-amount">${visionCost === 0 ? 'חינם' : '$' + visionCost.toFixed(2)}</span>`;
+            }
+
+            // Video
+            const videoModel = (modelsData.video || []).find(m => m.provider === settingsData.video_provider && m.model === settingsData.video_model);
+            const videoCost = videoModel ? videoModel.cost_per_minute * mediaCountsForSettings.videos : 0;
+            const videoEl = document.getElementById('cost-video');
+            if (videoEl) {
+                const count = mediaCountsForSettings.videos;
+                videoEl.innerHTML = `🎬 יש לך <strong>${count}</strong> סרטונים — עלות: <span class="cost-amount">${videoCost === 0 ? 'חינם' : '$' + videoCost.toFixed(2)}</span>`;
+            }
+
+            // RAG
+            const ragModel = (modelsData.rag || []).find(m => m.provider === settingsData.rag_provider && m.model === settingsData.rag_model);
+            const ragCost = ragModel ? ragModel.cost_per_query * 100 : 0;
+            const ragEl = document.getElementById('cost-rag');
+            if (ragEl) {
+                ragEl.innerHTML = `💬 עלות ל-100 שאלות: <span class="cost-amount">${ragCost === 0 ? 'חינם' : '$' + ragCost.toFixed(2)}</span>`;
+            }
+        }
+
+        function onCostChatChange() {
+            const selector = document.getElementById('costChatSelector');
+            if (!selector) return;
+            const val = selector.value;
+            if (val === '__all__') {
+                mediaCountsForSettings = { ...mediaCountsAll };
+            } else {
+                mediaCountsForSettings = mediaCountsPerChat[val] || { images: 0, videos: 0 };
+            }
+            updateCostCalculators();
+            updateCostSummary();
+        }
+
+        function updateCostSummary() {
+            const visionModel = (modelsData.vision || []).find(m => m.provider === settingsData.vision_provider && m.model === settingsData.vision_model);
+            const videoModel = (modelsData.video || []).find(m => m.provider === settingsData.video_provider && m.model === settingsData.video_model);
+            const ragModel = (modelsData.rag || []).find(m => m.provider === settingsData.rag_provider && m.model === settingsData.rag_model);
+
+            const vCost = visionModel ? visionModel.cost_per_image * mediaCountsForSettings.images : 0;
+            const vidCost = videoModel ? videoModel.cost_per_minute * mediaCountsForSettings.videos : 0;
+            const rCost = ragModel ? ragModel.cost_per_query * 100 : 0;
+            const total = vCost + vidCost + rCost;
+
+            const el = document.getElementById('costSummary');
+            if (!el) return;
+
+            const selector = document.getElementById('costChatSelector');
+            const chatLabel = selector && selector.value !== '__all__' ? escapeHtml(selector.value) : 'כל הצ\'אטים';
+            const imgCount = mediaCountsForSettings.images;
+            const vidCount = mediaCountsForSettings.videos;
+
+            el.innerHTML = `
+                <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">${imgCount} תמונות, ${vidCount} סרטונים</div>
+                <div class="receipt-row">
+                    <span>📷 תיאור תמונות</span>
+                    <span><strong>${visionModel ? escapeHtml(visionModel.display) : '—'}</strong> — ${vCost === 0 ? 'חינם' : '$' + vCost.toFixed(2)}</span>
+                </div>
+                <div class="receipt-row">
+                    <span>🎬 תיאור סרטונים</span>
+                    <span><strong>${videoModel ? escapeHtml(videoModel.display) : '—'}</strong> — ${vidCost === 0 ? 'חינם' : '$' + vidCost.toFixed(2)}</span>
+                </div>
+                <div class="receipt-row">
+                    <span>💬 צ'אט AI (100 שאלות)</span>
+                    <span><strong>${ragModel ? escapeHtml(ragModel.display) : '—'}</strong> — ${rCost === 0 ? 'חינם' : '$' + rCost.toFixed(2)}</span>
+                </div>
+                <div class="receipt-total">
+                    <span>סה"כ משוער</span>
+                    <span class="total-amount">${total === 0 ? 'חינם!' : '$' + total.toFixed(2)}</span>
+                </div>
+            `;
+        }
+
+        async function saveSettings() {
+            const btn = document.getElementById('saveSettingsBtn');
+            const statusEl = document.getElementById('settingsSaveStatus');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> שומר...';
+
+            try {
+                const body = { ...settingsData };
+
+                // Include API keys if user entered new ones
+                const aKey = document.getElementById('anthropicKeyInput').value.trim();
+                const oKey = document.getElementById('openaiKeyInput').value.trim();
+                const gKey = document.getElementById('geminiKeyInput').value.trim();
+                if (aKey) body.anthropic_key = aKey;
+                if (oKey) body.openai_key = oKey;
+                if (gKey) body.gemini_key = gKey;
+
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Save failed');
+
+                // Clear key inputs
+                document.getElementById('anthropicKeyInput').value = '';
+                document.getElementById('openaiKeyInput').value = '';
+                document.getElementById('geminiKeyInput').value = '';
+
+                statusEl.style.display = 'inline';
+                statusEl.style.color = 'var(--accent-green)';
+                statusEl.textContent = '✓ נשמר בהצלחה!';
+                setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+
+                loadSettings();
+                initAiChat();
+            } catch (err) {
+                statusEl.style.display = 'inline';
+                statusEl.style.color = 'var(--accent-red)';
+                statusEl.textContent = 'שגיאה בשמירה';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> שמור הגדרות';
+            }
+        }
+
+        function toggleKeyVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                input.type = 'password';
+                btn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+
+        // ============================================================
+        // KEYBOARD SHORTCUTS
+        // ============================================================
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+F or Cmd+F -> focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                if (activeTab === 'search') {
+                    e.preventDefault();
+                    $query.focus();
+                    $query.select();
+                }
+            }
+            // Ctrl+K or Cmd+K -> toggle AI chat
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                if (document.getElementById('aiChatFab').style.display !== 'none') {
+                    toggleAiChat();
+                }
+            }
+        });
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+    }
     </script>
 </body>
 </html>

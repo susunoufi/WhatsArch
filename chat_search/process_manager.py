@@ -11,6 +11,7 @@ import sqlite3
 import subprocess
 import shutil
 import threading
+import time
 
 # ---------------------------------------------------------------------------
 # In-memory processing state (thread-safe)
@@ -19,6 +20,22 @@ import threading
 _processing_state = {}  # chat_name -> {task, status, current_file, processed, total, error}
 _processing_lock = threading.Lock()
 _cancel_events = {}  # chat_name -> threading.Event (set = cancel requested)
+
+
+def _get_api_key_for_provider(provider: str) -> str:
+    """Get the appropriate API key for a given provider."""
+    key_map = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+    }
+    env_var = key_map.get(provider)
+    if env_var:
+        key = os.environ.get(env_var, "")
+        if not key and provider != "ollama":
+            raise RuntimeError(f"{env_var} not set — required for {provider}")
+        return key
+    return ""  # Ollama doesn't need a key
 
 
 # ---------------------------------------------------------------------------
@@ -152,10 +169,29 @@ def get_processing_status(chat_dir: str) -> dict:
         except Exception:
             pass
 
-    # Embeddings status (check for chunk embeddings)
+    # Embeddings status (check for chunk embeddings, including partial progress)
     chunk_embeddings_path = os.path.join(data_dir, "chat_chunk_embeddings.npy")
     legacy_embeddings_path = os.path.join(data_dir, "chat_embeddings.npy")
     embeddings_exist = os.path.exists(chunk_embeddings_path) or os.path.exists(legacy_embeddings_path)
+    embeddings_done = 0
+    embeddings_total = 0
+    if os.path.exists(chunk_embeddings_path):
+        try:
+            import numpy as np
+            emb = np.load(chunk_embeddings_path)
+            embeddings_done = emb.shape[0]
+        except Exception:
+            pass
+    # Get total chunk count from DB
+    if index_exists:
+        try:
+            conn = sqlite3.connect(db_path)
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM chunks")
+            embeddings_total = c.fetchone()[0]
+            conn.close()
+        except Exception:
+            pass
 
     chat_name = os.path.basename(chat_dir)
 
@@ -187,6 +223,8 @@ def get_processing_status(chat_dir: str) -> dict:
         },
         "embeddings": {
             "exists": embeddings_exist,
+            "done": embeddings_done,
+            "total": embeddings_total,
         },
         "active_task": get_active_task(chat_name),
     }
@@ -242,6 +280,8 @@ def start_processing(chat_name: str, task: str, chats_dir: str, model_size: str 
             "processed": 0,
             "total": 0,
             "error": None,
+            "start_time": time.time(),
+            "eta_seconds": None,
         }
 
     thread = threading.Thread(
@@ -277,6 +317,13 @@ def _make_progress_callback(chat_name: str):
                 state["current_file"] = filename
                 state["processed"] = processed
                 state["total"] = total
+                elapsed = time.time() - state.get("start_time", time.time())
+                if processed > 0 and total > 0:
+                    rate = elapsed / processed  # seconds per item
+                    remaining = (total - processed) * rate
+                    state["eta_seconds"] = round(remaining)
+                else:
+                    state["eta_seconds"] = None
     return callback
 
 
@@ -302,20 +349,28 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
 
         elif task == "images":
             from .vision import process_images
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if not api_key:
-                raise RuntimeError("ANTHROPIC_API_KEY not set")
+            from . import config
+            project_root = os.path.dirname(chats_dir)
+            settings = config.load_settings(project_root)
+            provider = settings.get("vision_provider", "anthropic")
+            model = settings.get("vision_model")
+            api_key = _get_api_key_for_provider(provider)
+            ollama_url = settings.get("ollama_base_url")
             cache_path = os.path.join(data_dir, "descriptions.json")
-            process_images(chat_dir, cache_path, api_key, progress_callback=callback, cancel_event=cancel_event)
+            process_images(chat_dir, cache_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, progress_callback=callback, cancel_event=cancel_event)
 
         elif task == "videos":
             from .vision import process_videos
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if not api_key:
-                raise RuntimeError("ANTHROPIC_API_KEY not set")
+            from . import config
+            project_root = os.path.dirname(chats_dir)
+            settings = config.load_settings(project_root)
+            provider = settings.get("video_provider", "anthropic")
+            model = settings.get("video_model")
+            api_key = _get_api_key_for_provider(provider)
+            ollama_url = settings.get("ollama_base_url")
             desc_path = os.path.join(data_dir, "descriptions.json")
             vtrans_path = os.path.join(data_dir, "video_transcriptions.json")
-            process_videos(chat_dir, desc_path, vtrans_path, api_key, model_size=model_size, progress_callback=callback, cancel_event=cancel_event)
+            process_videos(chat_dir, desc_path, vtrans_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, model_size=model_size, progress_callback=callback, cancel_event=cancel_event)
 
         elif task == "pdfs":
             from .vision import process_pdfs
@@ -417,41 +472,58 @@ def _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
 
 
 def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
-    """Run the chunk embeddings generation pipeline."""
-    from .vision import load_cache as load_vision_cache
-    from .transcribe import load_cache
-    from .parser import parse_chat, detect_chat_type
-    from .indexer import build_chunks, build_chunk_embeddings, save_chat_metadata
-    from .chunker import segment_into_chunks
+    """Run the chunk embeddings generation pipeline.
 
-    chat_file = os.path.join(chat_dir, "_chat.txt")
+    If chunks already exist in the DB, reuses them to allow resume of partial
+    embeddings without rebuilding. Only rebuilds chunks if they don't exist.
+    """
+    from .indexer import build_chunks, build_chunk_embeddings, save_chat_metadata, load_chunks_from_db
+
     db_path = os.path.join(data_dir, "chat.db")
 
     _check_cancel(cancel_event)
-    callback("Loading caches...", 0, 5)
-    transcriptions = load_cache(os.path.join(data_dir, "transcriptions.json"))
-    descriptions = load_vision_cache(os.path.join(data_dir, "descriptions.json"))
-    video_trans = load_vision_cache(os.path.join(data_dir, "video_transcriptions.json"))
-    pdf_texts = load_vision_cache(os.path.join(data_dir, "pdf_texts.json"))
+    callback("Checking existing chunks...", 0, 3)
 
-    _check_cancel(cancel_event)
-    callback("Parsing messages...", 1, 5)
-    messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
+    # Try to load existing chunks from DB (avoids rebuild, preserves partial embeddings)
+    chunks = load_chunks_from_db(db_path)
 
-    _check_cancel(cancel_event)
-    callback("Detecting chat type...", 2, 5)
-    chat_info = detect_chat_type(chat_file, messages)
-    chat_type = chat_info["chat_type"]
-    save_chat_metadata(db_path, {
-        "chat_type": chat_type,
-        "unique_senders": chat_info["unique_senders"],
-        "total_messages": len(messages),
-    })
+    if chunks:
+        callback("Using existing chunks...", 1, 3)
+        print(f"  Loaded {len(chunks)} existing chunks from DB, skipping rebuild.")
+    else:
+        # No chunks yet — need to build them from scratch
+        from .vision import load_cache as load_vision_cache
+        from .transcribe import load_cache
+        from .parser import parse_chat, detect_chat_type
+        from .chunker import segment_into_chunks
 
-    _check_cancel(cancel_event)
-    callback("Building chunks...", 3, 5)
-    chunks = segment_into_chunks(messages, chat_type=chat_type)
-    build_chunks(chunks, db_path)
+        chat_file = os.path.join(chat_dir, "_chat.txt")
+
+        _check_cancel(cancel_event)
+        callback("Loading caches...", 0, 5)
+        transcriptions = load_cache(os.path.join(data_dir, "transcriptions.json"))
+        descriptions = load_vision_cache(os.path.join(data_dir, "descriptions.json"))
+        video_trans = load_vision_cache(os.path.join(data_dir, "video_transcriptions.json"))
+        pdf_texts = load_vision_cache(os.path.join(data_dir, "pdf_texts.json"))
+
+        _check_cancel(cancel_event)
+        callback("Parsing messages...", 1, 5)
+        messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
+
+        _check_cancel(cancel_event)
+        callback("Detecting chat type...", 2, 5)
+        chat_info = detect_chat_type(chat_file, messages)
+        chat_type = chat_info["chat_type"]
+        save_chat_metadata(db_path, {
+            "chat_type": chat_type,
+            "unique_senders": chat_info["unique_senders"],
+            "total_messages": len(messages),
+        })
+
+        _check_cancel(cancel_event)
+        callback("Building chunks...", 3, 5)
+        chunks = segment_into_chunks(messages, chat_type=chat_type)
+        build_chunks(chunks, db_path)
 
     _check_cancel(cancel_event)
     callback("Building chunk embeddings...", 0, len(chunks))

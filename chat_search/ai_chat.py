@@ -11,6 +11,7 @@ try:
 except ImportError:
     pass
 
+from . import config
 from . import indexer
 
 # Hebrew stop words - common words to filter out from search queries
@@ -53,7 +54,7 @@ HEBREW_PREFIXES = (
     "ה", "ב", "ל", "מ", "כ", "ו", "ש", "נ", "י", "ת", "א",
 )
 
-SYSTEM_PROMPT = """אתה עוזר חכם שמנתח שיחות WhatsApp בעברית.
+SYSTEM_PROMPT_HE = """אתה עוזר חכם שמנתח שיחות WhatsApp בעברית.
 קיבלת קטעי שיחה רלוונטיים מצ'אט "{chat_name}".
 
 כללים:
@@ -67,21 +68,115 @@ SYSTEM_PROMPT = """אתה עוזר חכם שמנתח שיחות WhatsApp בעב�
 - [תמלול וידאו] מציין תמלול של הקול בסרטון וידאו
 - [טקסט PDF] מציין תוכן של קובץ PDF שצורף בשיחה"""
 
+SYSTEM_PROMPT_EN = """You are a smart assistant that analyzes chat conversations.
+You received relevant conversation segments from chat "{chat_name}".
 
-def extract_keywords(question: str) -> list[str]:
-    """Extract meaningful search keywords from a Hebrew question."""
+Rules:
+- Always respond in the same language as the conversation
+- Be concise and to the point
+- Cite relevant message IDs in square brackets, e.g.: [#1234]
+- If there is not enough information, say so honestly
+- Do not make up information not present in the segments
+- When the answer is based on image or video descriptions, mention it
+- [visual description] indicates a description of an image or video sent in the conversation
+- [video transcription] indicates audio transcription from a video
+- [PDF text] indicates content from an attached PDF file"""
+
+SYSTEM_PROMPTS = {
+    "he": SYSTEM_PROMPT_HE,
+    "ar": SYSTEM_PROMPT_HE.replace("בעברית", "בערבית").replace("ענה בעברית תמיד", "ענה בערבית תמיד"),
+    "en": SYSTEM_PROMPT_EN,
+}
+
+# Multilingual stop words
+STOP_WORDS = {
+    "en": {
+        "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+        "of", "with", "by", "is", "was", "are", "were", "be", "been", "being",
+        "have", "has", "had", "do", "does", "did", "will", "would", "could",
+        "should", "may", "might", "can", "shall", "not", "no", "nor", "so",
+        "if", "then", "than", "that", "this", "these", "those", "it", "its",
+        "i", "me", "my", "we", "us", "our", "you", "your", "he", "him", "his",
+        "she", "her", "they", "them", "their", "what", "which", "who", "whom",
+        "when", "where", "why", "how", "all", "each", "every", "both", "few",
+        "more", "most", "some", "any", "just", "about", "very", "also", "too",
+        "here", "there", "up", "down", "out", "from", "into", "over", "after",
+        "before", "between", "under", "again", "once", "yes", "no", "ok", "okay",
+    },
+    "es": {
+        "el", "la", "los", "las", "un", "una", "unos", "unas", "y", "o", "pero",
+        "en", "de", "del", "al", "con", "por", "para", "que", "como", "si",
+        "no", "más", "muy", "este", "esta", "estos", "estas", "ese", "esa",
+        "yo", "tú", "él", "ella", "nosotros", "ellos", "ellas", "me", "te", "se",
+        "lo", "le", "nos", "les", "mi", "tu", "su", "es", "son", "fue", "ser",
+        "estar", "hay", "tiene", "hace", "puede", "todo", "bien", "sí", "ya",
+    },
+    "fr": {
+        "le", "la", "les", "un", "une", "des", "et", "ou", "mais", "dans",
+        "de", "du", "en", "à", "au", "aux", "pour", "par", "sur", "avec",
+        "que", "qui", "ne", "pas", "plus", "ce", "cette", "ces", "je", "tu",
+        "il", "elle", "nous", "vous", "ils", "elles", "me", "te", "se",
+        "mon", "ton", "son", "ma", "ta", "sa", "est", "sont", "été", "être",
+        "avoir", "fait", "peut", "tout", "bien", "oui", "non", "très",
+    },
+    "de": {
+        "der", "die", "das", "ein", "eine", "und", "oder", "aber", "in", "im",
+        "an", "auf", "von", "zu", "mit", "für", "ist", "sind", "war", "hat",
+        "ich", "du", "er", "sie", "es", "wir", "ihr", "mein", "dein", "sein",
+        "nicht", "kein", "auch", "noch", "schon", "sehr", "ja", "nein", "gut",
+        "den", "dem", "des", "dass", "wenn", "als", "wie", "was", "wer",
+    },
+    "ru": {
+        "и", "в", "не", "на", "я", "он", "она", "мы", "вы", "они", "что",
+        "как", "это", "но", "с", "по", "для", "от", "до", "из", "за", "к",
+        "у", "бы", "же", "то", "все", "так", "его", "её", "их", "мой", "твой",
+        "наш", "ваш", "был", "была", "были", "есть", "нет", "да", "уже",
+        "ещё", "тоже", "очень", "тут", "там", "вот", "ну", "ок", "хорошо",
+    },
+    "pt": {
+        "o", "a", "os", "as", "um", "uma", "e", "ou", "mas", "em", "de",
+        "do", "da", "no", "na", "com", "por", "para", "que", "como", "se",
+        "não", "mais", "este", "esta", "esse", "essa", "eu", "tu", "ele",
+        "ela", "nós", "eles", "elas", "me", "te", "se", "meu", "teu", "seu",
+        "é", "são", "foi", "ser", "estar", "tem", "há", "pode", "tudo", "bem",
+    },
+}
+
+# Hebrew stop words remain the default
+STOP_WORDS["he"] = HEBREW_STOP_WORDS
+
+
+def get_system_prompt(chat_name: str, language: str = "he") -> str:
+    """Get the system prompt for the given language."""
+    if language in SYSTEM_PROMPTS:
+        return SYSTEM_PROMPTS[language].format(chat_name=chat_name)
+    # Default: English prompt with language instruction
+    return SYSTEM_PROMPT_EN.format(chat_name=chat_name).replace(
+        "Always respond in the same language as the conversation",
+        f"Always respond in the language of the conversation (detected: {language})"
+    )
+
+
+def get_stop_words(language: str = "he") -> set:
+    """Get stop words for the given language."""
+    return STOP_WORDS.get(language, STOP_WORDS["en"])
+
+
+def extract_keywords(question: str, language: str = "he") -> list[str]:
+    """Extract meaningful search keywords from a question in any language."""
     # Remove punctuation
     cleaned = re.sub(r'[^\w\s]', ' ', question)
     # Split into tokens
     tokens = cleaned.split()
     # Filter stop words and single-char tokens
+    stop = get_stop_words(language)
     keywords = []
     seen = set()
     for t in tokens:
         t_lower = t.strip()
         if len(t_lower) < 2:
             continue
-        if t_lower in HEBREW_STOP_WORDS:
+        if t_lower in stop or t_lower.lower() in stop:
             continue
         if t_lower not in seen:
             seen.add(t_lower)
@@ -535,47 +630,135 @@ def _format_single_chunk(group: dict, section_num: int, indent: str = "") -> str
 
 
 class LLMClient:
-    """Abstraction over Anthropic and OpenAI APIs."""
+    """Abstraction over Anthropic, OpenAI, Google Gemini, and Ollama APIs."""
 
-    def __init__(self):
+    def __init__(self, provider=None, model=None, project_root=None):
         self.provider = None
         self.client = None
         self.model = None
 
-        anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
-        openai_key = os.environ.get("OPENAI_API_KEY")
+        # If not specified, read from settings
+        if provider is None and project_root:
+            settings = config.load_settings(project_root)
+            provider = settings.get("rag_provider", "anthropic")
+            model = settings.get("rag_model", "claude-opus-4-6")
 
-        if anthropic_key:
+        if provider == "anthropic":
+            anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+            if not anthropic_key:
+                raise RuntimeError("ANTHROPIC_API_KEY not configured")
             import anthropic
             self.provider = "anthropic"
             self.client = anthropic.Anthropic(api_key=anthropic_key)
-            self.model = "claude-opus-4-6"
-        elif openai_key:
+            self.model = model or "claude-opus-4-6"
+
+        elif provider == "openai":
+            openai_key = os.environ.get("OPENAI_API_KEY")
+            if not openai_key:
+                raise RuntimeError("OPENAI_API_KEY not configured")
             from openai import OpenAI
             self.provider = "openai"
             self.client = OpenAI(api_key=openai_key)
-            self.model = "gpt-4o-mini"
+            self.model = model or "gpt-4o-mini"
+
+        elif provider == "gemini":
+            gemini_key = os.environ.get("GEMINI_API_KEY")
+            if not gemini_key:
+                raise RuntimeError("GEMINI_API_KEY not configured")
+            from google import genai
+            self.provider = "gemini"
+            self.client = genai.Client(api_key=gemini_key)
+            self.model = model or "gemini-2.0-flash"
+
+        elif provider == "ollama":
+            from openai import OpenAI
+            self.provider = "ollama"
+            ollama_url = "http://localhost:11434/v1"
+            if project_root:
+                settings = config.load_settings(project_root)
+                base = settings.get("ollama_base_url", "http://localhost:11434")
+                ollama_url = base.rstrip("/") + "/v1"
+                model = model or settings.get("ollama_rag_model", "qwen2.5:14b")
+            self.client = OpenAI(base_url=ollama_url, api_key="ollama")
+            self.model = model or "qwen2.5:14b"
+
         else:
-            raise RuntimeError(
-                "AI לא מוגדר. הגדירו ANTHROPIC_API_KEY או OPENAI_API_KEY כמשתנה סביבה."
-            )
+            # Fallback: try anthropic, then openai
+            anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+            openai_key = os.environ.get("OPENAI_API_KEY")
+            if anthropic_key:
+                import anthropic
+                self.provider = "anthropic"
+                self.client = anthropic.Anthropic(api_key=anthropic_key)
+                self.model = "claude-opus-4-6"
+            elif openai_key:
+                from openai import OpenAI
+                self.provider = "openai"
+                self.client = OpenAI(api_key=openai_key)
+                self.model = "gpt-4o-mini"
+            else:
+                raise RuntimeError("AI לא מוגדר. הגדירו מפתח API בהגדרות.")
 
     @staticmethod
     def is_configured() -> bool:
         return bool(
             os.environ.get("ANTHROPIC_API_KEY")
             or os.environ.get("OPENAI_API_KEY")
+            or os.environ.get("GEMINI_API_KEY")
         )
 
     @staticmethod
     def get_provider_info() -> dict:
-        anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
-        openai_key = os.environ.get("OPENAI_API_KEY")
-        if anthropic_key:
-            return {"configured": True, "provider": "anthropic", "model": "claude-opus-4-6"}
-        elif openai_key:
-            return {"configured": True, "provider": "openai", "model": "gpt-4o-mini"}
-        return {"configured": False, "provider": None, "model": None}
+        # Check what's available
+        providers = []
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            providers.append("anthropic")
+        if os.environ.get("OPENAI_API_KEY"):
+            providers.append("openai")
+        if os.environ.get("GEMINI_API_KEY"):
+            providers.append("gemini")
+        # Ollama is always potentially available (local)
+        providers.append("ollama")
+
+        return {
+            "configured": len(providers) > 1 or bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("OPENAI_API_KEY") or os.environ.get("GEMINI_API_KEY")),
+            "providers": providers,
+        }
+
+    def chat_stream(self, system_prompt: str, user_message: str, max_tokens: int = 1024):
+        """Generator that yields text chunks as they arrive from the LLM."""
+        if self.provider == "anthropic":
+            with self.client.messages.stream(
+                model=self.model,
+                max_tokens=max_tokens,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            ) as stream:
+                for text in stream.text_stream:
+                    yield text
+        elif self.provider == "gemini":
+            response = self.client.models.generate_content_stream(
+                model=self.model,
+                contents=f"{system_prompt}\n\n{user_message}",
+                config={"max_output_tokens": max_tokens},
+            )
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+        else:
+            # OpenAI and Ollama both use OpenAI-compatible API
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                stream=True,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+            )
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
 
     def chat(self, system_prompt: str, user_message: str, max_tokens: int = 1024) -> str:
         if self.provider == "anthropic":
@@ -586,7 +769,15 @@ class LLMClient:
                 messages=[{"role": "user", "content": user_message}],
             )
             return response.content[0].text
+        elif self.provider == "gemini":
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=f"{system_prompt}\n\n{user_message}",
+                config={"max_output_tokens": max_tokens},
+            )
+            return response.text
         else:
+            # OpenAI and Ollama both use OpenAI-compatible API
             response = self.client.chat.completions.create(
                 model=self.model,
                 max_tokens=max_tokens,
@@ -599,20 +790,28 @@ class LLMClient:
 
 
 _llm_client = None
+_llm_client_key = None  # track settings to detect changes
 
 
-def _get_llm_client():
-    """Get or create a singleton LLMClient instance."""
-    global _llm_client
-    if _llm_client is None:
-        _llm_client = LLMClient()
+def _get_llm_client(project_root=None):
+    """Get or create a singleton LLMClient instance. Recreates if settings changed."""
+    global _llm_client, _llm_client_key
+    # Build a key from current settings to detect changes
+    current_key = None
+    if project_root:
+        settings = config.load_settings(project_root)
+        current_key = (settings.get("rag_provider"), settings.get("rag_model"))
+
+    if _llm_client is None or (current_key and current_key != _llm_client_key):
+        _llm_client = LLMClient(project_root=project_root)
+        _llm_client_key = current_key
     return _llm_client
 
 
-def ask(db_path: str, question: str, chat_name: str, history: list = None) -> dict:
+def ask(db_path: str, question: str, chat_name: str, history: list = None, project_root: str = None, language: str = "he") -> dict:
     """Main RAG pipeline: retrieve relevant chunks, then ask LLM.
 
-    Returns {answer, sources, keywords, provider}.
+    Returns {answer, sources, keywords, provider, debug}.
     """
     # 1. Retrieve relevant conversation chunks
     chunk_groups = retrieve_chunks(db_path, question, max_results=12)
@@ -633,8 +832,8 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None) -> di
         user_message = f"היסטוריית שיחה אחרונה:\n{history_text}\n\n{user_message}"
 
     # 5. Call LLM
-    llm = _get_llm_client()
-    system = SYSTEM_PROMPT.format(chat_name=chat_name)
+    llm = _get_llm_client(project_root)
+    system = get_system_prompt(chat_name, language)
     answer = llm.chat(system, user_message, max_tokens=2048)
 
     # 6. Extract source citations from chunks
@@ -667,4 +866,104 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None) -> di
         "sources": sources,
         "keywords": extract_keywords(question),
         "provider": llm.provider,
+        "debug": {
+            "chunks_retrieved": len(chunk_groups),
+            "chunks_detail": [
+                {
+                    "chunk_id": g["chunk_id"],
+                    "score": g["score"],
+                    "start_message_id": g["chunk_data"].get("start_message_id"),
+                    "end_message_id": g["chunk_data"].get("end_message_id"),
+                    "thread_id": g["chunk_data"].get("thread_id"),
+                    "message_count": g["chunk_data"].get("message_count"),
+                    "senders": g["chunk_data"].get("senders", ""),
+                    "preview": g["chunk_data"].get("combined_text", "")[:200],
+                }
+                for g in chunk_groups
+            ],
+        },
     }
+
+
+def ask_stream(db_path: str, question: str, chat_name: str, history: list = None, project_root: str = None, language: str = "he"):
+    """Streaming RAG pipeline. Yields: first a JSON metadata line, then text chunks.
+
+    First yield: JSON string with sources, keywords, debug info
+    Subsequent yields: text chunks of the answer
+    """
+    import json
+
+    # 1. Retrieve relevant conversation chunks
+    chunk_groups = retrieve_chunks(db_path, question, max_results=12)
+
+    # 2. Format for prompt
+    context_text = format_chunks_for_prompt(chunk_groups, chat_name)
+
+    # 3. Build user message
+    user_message = f"קטעי שיחה רלוונטיים:\n{context_text}\n\nשאלה: {question}"
+
+    # 4. Append recent history if available (max 2 exchanges = 4 items)
+    if history and len(history) > 0:
+        recent = history[-4:]
+        history_text = "\n".join(
+            f"{'שאלה קודמת' if h['role'] == 'user' else 'תשובה קודמת'}: {h['content'][:200]}"
+            for h in recent
+        )
+        user_message = f"היסטוריית שיחה אחרונה:\n{history_text}\n\n{user_message}"
+
+    # 5. Extract source citations from chunks
+    sources = []
+    seen_ids = set()
+    for group in chunk_groups:
+        chunk_data = group["chunk_data"]
+        messages = chunk_data.get("messages", [])
+        for m in messages:
+            if m["id"] in seen_ids:
+                continue
+            preview_text = (m.get("text")
+                            or m.get("transcription")
+                            or m.get("visual_description")
+                            or m.get("pdf_text")
+                            or "")
+            if preview_text:
+                seen_ids.add(m["id"])
+                sources.append({
+                    "message_id": m["id"],
+                    "datetime": m.get("datetime", ""),
+                    "sender": m.get("sender", ""),
+                    "preview": preview_text[:80],
+                })
+                break  # One source per chunk
+
+    debug_info = {
+        "chunks_retrieved": len(chunk_groups),
+        "chunks_detail": [
+            {
+                "chunk_id": g["chunk_id"],
+                "score": g["score"],
+                "start_message_id": g["chunk_data"].get("start_message_id"),
+                "end_message_id": g["chunk_data"].get("end_message_id"),
+                "thread_id": g["chunk_data"].get("thread_id"),
+                "message_count": g["chunk_data"].get("message_count"),
+                "senders": g["chunk_data"].get("senders", ""),
+                "preview": g["chunk_data"].get("combined_text", "")[:200],
+            }
+            for g in chunk_groups
+        ],
+    }
+
+    llm = _get_llm_client(project_root)
+
+    # First yield: metadata (sources, keywords, debug)
+    yield json.dumps({
+        "type": "metadata",
+        "sources": sources,
+        "keywords": extract_keywords(question),
+        "provider": llm.provider,
+        "debug": debug_info,
+    }) + "\n"
+
+    # 6. Stream the answer from LLM
+    system = get_system_prompt(chat_name, language)
+    for chunk in llm.chat_stream(system, user_message, max_tokens=2048):
+        yield chunk

@@ -2,9 +2,9 @@
 
 import os
 import mimetypes
-from flask import Flask, request, jsonify, render_template, send_from_directory, abort
+from flask import Flask, request, jsonify, render_template, send_from_directory, abort, Response
 
-from . import indexer, ai_chat
+from . import indexer, ai_chat, config
 
 # Register .opus MIME type so browsers can play audio
 mimetypes.add_type("audio/ogg", ".opus")
@@ -28,20 +28,76 @@ def create_app(chats_dir: str) -> Flask:
 
     @app.route("/api/chats")
     def api_chats():
-        """List all available chats with their status."""
+        """List all available chats with their status (WhatsApp + Telegram)."""
         result = []
         for name in sorted(os.listdir(chats_dir)):
             chat_dir = os.path.join(chats_dir, name)
-            chat_file = os.path.join(chat_dir, "_chat.txt")
+            if not os.path.isdir(chat_dir):
+                continue
+            # Detect platform
+            has_whatsapp = os.path.exists(os.path.join(chat_dir, "_chat.txt"))
+            has_telegram = os.path.exists(os.path.join(chat_dir, "result.json"))
+            if not has_whatsapp and not has_telegram:
+                continue
             db_path = os.path.join(chat_dir, "data", "chat.db")
-            if os.path.isdir(chat_dir) and os.path.exists(chat_file):
-                ready = os.path.exists(db_path)
-                info = {"name": name, "ready": ready}
-                if ready:
-                    stats = indexer.get_stats(db_path)
-                    info["total_messages"] = stats["total_messages"]
-                result.append(info)
+            ready = os.path.exists(db_path)
+            platform = "telegram" if has_telegram else "whatsapp"
+            info = {"name": name, "ready": ready, "platform": platform}
+            if ready:
+                stats = indexer.get_stats(db_path)
+                info["total_messages"] = stats["total_messages"]
+                metadata = indexer.get_chat_metadata(db_path)
+                info["language"] = metadata.get("language", "he")
+            result.append(info)
         return jsonify(result)
+
+    @app.route("/api/search/all")
+    def api_search_all():
+        """Search across all chats simultaneously."""
+        q = request.args.get("q", "").strip()
+        if not q:
+            return jsonify({"results": [], "total": 0})
+
+        sender = request.args.get("sender", "").strip()
+        date_from = request.args.get("from", "").strip()
+        date_to = request.args.get("to", "").strip()
+        search_type = request.args.get("type", "all").strip()
+        page = int(request.args.get("page", 1))
+
+        all_results = []
+
+        # Search each chat
+        for name in sorted(os.listdir(chats_dir)):
+            chat_dir = os.path.join(chats_dir, name)
+            db_path = os.path.join(chat_dir, "data", "chat.db")
+            if not os.path.isdir(chat_dir) or not os.path.exists(db_path):
+                continue
+
+            try:
+                results, total = indexer.search(
+                    db_path, q, sender=sender, date_from=date_from, date_to=date_to,
+                    page=1, per_page=20, search_type=search_type
+                )
+                for r in results:
+                    r["chat_name"] = name
+                all_results.extend(results)
+            except Exception:
+                continue
+
+        # Sort all results by relevance_score (lower is better for FTS5 rank)
+        all_results.sort(key=lambda r: r.get("relevance_score", 0))
+
+        # Paginate
+        per_page = 50
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        return jsonify({
+            "results": all_results[start:end],
+            "total": len(all_results),
+            "page": page,
+            "per_page": per_page,
+        })
 
     @app.route("/api/search")
     def api_search():
@@ -103,8 +159,12 @@ def create_app(chats_dir: str) -> Flask:
 
     @app.route("/api/ai/status")
     def api_ai_status():
-        """Check if AI chat is available."""
+        """Check AI provider availability."""
         info = ai_chat.LLMClient.get_provider_info()
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        info["current_rag_provider"] = settings.get("rag_provider")
+        info["current_rag_model"] = settings.get("rag_model")
         return jsonify(info)
 
     @app.route("/api/ai/chat", methods=["POST"])
@@ -124,12 +184,46 @@ def create_app(chats_dir: str) -> Flask:
         _, db_path = get_chat_paths(chat_name)
 
         try:
-            result = ai_chat.ask(db_path, question, chat_name, history)
+            project_root = os.path.dirname(chats_dir)
+            metadata = indexer.get_chat_metadata(db_path)
+            language = metadata.get("language", "he")
+            result = ai_chat.ask(db_path, question, chat_name, history, project_root=project_root, language=language)
             return jsonify(result)
         except RuntimeError as e:
             return jsonify({"error": str(e)}), 503
         except Exception as e:
             return jsonify({"error": f"שגיאה: {str(e)}"}), 500
+
+    @app.route("/api/ai/chat/stream", methods=["POST"])
+    def api_ai_chat_stream():
+        """Streaming AI chat endpoint using Server-Sent Events."""
+        data = request.get_json()
+        if not data:
+            abort(400, "Missing JSON body")
+
+        chat_name = data.get("chat", "").strip()
+        question = data.get("question", "").strip()
+        history = data.get("history", [])
+
+        if not chat_name or not question:
+            abort(400, "Missing chat or question")
+
+        _, db_path = get_chat_paths(chat_name)
+        project_root = os.path.dirname(chats_dir)
+
+        def generate():
+            import json
+            try:
+                metadata = indexer.get_chat_metadata(db_path)
+                language = metadata.get("language", "he")
+                for chunk in ai_chat.ask_stream(db_path, question, chat_name, history, project_root=project_root, language=language):
+                    yield f"data: {chunk}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+        return Response(generate(), mimetype='text/event-stream',
+                        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
 
     @app.route("/api/vision/status")
     def api_vision_status():
@@ -285,6 +379,210 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify({"status": "stopping", "chat": chat_name})
 
     # ------------------------------------------------------------------
+    # Media gallery endpoint
+    # ------------------------------------------------------------------
+
+    @app.route("/api/media/list")
+    def api_media_list():
+        """List all media files for a chat with metadata."""
+        chat_name = request.args.get("chat", "").strip()
+        media_type_filter = request.args.get("type", "all").strip()  # all, image, video
+        page = int(request.args.get("page", 1))
+        per_page = 50
+
+        if not chat_name:
+            abort(400, "Missing chat parameter")
+
+        chat_dir = os.path.join(chats_dir, chat_name)
+        if not os.path.isdir(chat_dir):
+            abort(404)
+
+        # Load description cache
+        from . import vision
+        desc_cache = vision.load_cache(os.path.join(chat_dir, "data", "descriptions.json"))
+
+        media_files = []
+        image_exts = ('.jpg', '.jpeg', '.png')
+        video_exts = ('.mp4', '.mov')
+
+        for f in sorted(os.listdir(chat_dir)):
+            fl = f.lower()
+            full_path = os.path.join(chat_dir, f)
+            if not os.path.isfile(full_path):
+                continue
+
+            is_image = any(fl.endswith(e) for e in image_exts) and 'sticker' not in fl.upper()
+            is_video = any(fl.endswith(e) for e in video_exts) and not fl.upper().startswith('GIF')
+
+            if not is_image and not is_video:
+                continue
+
+            if media_type_filter == 'image' and not is_image:
+                continue
+            if media_type_filter == 'video' and not is_video:
+                continue
+
+            item = {
+                "filename": f,
+                "type": "image" if is_image else "video",
+                "description": desc_cache.get(f, ""),
+                "url": f"/media/{chat_name}/{f}",
+            }
+            if is_video:
+                item["thumbnail_url"] = f"/api/thumbnail/{chat_name}/{f}"
+
+            media_files.append(item)
+
+        total = len(media_files)
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        return jsonify({
+            "files": media_files[start:end],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+        })
+
+    # ------------------------------------------------------------------
+    # Analytics endpoint
+    # ------------------------------------------------------------------
+
+    @app.route("/api/analytics")
+    def api_analytics():
+        """Get analytics data for a chat."""
+        chat_name = request.args.get("chat", "").strip()
+        if not chat_name:
+            abort(400, "Missing chat parameter")
+
+        _, db_path = get_chat_paths(chat_name)
+
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            c = conn.cursor()
+
+            # Messages per sender
+            c.execute("SELECT sender, COUNT(*) as count FROM messages GROUP BY sender ORDER BY count DESC LIMIT 20")
+            senders = [{"sender": row["sender"], "count": row["count"]} for row in c.fetchall()]
+
+            # Messages per month (for activity chart)
+            c.execute("""
+                SELECT substr(datetime, 7, 4) || '-' || substr(datetime, 4, 2) as month,
+                       COUNT(*) as count
+                FROM messages
+                WHERE datetime IS NOT NULL AND length(datetime) >= 10
+                GROUP BY month
+                ORDER BY month
+            """)
+            activity = [{"month": row["month"], "count": row["count"]} for row in c.fetchall()]
+
+            # Messages per hour of day (for heatmap)
+            c.execute("""
+                SELECT CAST(substr(datetime, 12, 2) AS INTEGER) as hour, COUNT(*) as count
+                FROM messages
+                WHERE datetime IS NOT NULL AND length(datetime) >= 14
+                GROUP BY hour
+                ORDER BY hour
+            """)
+            hourly = [{"hour": row["hour"], "count": row["count"]} for row in c.fetchall()]
+
+            # Media breakdown
+            c.execute("SELECT media_type, COUNT(*) as count FROM messages WHERE media_type IS NOT NULL AND media_type != '' GROUP BY media_type")
+            media = [{"type": row["media_type"], "count": row["count"]} for row in c.fetchall()]
+
+            # Average message length per sender
+            c.execute("SELECT sender, ROUND(AVG(length(text)), 0) as avg_len FROM messages WHERE text IS NOT NULL AND text != '' GROUP BY sender ORDER BY avg_len DESC LIMIT 10")
+            msg_lengths = [{"sender": row["sender"], "avg_length": row["avg_len"]} for row in c.fetchall()]
+
+            # Most active days (top 10)
+            c.execute("""
+                SELECT substr(datetime, 1, 10) as date, COUNT(*) as count
+                FROM messages
+                WHERE datetime IS NOT NULL
+                GROUP BY date
+                ORDER BY count DESC
+                LIMIT 10
+            """)
+            busiest_days = [{"date": row["date"], "count": row["count"]} for row in c.fetchall()]
+
+            return jsonify({
+                "senders": senders,
+                "activity": activity,
+                "hourly": hourly,
+                "media": media,
+                "msg_lengths": msg_lengths,
+                "busiest_days": busiest_days,
+            })
+        finally:
+            conn.close()
+
+    # ------------------------------------------------------------------
+    # Export endpoint
+    # ------------------------------------------------------------------
+
+    @app.route("/api/export")
+    def api_export():
+        """Export search results as CSV or JSON file download."""
+        chat_name = request.args.get("chat", "").strip()
+        q = request.args.get("q", "").strip()
+        fmt = request.args.get("format", "csv").strip()
+        sender = request.args.get("sender", "").strip()
+        date_from = request.args.get("from", "").strip()
+        date_to = request.args.get("to", "").strip()
+        search_type = request.args.get("type", "all").strip()
+
+        if not q:
+            abort(400, "Missing query")
+
+        # Get all results (no pagination limit)
+        if chat_name == '__all__' or not chat_name:
+            all_results = []
+            for name in sorted(os.listdir(chats_dir)):
+                chat_dir_path = os.path.join(chats_dir, name)
+                db_path = os.path.join(chat_dir_path, "data", "chat.db")
+                if not os.path.isdir(chat_dir_path) or not os.path.exists(db_path):
+                    continue
+                try:
+                    results, _ = indexer.search(db_path, q, sender=sender, date_from=date_from, date_to=date_to, page=1, per_page=1000, search_type=search_type)
+                    for r in results:
+                        r["chat_name"] = name
+                    all_results.extend(results)
+                except Exception:
+                    continue
+            results = all_results
+        else:
+            _, db_path = get_chat_paths(chat_name)
+            results, _ = indexer.search(db_path, q, sender=sender, date_from=date_from, date_to=date_to, page=1, per_page=5000, search_type=search_type)
+
+        if fmt == 'json':
+            import json
+            output = json.dumps(results, ensure_ascii=False, indent=2)
+            return Response(output, mimetype='application/json',
+                           headers={'Content-Disposition': 'attachment; filename=whatsarch_export.json'})
+        else:
+            import csv, io
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['id', 'datetime', 'sender', 'text', 'transcription', 'visual_description', 'media_type', 'chat_name'])
+            for r in results:
+                writer.writerow([
+                    r.get('id', ''),
+                    r.get('datetime', ''),
+                    r.get('sender', ''),
+                    r.get('text', ''),
+                    r.get('transcription', ''),
+                    r.get('visual_description', ''),
+                    r.get('media_type', ''),
+                    r.get('chat_name', chat_name or ''),
+                ])
+            csv_content = output.getvalue()
+            # Add BOM for Hebrew Excel compatibility
+            return Response('\ufeff' + csv_content, mimetype='text/csv; charset=utf-8',
+                           headers={'Content-Disposition': 'attachment; filename=whatsarch_export.csv'})
+
+    # ------------------------------------------------------------------
     # Media serving
     # ------------------------------------------------------------------
 
@@ -319,5 +617,70 @@ def create_app(chats_dir: str) -> Flask:
             return 0
         finally:
             conn.close()
+
+    # ------------------------------------------------------------------
+    # Settings endpoints
+    # ------------------------------------------------------------------
+
+    @app.route("/api/settings")
+    def api_settings():
+        """Get current settings including API key status and model preferences."""
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        keys = config.get_api_keys()
+        return jsonify({
+            "settings": settings,
+            "api_keys": {
+                "anthropic_configured": bool(keys["anthropic_key"]),
+                "anthropic_preview": keys["anthropic_key"][:8] + "..." if len(keys["anthropic_key"]) > 8 else "",
+                "openai_configured": bool(keys["openai_key"]),
+                "openai_preview": keys["openai_key"][:8] + "..." if len(keys["openai_key"]) > 8 else "",
+                "gemini_configured": bool(keys["gemini_key"]),
+                "gemini_preview": keys["gemini_key"][:8] + "..." if len(keys["gemini_key"]) > 8 else "",
+            },
+        })
+
+    @app.route("/api/settings", methods=["POST"])
+    def api_settings_update():
+        """Update settings and/or API keys."""
+        data = request.get_json()
+        if not data:
+            abort(400, "Missing JSON body")
+
+        project_root = os.path.dirname(chats_dir)
+
+        # Update API keys if provided
+        key_fields = {}
+        for field in ("anthropic_key", "openai_key", "gemini_key"):
+            if field in data:
+                key_fields[field] = data[field]
+        if key_fields:
+            config.save_api_keys(project_root, key_fields)
+
+        # Update model/provider settings
+        setting_fields = {}
+        valid_keys = set(config.DEFAULT_SETTINGS.keys())
+        for k, v in data.items():
+            if k in valid_keys:
+                setting_fields[k] = v
+        if setting_fields:
+            config.update_settings(project_root, setting_fields)
+
+        # Reset AI client so it picks up new settings
+        ai_chat._llm_client = None
+
+        return jsonify({"status": "ok"})
+
+    @app.route("/api/hardware")
+    def api_hardware():
+        """Get hardware info and Ollama performance estimates."""
+        hw = config.detect_hardware()
+        perf = config.estimate_ollama_performance(hw)
+        return jsonify({"hardware": hw, "performance": perf})
+
+    @app.route("/api/models")
+    def api_models():
+        """Get available model options for each task."""
+        return jsonify(config.PROVIDER_MODELS)
 
     return app

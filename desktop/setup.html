@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>WhatsArch - התקנה ראשונית</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Segoe UI", "Arial", sans-serif;
+            background: linear-gradient(135deg, #0D9488 0%, #6366F1 100%);
+            color: #FFFFFF; height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            -webkit-app-region: drag; user-select: none; overflow: hidden;
+        }
+        .logo { width: 80px; height: 80px; margin-bottom: 16px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); }
+        h1 { font-size: 1.6em; font-weight: 700; margin-bottom: 4px; }
+        h1 .arch { opacity: 0.7; }
+        .subtitle { font-size: 0.9em; opacity: 0.8; margin-bottom: 32px; }
+        .steps { width: 380px; -webkit-app-region: no-drag; }
+        .step {
+            display: flex; align-items: center; gap: 14px; padding: 12px 16px; margin-bottom: 10px;
+            background: rgba(255,255,255,0.12); border-radius: 12px; backdrop-filter: blur(8px); transition: background 0.3s;
+        }
+        .step.active { background: rgba(255,255,255,0.2); }
+        .step.done { background: rgba(255,255,255,0.08); }
+        .step-icon {
+            width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; font-size: 0.9em; background: rgba(255,255,255,0.15);
+        }
+        .step-info { flex: 1; min-width: 0; }
+        .step-label { font-size: 0.9em; font-weight: 600; margin-bottom: 4px; }
+        .step-status { font-size: 0.78em; opacity: 0.8; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #FFFFFF; border-radius: 3px; width: 0%; transition: width 0.4s ease; }
+        .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #FFF; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .footer { margin-top: 24px; font-size: 0.78em; opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <svg class="logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="white" opacity="0.95"/>
+        <rect x="30" y="30" width="28" height="3" rx="1.5" fill="#0D9488" opacity="0.8"/>
+        <rect x="30" y="38" width="22" height="3" rx="1.5" fill="#0D9488" opacity="0.5"/>
+        <circle cx="62" cy="56" r="12" stroke="#6366F1" stroke-width="3.5" fill="none" opacity="0.95"/>
+        <line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+    </svg>
+    <h1><span>Whats</span><span class="arch">Arch</span></h1>
+    <p class="subtitle">התקנה ראשונית - מוריד מודלים</p>
+    <div class="steps">
+        <div class="step active" id="stepWhisper">
+            <div class="step-icon" id="whisperIcon"><div class="spinner"></div></div>
+            <div class="step-info">
+                <div class="step-label">מודל זיהוי דיבור (Whisper)</div>
+                <div class="step-status" id="whisperStatus">ממתין...</div>
+                <div class="progress-bar" id="whisperBar" style="display:none"><div class="progress-fill" id="whisperFill"></div></div>
+            </div>
+        </div>
+        <div class="step" id="stepE5">
+            <div class="step-icon" id="e5Icon"><span style="opacity:0.4;">2</span></div>
+            <div class="step-info">
+                <div class="step-label">מודל חיפוש חכם (E5-large)</div>
+                <div class="step-status" id="e5Status">ממתין...</div>
+                <div class="progress-bar" id="e5Bar" style="display:none"><div class="progress-fill" id="e5Fill"></div></div>
+            </div>
+        </div>
+    </div>
+    <p class="footer">ההורדה מתבצעת פעם אחת בלבד</p>
+    <script>
+        window.setupAPI.onProgress(({ step, status, message, percent }) => {
+            if (step === 'whisper') {
+                document.getElementById('whisperStatus').textContent = message;
+                if (status === 'downloading') {
+                    document.getElementById('whisperBar').style.display = 'block';
+                    document.getElementById('whisperFill').style.width = percent + '%';
+                    document.getElementById('whisperIcon').innerHTML = '<div class="spinner"></div>';
+                    document.getElementById('stepWhisper').className = 'step active';
+                }
+                if (status === 'done') {
+                    document.getElementById('whisperBar').style.display = 'none';
+                    document.getElementById('whisperIcon').innerHTML = '<span style="font-size:1.1em;">&#10003;</span>';
+                    document.getElementById('stepWhisper').className = 'step done';
+                    document.getElementById('e5Icon').innerHTML = '<div class="spinner"></div>';
+                    document.getElementById('stepE5').className = 'step active';
+                }
+            }
+            if (step === 'e5') {
+                document.getElementById('e5Status').textContent = message;
+                if (status === 'downloading') {
+                    document.getElementById('e5Bar').style.display = 'block';
+                    document.getElementById('e5Fill').style.width = percent + '%';
+                }
+                if (status === 'done') {
+                    document.getElementById('e5Bar').style.display = 'none';
+                    document.getElementById('e5Icon').innerHTML = '<span style="font-size:1.1em;">&#10003;</span>';
+                    document.getElementById('stepE5').className = 'step done';
+                }
+            }
+        });
+        window.setupAPI.onComplete(() => {
+            document.querySelector('.subtitle').textContent = 'ההתקנה הושלמה! מפעיל...';
+        });
+    </script>
+</body>
+</html>

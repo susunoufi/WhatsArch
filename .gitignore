@@ -29,3 +29,13 @@ Desktop.ini
 # Models (downloaded at runtime)
 *.bin
 *.onnx
+
+# Upload/temp directories
+_ul*
+
+# Electron (desktop app wrapper)
+electron/
+desktop/vendor/
+desktop/dist/
+desktop/node_modules/
+desktop/out/

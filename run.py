@@ -10,7 +10,6 @@ Usage:
 """
 
 import argparse
-import glob
 import os
 import shutil
 import sys
@@ -78,14 +77,18 @@ def migrate_legacy_layout():
 
 
 def discover_chats():
-    """Find all chat folders inside chats/ that contain _chat.txt."""
+    """Find all chat folders inside chats/ that contain _chat.txt or result.json (Telegram)."""
     if not os.path.isdir(CHATS_DIR):
         return []
     chats = []
     for name in sorted(os.listdir(CHATS_DIR)):
         chat_dir = os.path.join(CHATS_DIR, name)
+        if not os.path.isdir(chat_dir):
+            continue
+        # WhatsApp or Telegram
         chat_file = os.path.join(chat_dir, "_chat.txt")
-        if os.path.isdir(chat_dir) and os.path.exists(chat_file):
+        telegram_file = os.path.join(chat_dir, "result.json")
+        if os.path.exists(chat_file) or os.path.exists(telegram_file):
             chats.append(name)
     return chats
 
@@ -158,18 +161,32 @@ def process_chat(
         if cached_total > 0:
             print(f"  [{chat_name}] Loaded {cached_total} cached vision/PDF results")
 
-    # Step 3: Parse and index
-    from chat_search.parser import parse_chat, detect_chat_type
+    # Step 3: Parse and index (WhatsApp or Telegram)
+    from chat_search.parser import parse_chat, parse_telegram, detect_chat_type, detect_platform, detect_chat_language
     from chat_search.indexer import build_index, save_chat_metadata
 
-    messages = parse_chat(chat_file, transcriptions, visual_descriptions, video_transcriptions, pdf_texts)
-    print(f"  [{chat_name}] Parsed {len(messages)} messages")
+    platform = detect_platform(chat_dir)
+    if platform == "telegram":
+        messages = parse_telegram(chat_dir, transcriptions, visual_descriptions, video_transcriptions, pdf_texts)
+        print(f"  [{chat_name}] Parsed {len(messages)} Telegram messages")
+    else:
+        messages = parse_chat(chat_file, transcriptions, visual_descriptions, video_transcriptions, pdf_texts)
+        print(f"  [{chat_name}] Parsed {len(messages)} WhatsApp messages")
+
+    # Detect chat language
+    chat_language = detect_chat_language(messages)
+    print(f"  [{chat_name}] Detected language: {chat_language}")
     build_index(messages, db_path)
 
     # Step 4: Detect chat type
     if force_chat_type:
         chat_type = force_chat_type
         print(f"  [{chat_name}] Chat type forced: {chat_type}")
+    elif platform == "telegram":
+        # Telegram: detect by sender count only
+        unique = len({m["sender"] for m in messages})
+        chat_type = "group" if unique > 2 else "1on1"
+        print(f"  [{chat_name}] Telegram chat type: {chat_type} ({unique} senders)")
     else:
         chat_info = detect_chat_type(chat_file, messages)
         chat_type = chat_info["chat_type"]
@@ -179,6 +196,8 @@ def process_chat(
 
     save_chat_metadata(db_path, {
         "chat_type": chat_type,
+        "platform": platform,
+        "language": chat_language,
         "unique_senders": len({m["sender"] for m in messages}),
         "total_messages": len(messages),
     })

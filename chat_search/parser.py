@@ -1,5 +1,6 @@
-"""WhatsApp chat export parser."""
+"""WhatsApp and Telegram chat export parser."""
 
+import json
 import re
 import os
 from datetime import datetime
@@ -229,3 +230,247 @@ def parse_chat(
     messages = add_name_mentions(messages)
 
     return messages
+
+
+# ===================================================================
+# Telegram export parser
+# ===================================================================
+
+def detect_telegram_media_type(media_type_field: str, file_path: str) -> str:
+    """Map Telegram's media_type field to our internal type."""
+    if not media_type_field and not file_path:
+        return ""
+    mt = (media_type_field or "").lower()
+    if mt in ("voice_message", "audio_file"):
+        return "audio"
+    if mt in ("video_message", "video_file"):
+        return "video"
+    if mt in ("sticker", "animation"):
+        return ""  # skip stickers/GIFs
+    # Check file extension for photo or document
+    if file_path:
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext in (".jpg", ".jpeg", ".png", ".webp"):
+            return "image"
+        if ext in (".mp4", ".mov"):
+            return "video"
+        if ext in (".opus", ".ogg", ".mp3", ".m4a"):
+            return "audio"
+        if ext == ".pdf":
+            return "pdf"
+        if ext in (".vcf",):
+            return "contact"
+        return "file"
+    if mt == "photo":
+        return "image"
+    return ""
+
+
+def parse_telegram(
+    export_path: str,
+    transcriptions: dict = None,
+    visual_descriptions: dict = None,
+    video_transcriptions: dict = None,
+    pdf_texts: dict = None,
+) -> list:
+    """Parse Telegram Desktop export (result.json) and return list of message dicts.
+
+    Telegram exports contain a result.json with a 'messages' array.
+    Media files are in subdirectories (photos/, video_files/, voice_messages/, etc).
+
+    Returns same format as parse_chat() for full compatibility.
+    """
+    if transcriptions is None:
+        transcriptions = {}
+    if visual_descriptions is None:
+        visual_descriptions = {}
+    if video_transcriptions is None:
+        video_transcriptions = {}
+    if pdf_texts is None:
+        pdf_texts = {}
+
+    # Find the JSON file
+    json_path = None
+    if os.path.isfile(export_path) and export_path.endswith(".json"):
+        json_path = export_path
+    else:
+        # Look for result.json in directory
+        candidate = os.path.join(export_path, "result.json")
+        if os.path.exists(candidate):
+            json_path = candidate
+
+    if not json_path:
+        return []
+
+    chat_dir = os.path.dirname(json_path)
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    raw_messages = data.get("messages", [])
+    messages = []
+
+    for msg in raw_messages:
+        # Skip service messages (joins, leaves, etc)
+        if msg.get("type") != "message":
+            continue
+
+        # Parse sender
+        sender = msg.get("from", "") or msg.get("actor", "") or "Unknown"
+
+        # Parse date
+        date_str = msg.get("date", "")
+        if not date_str:
+            continue
+        try:
+            dt = datetime.fromisoformat(date_str)
+        except (ValueError, TypeError):
+            continue
+
+        # Parse text - Telegram text can be string or list of segments
+        raw_text = msg.get("text", "")
+        if isinstance(raw_text, list):
+            # List of text segments: [{"type": "plain", "text": "hello"}, ...]
+            text_parts = []
+            for part in raw_text:
+                if isinstance(part, str):
+                    text_parts.append(part)
+                elif isinstance(part, dict):
+                    text_parts.append(part.get("text", ""))
+            text = "".join(text_parts)
+        else:
+            text = str(raw_text)
+
+        # Parse media
+        file_path = msg.get("file", "") or msg.get("photo", "") or ""
+        media_type_field = msg.get("media_type", "")
+
+        # If it's a photo (no media_type field but has photo field)
+        if msg.get("photo") and not media_type_field:
+            media_type_field = "photo"
+
+        media_type = detect_telegram_media_type(media_type_field, file_path)
+
+        # Get the filename (basename) for cache lookups
+        attachment = os.path.basename(file_path) if file_path else ""
+
+        # Get transcription for audio
+        transcription = ""
+        if media_type == "audio" and attachment:
+            entry = transcriptions.get(attachment, "")
+            transcription = entry.get("text", "") if isinstance(entry, dict) else entry
+
+        # Get visual description
+        visual_description = ""
+        if media_type in ("image", "video") and attachment:
+            visual_description = visual_descriptions.get(attachment, "")
+
+        # Get video transcription
+        video_transcription = ""
+        if media_type == "video" and attachment:
+            entry = video_transcriptions.get(attachment, "")
+            video_transcription = entry.get("text", "") if isinstance(entry, dict) else entry
+
+        # Get PDF text
+        pdf_text = ""
+        if media_type == "pdf" and attachment:
+            pdf_text = pdf_texts.get(attachment, "")
+
+        messages.append({
+            "date": dt.strftime("%d/%m/%Y"),
+            "time": dt.strftime("%H:%M:%S"),
+            "datetime": dt.isoformat(),
+            "sender": sender,
+            "text": text,
+            "attachment": attachment,
+            "media_type": media_type,
+            "transcription": transcription,
+            "visual_description": visual_description,
+            "video_transcription": video_transcription,
+            "pdf_text": pdf_text,
+            "mentioned_sender": [],
+        })
+
+    # Add name mention detection
+    messages = add_name_mentions(messages)
+
+    return messages
+
+
+def detect_platform(chat_dir: str) -> str:
+    """Auto-detect if a chat directory is WhatsApp or Telegram export.
+
+    Returns 'whatsapp', 'telegram', or 'unknown'.
+    """
+    if os.path.exists(os.path.join(chat_dir, "_chat.txt")):
+        return "whatsapp"
+    if os.path.exists(os.path.join(chat_dir, "result.json")):
+        return "telegram"
+    # Check for JSON files that look like Telegram exports
+    for f in os.listdir(chat_dir):
+        if f.endswith(".json"):
+            try:
+                with open(os.path.join(chat_dir, f), "r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+                    if "messages" in data and isinstance(data["messages"], list):
+                        if len(data["messages"]) > 0 and "from" in data["messages"][0]:
+                            return "telegram"
+            except (json.JSONDecodeError, KeyError, IndexError):
+                continue
+    return "unknown"
+
+
+def detect_chat_language(messages: list, sample_size: int = 100) -> str:
+    """Detect the primary language of a chat based on message text.
+
+    Samples messages and checks for character set patterns.
+    Returns ISO 639-1 code: 'he', 'ar', 'ru', 'en', 'es', 'fr', 'de', 'pt', etc.
+    """
+    if not messages:
+        return "en"
+
+    # Sample messages evenly
+    step = max(1, len(messages) // sample_size)
+    sampled = [m["text"] for m in messages[::step] if m.get("text", "").strip()][:sample_size]
+    combined = " ".join(sampled)
+
+    if not combined.strip():
+        return "en"
+
+    # Count character ranges
+    total = len(combined)
+    hebrew = sum(1 for c in combined if '\u0590' <= c <= '\u05FF')
+    arabic = sum(1 for c in combined if '\u0600' <= c <= '\u06FF')
+    cyrillic = sum(1 for c in combined if '\u0400' <= c <= '\u04FF')
+    cjk = sum(1 for c in combined if '\u4E00' <= c <= '\u9FFF')
+    latin = sum(1 for c in combined if ('a' <= c <= 'z') or ('A' <= c <= 'Z'))
+
+    # Thresholds (% of total chars)
+    if hebrew / total > 0.1:
+        return "he"
+    if arabic / total > 0.1:
+        return "ar"
+    if cyrillic / total > 0.1:
+        return "ru"
+    if cjk / total > 0.05:
+        return "zh"
+
+    # Latin-based: try to differentiate by common words
+    text_lower = combined.lower()
+    spanish_words = ["que", "los", "las", "una", "para", "por", "como", "pero", "con"]
+    french_words = ["les", "des", "une", "que", "dans", "pour", "pas", "avec", "est"]
+    german_words = ["und", "der", "die", "das", "ist", "ein", "eine", "nicht", "ich"]
+    portuguese_words = ["que", "uma", "para", "com", "por", "como", "mais", "isso"]
+
+    scores = {
+        "es": sum(1 for w in spanish_words if f" {w} " in text_lower),
+        "fr": sum(1 for w in french_words if f" {w} " in text_lower),
+        "de": sum(1 for w in german_words if f" {w} " in text_lower),
+        "pt": sum(1 for w in portuguese_words if f" {w} " in text_lower),
+    }
+
+    best = max(scores, key=scores.get)
+    if scores[best] >= 3:
+        return best
+
+    return "en"

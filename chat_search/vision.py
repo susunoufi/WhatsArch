@@ -1,4 +1,4 @@
-"""Image, video, and PDF understanding using Claude Vision API and ffmpeg."""
+"""Image, video, and PDF understanding using vision AI providers and ffmpeg."""
 
 import base64
 import glob
@@ -7,9 +7,13 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
+
+from . import config
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +103,7 @@ def extract_key_frames(video_path: str, output_dir: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Claude Vision API
+# Vision AI providers
 # ---------------------------------------------------------------------------
 
 MEDIA_TYPES = {
@@ -108,6 +112,30 @@ MEDIA_TYPES = {
     ".png": "image/png",
     ".webp": "image/webp",
 }
+
+IMAGE_PROMPTS = {
+    "he": "תאר את התמונה בעברית בקצרה (2-3 משפטים). אם יש טקסט גלוי בתמונה, ציין אותו במדויק.",
+    "ar": "صف الصورة بالعربية باختصار (2-3 جمل). إذا كان هناك نص مرئي في الصورة، اذكره بدقة.",
+    "en": "Describe the image briefly (2-3 sentences). If there is visible text in the image, quote it exactly.",
+    "es": "Describe la imagen brevemente (2-3 oraciones). Si hay texto visible en la imagen, cítalo exactamente.",
+    "fr": "Décrivez l'image brièvement (2-3 phrases). S'il y a du texte visible dans l'image, citez-le exactement.",
+    "de": "Beschreiben Sie das Bild kurz (2-3 Sätze). Wenn sichtbarer Text im Bild ist, zitieren Sie ihn genau.",
+    "ru": "Опишите изображение кратко (2-3 предложения). Если на изображении есть видимый текст, укажите его точно.",
+    "pt": "Descreva a imagem brevemente (2-3 frases). Se houver texto visível na imagem, cite-o exatamente.",
+    "zh": "简要描述图片（2-3句话）。如果图片中有可见文字，请准确引用。",
+}
+
+IMAGE_PROMPT = IMAGE_PROMPTS["he"]  # Default for backward compatibility
+
+
+def get_image_prompt(language: str = "he") -> str:
+    """Get the image description prompt for the given language."""
+    return IMAGE_PROMPTS.get(language, IMAGE_PROMPTS["en"])
+
+VIDEO_PROMPT = (
+    "אלה פריימים מסרטון וידאו. תאר בעברית בקצרה (3-5 משפטים) "
+    "מה קורה בסרטון. אם יש טקסט גלוי, ציין אותו."
+)
 
 
 def _image_to_base64_block(image_path: str) -> dict:
@@ -128,24 +156,46 @@ def _image_to_base64_block(image_path: str) -> dict:
     }
 
 
-def describe_image(image_path: str, client) -> str:
-    """Send a single image to Claude Vision and get a Hebrew description + OCR."""
+def _read_image_as_data_url(image_path: str) -> str:
+    """Read an image file and return a data URL string."""
+    ext = os.path.splitext(image_path)[1].lower()
+    media_type = MEDIA_TYPES.get(ext, "image/jpeg")
+    with open(image_path, "rb") as f:
+        data = base64.standard_b64encode(f.read()).decode("utf-8")
+    return f"data:{media_type};base64,{data}"
+
+
+# ---------------------------------------------------------------------------
+# Image description: dispatcher + per-provider implementations
+# ---------------------------------------------------------------------------
+
+def describe_image(image_path: str, provider: str = "anthropic", model: str = None, api_key: str = None, ollama_url: str = None) -> str:
+    """Send a single image to AI and get a Hebrew description + OCR."""
+    if provider == "anthropic":
+        return _describe_image_anthropic(image_path, api_key, model or "claude-sonnet-4-20250514")
+    elif provider == "openai":
+        return _describe_image_openai(image_path, api_key, model or "gpt-4o-mini")
+    elif provider == "gemini":
+        return _describe_image_gemini(image_path, api_key, model or "gemini-2.0-flash")
+    elif provider == "ollama":
+        return _describe_image_ollama(image_path, ollama_url or "http://localhost:11434", model or "llama3.2-vision")
+    else:
+        return f"[unsupported provider: {provider}]"
+
+
+def _describe_image_anthropic(image_path: str, api_key: str, model: str) -> str:
     try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
         block = _image_to_base64_block(image_path)
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=model,
             max_tokens=300,
             messages=[{
                 "role": "user",
                 "content": [
                     block,
-                    {
-                        "type": "text",
-                        "text": (
-                            "תאר את התמונה בעברית בקצרה (2-3 משפטים). "
-                            "אם יש טקסט גלוי בתמונה, ציין אותו במדויק."
-                        ),
-                    },
+                    {"type": "text", "text": IMAGE_PROMPT},
                 ],
             }],
         )
@@ -154,30 +204,180 @@ def describe_image(image_path: str, client) -> str:
         return f"[vision error: {e}]"
 
 
-def describe_video_frames(frame_paths: list[str], client) -> str:
-    """Send multiple video frames to Claude Vision in a single call."""
+def _describe_image_openai(image_path: str, api_key: str, model: str) -> str:
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+
+        data_url = _read_image_as_data_url(image_path)
+
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=300,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                    {"type": "text", "text": IMAGE_PROMPT},
+                ],
+            }],
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"[vision error: {e}]"
+
+
+def _describe_image_gemini(image_path: str, api_key: str, model: str) -> str:
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key)
+
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+
+        ext = os.path.splitext(image_path)[1].lower()
+        media_type = MEDIA_TYPES.get(ext, "image/jpeg")
+
+        response = client.models.generate_content(
+            model=model,
+            contents=[
+                types.Part.from_bytes(data=image_data, mime_type=media_type),
+                IMAGE_PROMPT,
+            ],
+            config=types.GenerateContentConfig(max_output_tokens=300),
+        )
+        return response.text.strip()
+    except Exception as e:
+        return f"[vision error: {e}]"
+
+
+def _describe_image_ollama(image_path: str, ollama_url: str, model: str) -> str:
+    try:
+        from openai import OpenAI
+        client = OpenAI(base_url=ollama_url.rstrip("/") + "/v1", api_key="ollama")
+
+        data_url = _read_image_as_data_url(image_path)
+
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=300,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                    {"type": "text", "text": IMAGE_PROMPT},
+                ],
+            }],
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"[vision error: {e}]"
+
+
+# ---------------------------------------------------------------------------
+# Video frame description: dispatcher + per-provider implementations
+# ---------------------------------------------------------------------------
+
+def describe_video_frames(frame_paths: list[str], provider: str = "anthropic", model: str = None, api_key: str = None, ollama_url: str = None) -> str:
+    """Send multiple video frames to AI in a single call and get a Hebrew description."""
     if not frame_paths:
         return ""
+    if provider == "anthropic":
+        return _describe_video_anthropic(frame_paths, api_key, model or "claude-sonnet-4-20250514")
+    elif provider == "openai":
+        return _describe_video_openai(frame_paths, api_key, model or "gpt-4o-mini")
+    elif provider == "gemini":
+        return _describe_video_gemini(frame_paths, api_key, model or "gemini-2.0-flash")
+    elif provider == "ollama":
+        return _describe_video_ollama(frame_paths, ollama_url or "http://localhost:11434", model or "llama3.2-vision")
+    else:
+        return f"[unsupported provider: {provider}]"
 
-    content = []
-    for fp in frame_paths:
-        content.append(_image_to_base64_block(fp))
 
-    content.append({
-        "type": "text",
-        "text": (
-            "אלה פריימים מסרטון וידאו. תאר בעברית בקצרה (3-5 משפטים) "
-            "מה קורה בסרטון. אם יש טקסט גלוי, ציין אותו."
-        ),
-    })
-
+def _describe_video_anthropic(frame_paths: list[str], api_key: str, model: str) -> str:
     try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+
+        content = []
+        for fp in frame_paths:
+            content.append(_image_to_base64_block(fp))
+        content.append({"type": "text", "text": VIDEO_PROMPT})
+
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=model,
             max_tokens=500,
             messages=[{"role": "user", "content": content}],
         )
         return response.content[0].text.strip()
+    except Exception as e:
+        return f"[vision error: {e}]"
+
+
+def _describe_video_openai(frame_paths: list[str], api_key: str, model: str) -> str:
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+
+        content = []
+        for fp in frame_paths:
+            data_url = _read_image_as_data_url(fp)
+            content.append({"type": "image_url", "image_url": {"url": data_url}})
+        content.append({"type": "text", "text": VIDEO_PROMPT})
+
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=500,
+            messages=[{"role": "user", "content": content}],
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"[vision error: {e}]"
+
+
+def _describe_video_gemini(frame_paths: list[str], api_key: str, model: str) -> str:
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key)
+
+        contents = []
+        for fp in frame_paths:
+            with open(fp, "rb") as f:
+                image_data = f.read()
+            ext = os.path.splitext(fp)[1].lower()
+            media_type = MEDIA_TYPES.get(ext, "image/jpeg")
+            contents.append(types.Part.from_bytes(data=image_data, mime_type=media_type))
+        contents.append(VIDEO_PROMPT)
+
+        response = client.models.generate_content(
+            model=model,
+            contents=contents,
+            config=types.GenerateContentConfig(max_output_tokens=500),
+        )
+        return response.text.strip()
+    except Exception as e:
+        return f"[vision error: {e}]"
+
+
+def _describe_video_ollama(frame_paths: list[str], ollama_url: str, model: str) -> str:
+    try:
+        from openai import OpenAI
+        client = OpenAI(base_url=ollama_url.rstrip("/") + "/v1", api_key="ollama")
+
+        content = []
+        for fp in frame_paths:
+            data_url = _read_image_as_data_url(fp)
+            content.append({"type": "image_url", "image_url": {"url": data_url}})
+        content.append({"type": "text", "text": VIDEO_PROMPT})
+
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=500,
+            messages=[{"role": "user", "content": content}],
+        )
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"[vision error: {e}]"
 
@@ -225,11 +425,8 @@ def _should_skip_video(filename: str) -> bool:
 # Batch processing
 # ---------------------------------------------------------------------------
 
-def process_images(chat_dir: str, cache_path: str, api_key: str, progress_callback=None, cancel_event=None) -> dict:
-    """Batch-process all image files. Returns cache dict {filename: description}."""
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-
+def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", model: str = None, api_key: str = None, ollama_url: str = None, progress_callback=None, cancel_event=None, max_workers: int = 3) -> dict:
+    """Batch-process all image files with parallel API calls. Returns cache dict {filename: description}."""
     extensions = ("*.jpg", "*.jpeg", "*.png")
     image_files = []
     for ext in extensions:
@@ -244,38 +441,57 @@ def process_images(chat_dir: str, cache_path: str, api_key: str, progress_callba
         return load_cache(cache_path)
 
     cache = load_cache(cache_path)
-    already = sum(1 for f in image_files if os.path.basename(f) in cache)
-    remaining = len(image_files) - already
 
-    if remaining == 0:
+    # Collect files that need processing
+    to_process = [f for f in image_files if os.path.basename(f) not in cache]
+
+    if not to_process:
         print(f"  All {len(image_files)} images already described.")
         return cache
 
-    print(f"  Found {len(image_files)} images ({already} cached, {remaining} to describe)")
+    print(f"  Found {len(image_files)} images ({len(image_files) - len(to_process)} cached, {len(to_process)} to describe)")
 
-    bar = tqdm(image_files, desc="  Describing images", unit="file")
-    for filepath in bar:
+    # Determine max workers based on provider
+    # Ollama: 1 (local, can't parallelize well)
+    # API providers: max_workers (default 3)
+    workers = 1 if provider == "ollama" else max_workers
+
+    processed_count = len(image_files) - len(to_process)
+    lock = threading.Lock()
+
+    def process_one(filepath):
         if cancel_event and cancel_event.is_set():
-            print("  Image processing cancelled by user.")
-            break
-
+            return None, None
         filename = os.path.basename(filepath)
-        bar.set_postfix_str(filename[:35])
+        desc = describe_image(filepath, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url)
+        return filename, desc
 
-        if filename in cache:
-            continue
+    bar = tqdm(total=len(to_process), desc="  Describing images", unit="file", initial=0)
 
-        description = describe_image(filepath, client)
-        cache[filename] = description
-        save_cache(cache_path, cache)
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(process_one, f): f for f in to_process}
 
-        if progress_callback:
-            done = sum(1 for f in image_files if os.path.basename(f) in cache)
-            progress_callback(filename, done, len(image_files))
+        for future in as_completed(futures):
+            if cancel_event and cancel_event.is_set():
+                executor.shutdown(wait=False, cancel_futures=True)
+                print("  Image processing cancelled by user.")
+                break
 
-        # Small delay to respect API rate limits
-        time.sleep(0.3)
+            filename, desc = future.result()
+            if filename is None:
+                continue
 
+            with lock:
+                cache[filename] = desc
+                save_cache(cache_path, cache)
+                processed_count += 1
+                bar.update(1)
+                bar.set_postfix_str(filename[:35])
+
+            if progress_callback:
+                progress_callback(filename, processed_count, len(image_files))
+
+    bar.close()
     print(f"  Image descriptions complete. {len(cache)} files total.")
     return cache
 
@@ -284,7 +500,10 @@ def process_videos(
     chat_dir: str,
     descriptions_cache_path: str,
     video_trans_cache_path: str,
-    api_key: str,
+    provider: str = "anthropic",
+    model: str = None,
+    api_key: str = None,
+    ollama_url: str = None,
     model_size: str = "small",
     progress_callback=None,
     cancel_event=None,
@@ -297,9 +516,6 @@ def process_videos(
         print("  WARNING: ffmpeg not found. Skipping video processing.")
         print("  Install with: winget install ffmpeg")
         return load_cache(descriptions_cache_path), load_cache(video_trans_cache_path)
-
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
 
     video_files = sorted(glob.glob(os.path.join(chat_dir, "*.mp4")))
     video_files += sorted(glob.glob(os.path.join(chat_dir, "*.mov")))
@@ -351,7 +567,7 @@ def process_videos(
             # 1. Extract and describe frames
             frames = extract_key_frames(filepath, tmp_dir)
             if frames:
-                description = describe_video_frames(frames, client)
+                description = describe_video_frames(frames, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url)
                 desc_cache[filename] = description
             else:
                 desc_cache[filename] = ""
@@ -383,8 +599,6 @@ def process_videos(
         if progress_callback:
             done = sum(1 for f in video_files if os.path.basename(f) in desc_cache)
             progress_callback(filename, done, len(video_files))
-
-        time.sleep(0.3)
 
     print(f"  Video processing complete. {len(desc_cache)} descriptions, {len(trans_cache)} transcriptions.")
     return desc_cache, trans_cache
