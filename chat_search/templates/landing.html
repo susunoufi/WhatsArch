@@ -837,12 +837,12 @@ section {
 
         <div class="hero-cta">
           <a href="/login" class="btn btn-primary">
-            <span class="btn-icon"><i class="fas fa-cloud"></i></span>
-            <span>התחל אונליין</span>
+            <span class="btn-icon"><i class="fas fa-rocket"></i></span>
+            <span>התחל עכשיו</span>
           </a>
-          <a href="#download" class="btn btn-secondary desktop-only">
-            <span class="btn-icon"><i class="fas fa-laptop"></i></span>
-            <span>הורד למחשב</span>
+          <a href="#how-it-works" class="btn btn-secondary">
+            <span class="btn-icon"><i class="fas fa-info-circle"></i></span>
+            <span>איך זה עובד?</span>
           </a>
         </div>
       </div>
@@ -942,46 +942,49 @@ section {
   <section class="compare-section" id="download">
     <div class="container">
       <div class="section-header animate-on-scroll">
-        <div class="section-badge">בחר את המסלול</div>
-        <h2 class="section-title">אונליין או <span class="gradient">מקומי</span>?</h2>
-        <p class="section-desc">שני מסלולים, אותה חוויה מדהימה</p>
+        <div class="section-badge">בחר מצב עבודה</div>
+        <h2 class="section-title">ענן או <span class="gradient">מקומי</span>?</h2>
+        <p class="section-desc">שני מצבים, אותו ממשק — בחר לפי גודל הצ'אטים שלך</p>
       </div>
 
       <div class="compare-grid stagger-children">
-        <!-- ONLINE CARD -->
+        <!-- CLOUD MODE CARD -->
         <div class="compare-card card-online animate-on-scroll">
           <span class="compare-card-icon"><i class="fas fa-cloud"></i></span>
           <div class="compare-card-badge">מהיר להתחלה</div>
-          <h3 class="compare-card-title">אונליין</h3>
+          <h3 class="compare-card-title">מצב ענן</h3>
           <ul class="compare-list">
             <li>העלה ZIP ועובד מיד</li>
-            <li>עד 100MB לשיחה</li>
+            <li>עד 200MB לשיחה</li>
             <li>חיפוש + AI מובנה</li>
             <li>צריך חשבון (חינם)</li>
             <li>גישה מכל מכשיר</li>
           </ul>
           <a href="/login" class="btn btn-primary btn-sm" style="width:100%; justify-content: center;">
-            התחל עכשיו
+            <i class="fas fa-rocket"></i> התחל עכשיו
           </a>
         </div>
 
-        <!-- LOCAL CARD (hidden on mobile) -->
+        <!-- LOCAL MODE CARD -->
         <div class="compare-card card-local animate-on-scroll desktop-only">
-          <span class="compare-card-icon"><i class="fas fa-laptop"></i></span>
+          <span class="compare-card-icon"><i class="fas fa-desktop"></i></span>
           <div class="compare-card-badge">ללא הגבלה</div>
-          <h3 class="compare-card-title">התקנה מקומית</h3>
+          <h3 class="compare-card-title">מצב מקומי</h3>
           <ul class="compare-list">
-            <li>ללא הגבלת גודל</li>
-            <li>כל הכלים כולל Ollama</li>
-            <li>פרטיות מלאה — הכל רץ אצלך</li>
-            <li>חינם לנצח</li>
+            <li>לצ'אטים ענקיים — ללא הגבלת גודל</li>
+            <li>הממשק נשאר באתר</li>
+            <li>Agent קטן רץ ברקע על המחשב</li>
+            <li>תמלול מקומי (חינם)</li>
             <li>התקנה בדקה אחת</li>
           </ul>
-          <a href="https://github.com/susunoufi/WhatsArch/releases/latest" class="btn btn-secondary btn-sm" style="width:100%; justify-content: center; margin-bottom: 8px;">
-            הורד ל-Windows
-          </a>
-          <a href="https://github.com/susunoufi/WhatsArch/releases/latest" class="btn btn-secondary btn-sm" style="width:100%; justify-content: center; opacity: 0.8;">
-            הורד ל-Mac
+          <div style="font-size:0.82em; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+            <strong>איך מתחילים?</strong><br>
+            1. נרשמים לאתר (חשבון רגיל)<br>
+            2. מתקינים Agent על המחשב<br>
+            3. נכנסים לאתר — הוא מזהה את ה-Agent אוטומטית
+          </div>
+          <a href="https://github.com/susunoufi/WhatsArch/wiki/Local-Agent" class="btn btn-secondary btn-sm" style="width:100%; justify-content: center;">
+            <i class="fas fa-download"></i> התקן Agent
           </a>
         </div>
       </div>
