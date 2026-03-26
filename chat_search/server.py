@@ -268,9 +268,8 @@ def create_app(chats_dir: str) -> Flask:
         return render_template("index.html")
 
     @app.route("/app")
-    @require_auth
     def app_page():
-        """Main app (authenticated users)."""
+        """Main app page. Auth checked client-side via JS token."""
         return render_template("index.html")
 
     @app.route("/login")

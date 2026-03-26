@@ -130,7 +130,7 @@
         const token = localStorage.getItem('auth_token');
         if (token) {
             fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
-                .then(r => { if (r.ok) window.location.href = '/'; });
+                .then(r => { if (r.ok) window.location.href = '/app'; });
         }
 
         function switchAuthTab(tab) {
@@ -161,7 +161,7 @@
                 localStorage.setItem('auth_token', data.session.access_token);
                 localStorage.setItem('refresh_token', data.session.refresh_token);
                 localStorage.setItem('user_email', data.user.email);
-                window.location.href = '/';
+                window.location.href = '/app';
             } catch (e) {
                 errEl.textContent = 'שגיאה בהתחברות'; errEl.style.display = 'block';
             } finally {
@@ -193,7 +193,7 @@
                     localStorage.setItem('auth_token', data.session.access_token);
                     localStorage.setItem('refresh_token', data.session.refresh_token);
                     localStorage.setItem('user_email', data.user.email);
-                    window.location.href = '/';
+                    window.location.href = '/app';
                 } else {
                     successEl.textContent = 'נשלח אימייל אימות. בדוק את תיבת הדואר שלך.';
                     successEl.style.display = 'block';
