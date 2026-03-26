@@ -4,19 +4,19 @@
     "description": "Search your WhatsApp & Telegram chats with AI",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#FAFAF8",
+    "background_color": "#0a0f1a",
     "theme_color": "#0D9488",
     "orientation": "any",
     "icons": [
         {
-            "src": "/static/icon-192.svg",
+            "src": "/static/icon-192.png",
             "sizes": "192x192",
-            "type": "image/svg+xml"
+            "type": "image/png"
         },
         {
-            "src": "/static/icon-512.svg",
+            "src": "/static/icon-512.png",
             "sizes": "512x512",
-            "type": "image/svg+xml"
+            "type": "image/png"
         }
     ],
     "share_target": {

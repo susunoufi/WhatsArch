@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsArch - חיפוש בצ'אט WhatsApp</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='32' y2='32'%3E%3Cstop offset='0%25' stop-color='%230D9488'/%3E%3Cstop offset='100%25' stop-color='%236366F1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23bg)'/%3E%3Cpath d='M7 9.5C7 8.12 8.12 7 9.5 7h13c1.38 0 2.5 1.12 2.5 2.5v9c0 1.38-1.12 2.5-2.5 2.5H13l-4 3.5V21H9.5C8.12 21 7 19.88 7 18.5v-9z' fill='white' opacity='0.95'/%3E%3Ccircle cx='19' cy='17' r='3.2' stroke='%236366F1' stroke-width='1.5' fill='none' opacity='0.9'/%3E%3Cline x1='21.3' y1='19.3' x2='24' y2='22' stroke='%236366F1' stroke-width='1.5' stroke-linecap='round' opacity='0.9'/%3E%3Ccircle cx='22' cy='8' r='1' fill='%23fbbf24' opacity='0.9'/%3E%3Ccircle cx='25' cy='10' r='0.7' fill='%23fbbf24' opacity='0.7'/%3E%3Ccircle cx='24' cy='6.5' r='0.5' fill='%23fbbf24' opacity='0.6'/%3E%3Crect x='10' y='10' width='7' height='1.2' rx='0.6' fill='%230D9488' opacity='0.7'/%3E%3Crect x='10' y='12.8' width='5' height='1.2' rx='0.6' fill='%230D9488' opacity='0.45'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#0D9488">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -860,14 +860,7 @@
     <header class="header">
         <div class="header-top">
             <div class="header-title">
-                <svg class="header-logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="white" opacity="0.9"/>
-                    <rect x="30" y="30" width="28" height="3" rx="1.5" fill="#0D9488" opacity="0.8"/>
-                    <rect x="30" y="38" width="22" height="3" rx="1.5" fill="#0D9488" opacity="0.5"/>
-                    <rect x="30" y="46" width="25" height="3" rx="1.5" fill="#0D9488" opacity="0.4"/>
-                    <circle cx="62" cy="56" r="12" stroke="#6366F1" stroke-width="3.5" fill="none" opacity="0.95"/>
-                    <line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
-                </svg>
+                <img src="/static/icon-48.png" class="header-logo-icon" alt="WhatsArch" style="border-radius:8px;">
                 <h1><span class="logo-whats">Whats</span><span class="logo-arch">Arch</span></h1>
             </div>
             <select id="chatSelector" class="chat-selector">
@@ -1042,21 +1035,21 @@
                     <span style="font-size:0.75em;color:var(--text-muted);" data-i18n="settingsManualOverride">התאמה ידנית</span>
                 </div>
 
-                <div class="section-title">📷 <span data-i18n="settingsVision">תיאור תמונות</span></div>
+                <div class="section-title"><i class="fas fa-camera"></i> <span data-i18n="settingsVision">תיאור תמונות</span></div>
                 <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsVisionDesc">AI "מסתכל" על כל תמונה וכותב תיאור שלה — כך אפשר למצוא תמונות בחיפוש.</p>
                 <div class="model-grid" id="models-vision"></div>
                 <div class="cost-calc" id="cost-vision"></div>
 
                 <div class="section-divider"></div>
 
-                <div class="section-title">🎬 <span data-i18n="settingsVideo">תיאור סרטונים</span></div>
+                <div class="section-title"><i class="fas fa-film"></i> <span data-i18n="settingsVideo">תיאור סרטונים</span></div>
                 <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsVideoDesc">AI צופה בפריימים מהסרטון ומתאר מה קורה. האודיו מתומלל לוקאלית (חינם).</p>
                 <div class="model-grid" id="models-video"></div>
                 <div class="cost-calc" id="cost-video"></div>
 
                 <div class="section-divider"></div>
 
-                <div class="section-title">💬 <span data-i18n="settingsRag">צ'אט AI — תשאול חכם</span></div>
+                <div class="section-title"><i class="fas fa-comments"></i> <span data-i18n="settingsRag">צ'אט AI — תשאול חכם</span></div>
                 <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsRagDesc">שאלות על השיחה בשפה טבעית עם תשובות מבוססות תוכן הצ'אט.</p>
                 <div class="model-grid" id="models-rag"></div>
                 <div class="cost-calc" id="cost-rag"></div>
@@ -1203,7 +1196,7 @@
                 aiSelectChat: 'אנא בחר שיחה קודם.',
                 aiError: 'שגיאה בתקשורת עם השרת. נסו שוב.',
                 aiSources: 'מקורות',
-                aiWhyAnswer: '\uD83D\uDD0D למה התשובה הזו?',
+                aiWhyAnswer: '<i class="fas fa-search"></i> למה התשובה הזו?',
                 aiContextLabel: 'הקשר ההודעה:',
                 settingsApiKeys: 'מפתחות API',
                 settingsApiNote: 'המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.',
@@ -1223,7 +1216,7 @@
                 settingsCostSummary: 'סיכום עלויות',
                 settingsCostFor: 'חישוב עבור:',
                 settingsSave: 'שמור הגדרות',
-                settingsSaved: '✓ נשמר בהצלחה!',
+                settingsSaved: '<i class="fas fa-check"></i> נשמר בהצלחה!',
                 settingsSaveError: 'שגיאה בשמירה',
                 settingsSaving: 'שומר...',
                 settingsCostTotal: 'סה"כ משוער',
@@ -1235,8 +1228,8 @@
                 settingsRecommended: 'מומלץ',
                 settingsBest: 'הכי טוב',
                 settingsFreeLabel: 'חינם',
-                settingsFast: '⚡ מהיר',
-                settingsSlow: '🐌 איטי',
+                settingsFast: '<i class="fas fa-bolt"></i> מהיר',
+                settingsSlow: '<i class="fas fa-hourglass-half"></i> איטי',
                 settingsCost: 'עלות:',
                 settingsSpeed: 'מהירות:',
                 settingsHebrew: 'עברית:',
@@ -1301,7 +1294,7 @@
                 noChatsYet: 'אין צ\'אטים עדיין',
                 noChatsYetTitle: 'ברוכים הבאים ל-WhatsArch!',
                 noChatsYetDesc: 'העלה את הצ\'אט הראשון שלך כדי להתחיל',
-                goToUpload: '📤 העלה צ\'אט',
+                goToUpload: '<i class="fas fa-cloud-upload-alt"></i> העלה צ\'אט',
                 mgmtUpload: 'העלאת צ\'אט',
                 mgmtUploadDesc: 'העלה קובץ ZIP (עד 100MB) או הדבק קישור לקבצים גדולים',
                 mgmtUploadBtn: 'בחר קובץ ZIP',
@@ -1342,7 +1335,7 @@
                 loading: 'טוען...',
                 loadingData: 'טוען נתונים...',
                 contextTitle: 'הקשר הודעה',
-                ragDebugTitle: '\uD83D\uDD0D פירוט שליפת מידע (RAG)',
+                ragDebugTitle: '<i class="fas fa-search"></i> פירוט שליפת מידע (RAG)',
                 ragDebugChunks: 'קטעי שיחה רלוונטיים',
                 ragDebugChunk: 'קטע',
                 ragDebugScore: 'ניקוד',
@@ -1399,7 +1392,7 @@
                 aiSelectChat: 'Please select a chat first.',
                 aiError: 'Error communicating with the server. Please try again.',
                 aiSources: 'Sources',
-                aiWhyAnswer: '\uD83D\uDD0D Why this answer?',
+                aiWhyAnswer: '<i class="fas fa-search"></i> Why this answer?',
                 aiContextLabel: 'Message context:',
                 settingsApiKeys: 'API Keys',
                 settingsApiNote: 'Keys are stored locally in the .env file and never sent anywhere.',
@@ -1419,7 +1412,7 @@
                 settingsCostSummary: 'Cost Summary',
                 settingsCostFor: 'Calculate for:',
                 settingsSave: 'Save Settings',
-                settingsSaved: '✓ Saved successfully!',
+                settingsSaved: '<i class="fas fa-check"></i> Saved successfully!',
                 settingsSaveError: 'Error saving',
                 settingsSaving: 'Saving...',
                 settingsCostTotal: 'Estimated Total',
@@ -1431,8 +1424,8 @@
                 settingsRecommended: 'Recommended',
                 settingsBest: 'Best',
                 settingsFreeLabel: 'Free',
-                settingsFast: '⚡ Fast',
-                settingsSlow: '🐌 Slow',
+                settingsFast: '<i class="fas fa-bolt"></i> Fast',
+                settingsSlow: '<i class="fas fa-hourglass-half"></i> Slow',
                 settingsCost: 'Cost:',
                 settingsSpeed: 'Speed:',
                 settingsHebrew: 'Hebrew:',
@@ -1497,7 +1490,7 @@
                 noChatsYet: 'No chats yet',
                 noChatsYetTitle: 'Welcome to WhatsArch!',
                 noChatsYetDesc: 'Upload your first chat to get started',
-                goToUpload: '📤 Upload Chat',
+                goToUpload: '<i class="fas fa-cloud-upload-alt"></i> Upload Chat',
                 mgmtUpload: 'Upload Chat',
                 mgmtUploadDesc: 'Upload ZIP (up to 100MB) or paste a link for large files',
                 mgmtUploadBtn: 'Choose ZIP file',
@@ -1538,7 +1531,7 @@
                 loading: 'Loading...',
                 loadingData: 'Loading data...',
                 contextTitle: 'Message Context',
-                ragDebugTitle: '\uD83D\uDD0D Retrieval Details (RAG)',
+                ragDebugTitle: '<i class="fas fa-search"></i> Retrieval Details (RAG)',
                 ragDebugChunks: 'relevant conversation chunks',
                 ragDebugChunk: 'Chunk',
                 ragDebugScore: 'Score',
@@ -1856,7 +1849,7 @@
                     showState('initial');
                     const resultsArea = document.getElementById('resultsArea');
                     if (resultsArea) {
-                        resultsArea.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);"><div style="font-size:3em;margin-bottom:16px;">📤</div><h3 style="margin-bottom:8px;color:var(--text-secondary);">' + t('noChatsYetTitle') + '</h3><p style="margin-bottom:16px;">' + t('noChatsYetDesc') + '</p><button class="btn btn-primary" onclick="switchTab(\'management\')">' + t('goToUpload') + '</button></div>';
+                        resultsArea.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);"><div style="font-size:3em;margin-bottom:16px;"><i class="fas fa-cloud-upload-alt"></i></div><h3 style="margin-bottom:8px;color:var(--text-secondary);">' + t('noChatsYetTitle') + '</h3><p style="margin-bottom:16px;">' + t('noChatsYetDesc') + '</p><button class="btn btn-primary" onclick="switchTab(\'management\')">' + t('goToUpload') + '</button></div>';
                     }
                 }
             } catch (err) {
@@ -2103,11 +2096,11 @@
 
             // Build type badges
             let typeBadges = '';
-            if (msg.has_transcription) typeBadges += '<span class="type-badge" title="תמלול קולי">🎙️</span>';
-            if (msg.has_visual) typeBadges += '<span class="type-badge" title="תיאור תמונה/וידאו">🖼️</span>';
-            if (msg.has_video_transcription) typeBadges += '<span class="type-badge" title="תמלול וידאו">🎬</span>';
-            if (msg.has_pdf) typeBadges += '<span class="type-badge" title="טקסט PDF">📄</span>';
-            if (msg.media_type) typeBadges += '<span class="type-badge" title="' + escapeHtml(msg.media_type) + '">' + (msg.media_type === 'audio' ? '🔊' : msg.media_type === 'image' ? '📷' : msg.media_type === 'video' ? '🎥' : '📎') + '</span>';
+            if (msg.has_transcription) typeBadges += '<span class="type-badge" title="תמלול קולי"><i class="fas fa-microphone"></i></span>';
+            if (msg.has_visual) typeBadges += '<span class="type-badge" title="תיאור תמונה/וידאו"><i class="fas fa-image"></i></span>';
+            if (msg.has_video_transcription) typeBadges += '<span class="type-badge" title="תמלול וידאו"><i class="fas fa-film"></i></span>';
+            if (msg.has_pdf) typeBadges += '<span class="type-badge" title="טקסט PDF"><i class="fas fa-file-alt"></i></span>';
+            if (msg.media_type) typeBadges += '<span class="type-badge" title="' + escapeHtml(msg.media_type) + '">' + (msg.media_type === 'audio' ? '<i class="fas fa-volume-up"></i>' : msg.media_type === 'image' ? '<i class="fas fa-camera"></i>' : msg.media_type === 'video' ? '<i class="fas fa-video"></i>' : '<i class="fas fa-paperclip"></i>') + '</span>';
 
             card.innerHTML = `
                 <div class="message-header">
@@ -2517,10 +2510,16 @@
 
                 const presetOptions = ['budget', 'balanced', 'premium', 'local'];
                 const presetNames = {
-                    budget: '💰 ' + (currentLang === 'he' ? 'חסכוני' : 'Budget'),
-                    balanced: '⚡ ' + (currentLang === 'he' ? 'מאוזן' : 'Balanced'),
-                    premium: '👑 ' + (currentLang === 'he' ? 'פרימיום' : 'Premium'),
-                    local: '🏠 ' + (currentLang === 'he' ? 'לוקאלי' : 'Local'),
+                    budget: '<i class="fas fa-coins"></i> ' + (currentLang === 'he' ? 'חסכוני' : 'Budget'),
+                    balanced: '<i class="fas fa-bolt"></i> ' + (currentLang === 'he' ? 'מאוזן' : 'Balanced'),
+                    premium: '<i class="fas fa-crown"></i> ' + (currentLang === 'he' ? 'פרימיום' : 'Premium'),
+                    local: '<i class="fas fa-home"></i> ' + (currentLang === 'he' ? 'לוקאלי' : 'Local'),
+                };
+                const presetNamesText = {
+                    budget: currentLang === 'he' ? 'חסכוני' : 'Budget',
+                    balanced: currentLang === 'he' ? 'מאוזן' : 'Balanced',
+                    premium: currentLang === 'he' ? 'פרימיום' : 'Premium',
+                    local: currentLang === 'he' ? 'לוקאלי' : 'Local',
                 };
 
                 let html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.85em;">';
@@ -2545,7 +2544,7 @@
                     } else {
                         html += '<select onchange="setUserPreset(\'' + escapeHtml(u.email) + '\', this.value)" style="padding:6px 8px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:0.9em;">';
                         presetOptions.forEach(p => {
-                            html += '<option value="' + p + '"' + (u.preset === p ? ' selected' : '') + '>' + (presetNames[p] || p) + '</option>';
+                            html += '<option value="' + p + '"' + (u.preset === p ? ' selected' : '') + '>' + (presetNamesText[p] || p) + '</option>';
                         });
                         html += '</select>';
                     }
@@ -2603,13 +2602,13 @@
                 const uploadCard = `
                     <div class="mgmt-chat-card" style="border: 2px dashed var(--border-color); padding: 24px;">
                         <div style="text-align:center; margin-bottom: 20px;">
-                            <div style="font-size: 2em; margin-bottom: 8px;">📤</div>
+                            <div style="font-size: 2em; margin-bottom: 8px;"><i class="fas fa-cloud-upload-alt"></i></div>
                             <h3 style="font-size: 1em; margin-bottom: 6px;">${t('mgmtUpload')}</h3>
                             <p style="font-size: 0.82em; color: var(--text-secondary);">${t('mgmtUploadDesc')}</p>
                         </div>
                         <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:flex-start;">
                             <div style="flex:1; min-width:200px; max-width:300px; text-align:center; padding:16px; background:var(--bg-secondary); border-radius:var(--radius); border:1px solid var(--border-color);">
-                                <div style="font-size:1.2em; margin-bottom:8px;">📁</div>
+                                <div style="font-size:1.2em; margin-bottom:8px;"><i class="fas fa-folder-open"></i></div>
                                 <div style="font-size:0.85em; font-weight:600; margin-bottom:4px;">${t('mgmtUploadBtn')}</div>
                                 <div style="font-size:0.75em; color:var(--text-muted); margin-bottom:10px;">ZIP &bull; max 100MB</div>
                                 <label class="btn btn-primary btn-sm" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center;">
@@ -2618,7 +2617,7 @@
                                 </label>
                             </div>
                             <div style="flex:1; min-width:200px; max-width:300px; text-align:center; padding:16px; background:var(--bg-secondary); border-radius:var(--radius); border:1px solid var(--border-color);">
-                                <div style="font-size:1.2em; margin-bottom:8px;">🔗</div>
+                                <div style="font-size:1.2em; margin-bottom:8px;"><i class="fas fa-link"></i></div>
                                 <div style="font-size:0.85em; font-weight:600; margin-bottom:4px;">${t('mgmtUploadUrl')}</div>
                                 <div style="font-size:0.75em; color:var(--text-muted); margin-bottom:10px;">Google Drive / Dropbox / OneDrive</div>
                                 <input type="text" id="uploadUrlInput" placeholder="${t('mgmtUploadUrlPlaceholder')}" dir="ltr" style="width:100%; margin-bottom:8px; padding:8px; font-size:0.82em; background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-primary);">
@@ -3086,7 +3085,7 @@
                     const whyBtn = document.createElement('button');
                     whyBtn.className = 'why-btn';
                     whyBtn.onclick = showRagDebug;
-                    whyBtn.textContent = t('aiWhyAnswer');
+                    whyBtn.innerHTML = t('aiWhyAnswer');
                     messageDiv.appendChild(whyBtn);
                 }
             }
@@ -3379,7 +3378,7 @@
                 html += `
                 <div class="model-card ${isRec ? 'selected' : ''}" onclick="applyPreset('${p.key}', this)" style="text-align:center;padding:20px 14px;">
                     <div class="check-mark"><i class="fas fa-check"></i></div>
-                    <div style="font-size:2em;margin-bottom:6px;">${p.icon}</div>
+                    <div style="font-size:2em;margin-bottom:6px;">${{'💰':'<i class="fas fa-coins"></i>','⚡':'<i class="fas fa-bolt"></i>','👑':'<i class="fas fa-crown"></i>','🏠':'<i class="fas fa-home"></i>'}[p.icon] || p.icon}</div>
                     <div style="font-size:1em;font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>
                     <div style="font-size:0.78em;color:var(--text-secondary);margin-bottom:10px;line-height:1.5;">${escapeHtml(desc)}</div>
                     <div style="font-size:1.1em;font-weight:700;color:var(--accent-green);">${costText}</div>
@@ -3390,7 +3389,7 @@
 
             // Show estimate summary
             if (data.image_count > 0 || data.video_count > 0) {
-                estimate.innerHTML = '<div style="font-size:0.82em;color:var(--text-muted);">📊 ' +
+                estimate.innerHTML = '<div style="font-size:0.82em;color:var(--text-muted);"><i class="fas fa-chart-bar"></i> ' +
                     (data.chat_name ? escapeHtml(data.chat_name) + ' — ' : '') +
                     data.image_count + ' ' + t('settingsImages') + ', ' +
                     data.video_count + ' ' + t('settingsVideos') + '</div>';
@@ -3487,7 +3486,7 @@
                     <div class="hw-meter"><div class="hw-meter-fill ${perf.overall_rating}"></div></div>
                 </div>
                 <div class="hw-recommendation">
-                    💡 ${escapeHtml(perf.recommendation_text || '')}
+                    <i class="fas fa-lightbulb"></i> ${escapeHtml(perf.recommendation_text || '')}
                 </div>` : ''}
             `;
         }
@@ -3524,7 +3523,7 @@
                     const rating = hardwareData.performance.overall_rating;
                     if (rating === 'low' || rating === 'medium') {
                         const cls = m.speed === 'slow' ? 'slow' : 'medium';
-                        perfTagHtml = `<span class="perf-tag ${cls}">⚠ ${rating === 'low' ? 'איטי' : 'סביר'} על המחשב</span>`;
+                        perfTagHtml = `<span class="perf-tag ${cls}"><i class="fas fa-exclamation-triangle"></i> ${rating === 'low' ? 'איטי' : 'סביר'} על המחשב</span>`;
                     } else {
                         perfTagHtml = '<span class="perf-tag ok">מתאים למחשב</span>';
                     }
@@ -3575,7 +3574,7 @@
             const visionEl = document.getElementById('cost-vision');
             if (visionEl) {
                 const count = mediaCountsForSettings.images;
-                visionEl.innerHTML = `📷 ${t('settingsYouHave')} <strong>${count}</strong> ${t('images')} — ${t('settingsCostLabel')} <span class="cost-amount">${visionCost === 0 ? t('settingsFree') : '$' + visionCost.toFixed(2)}</span>`;
+                visionEl.innerHTML = `<i class="fas fa-camera"></i> ${t('settingsYouHave')} <strong>${count}</strong> ${t('images')} — ${t('settingsCostLabel')} <span class="cost-amount">${visionCost === 0 ? t('settingsFree') : '$' + visionCost.toFixed(2)}</span>`;
             }
 
             // Video
@@ -3584,7 +3583,7 @@
             const videoEl = document.getElementById('cost-video');
             if (videoEl) {
                 const count = mediaCountsForSettings.videos;
-                videoEl.innerHTML = `🎬 ${t('settingsYouHave')} <strong>${count}</strong> ${t('videos')} — ${t('settingsCostLabel')} <span class="cost-amount">${videoCost === 0 ? t('settingsFree') : '$' + videoCost.toFixed(2)}</span>`;
+                videoEl.innerHTML = `<i class="fas fa-film"></i> ${t('settingsYouHave')} <strong>${count}</strong> ${t('videos')} — ${t('settingsCostLabel')} <span class="cost-amount">${videoCost === 0 ? t('settingsFree') : '$' + videoCost.toFixed(2)}</span>`;
             }
 
             // RAG
@@ -3592,7 +3591,7 @@
             const ragCost = ragModel ? ragModel.cost_per_query * 100 : 0;
             const ragEl = document.getElementById('cost-rag');
             if (ragEl) {
-                ragEl.innerHTML = `💬 ${t('settingsCostFor100')} <span class="cost-amount">${ragCost === 0 ? t('settingsFree') : '$' + ragCost.toFixed(2)}</span>`;
+                ragEl.innerHTML = `<i class="fas fa-comments"></i> ${t('settingsCostFor100')} <span class="cost-amount">${ragCost === 0 ? t('settingsFree') : '$' + ragCost.toFixed(2)}</span>`;
             }
         }
 
@@ -3630,15 +3629,15 @@
             el.innerHTML = `
                 <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">${imgCount} ${t('images')}, ${vidCount} ${t('videos')}</div>
                 <div class="receipt-row">
-                    <span>📷 ${t('settingsImageDescCost')}</span>
+                    <span><i class="fas fa-camera"></i> ${t('settingsImageDescCost')}</span>
                     <span><strong>${visionModel ? escapeHtml(visionModel.display) : '—'}</strong> — ${vCost === 0 ? t('settingsFree') : '$' + vCost.toFixed(2)}</span>
                 </div>
                 <div class="receipt-row">
-                    <span>🎬 ${t('settingsVideoDescCost')}</span>
+                    <span><i class="fas fa-film"></i> ${t('settingsVideoDescCost')}</span>
                     <span><strong>${videoModel ? escapeHtml(videoModel.display) : '—'}</strong> — ${vidCost === 0 ? t('settingsFree') : '$' + vidCost.toFixed(2)}</span>
                 </div>
                 <div class="receipt-row">
-                    <span>💬 ${t('settingsAiChat100')}</span>
+                    <span><i class="fas fa-comments"></i> ${t('settingsAiChat100')}</span>
                     <span><strong>${ragModel ? escapeHtml(ragModel.display) : '—'}</strong> — ${rCost === 0 ? t('settingsFree') : '$' + rCost.toFixed(2)}</span>
                 </div>
                 <div class="receipt-total">
@@ -3680,7 +3679,7 @@
 
                 statusEl.style.display = 'inline';
                 statusEl.style.color = 'var(--accent-green)';
-                statusEl.textContent = t('settingsSaved');
+                statusEl.innerHTML = t('settingsSaved');
                 setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 
                 loadSettings();
