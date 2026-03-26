@@ -206,24 +206,27 @@ def api_chats():
 @app.route("/browse/folder", methods=["POST"])
 def browse_folder():
     """Open a native folder picker dialog and return the selected path."""
-    import tkinter as tk
-    from tkinter import filedialog
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
 
-    def pick():
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        folder = filedialog.askdirectory(title="Select chat folder")
-        root.destroy()
-        return folder
+        def pick():
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+            folder = filedialog.askdirectory(title="Select chat folder")
+            root.destroy()
+            return folder
 
-    # tkinter must run on main thread on macOS, but Flask runs in threads.
-    # On Windows it works fine from any thread.
-    folder = pick()
-    if not folder:
-        return jsonify({"error": "cancelled"}), 400
+        # tkinter must run on main thread on macOS, but Flask runs in threads.
+        # On Windows it works fine from any thread.
+        folder = pick()
+        if not folder:
+            return jsonify({"error": "cancelled"}), 400
 
-    return jsonify({"path": folder})
+        return jsonify({"path": folder})
+    except Exception as e:
+        return jsonify({"error": f"Folder picker failed: {e}"}), 500
 
 
 @app.route("/upload/local", methods=["POST"])
@@ -265,8 +268,27 @@ def upload_local():
         if dest.exists():
             chat_name = chat_name + "_new"
             dest = CHATS_DIR / chat_name
-        # Create symlink instead of copying — avoids duplicating large media files
-        os.symlink(str(source_path), str(dest), target_is_directory=True)
+        # Try junction (no admin needed on Windows), then symlink, then copy
+        linked = False
+        if sys.platform == "win32":
+            try:
+                subprocess.run(
+                    ["cmd", "/c", "mklink", "/J", str(dest), str(source_path)],
+                    capture_output=True, timeout=10
+                )
+                if dest.exists():
+                    linked = True
+            except Exception:
+                pass
+        if not linked:
+            try:
+                os.symlink(str(source_path), str(dest), target_is_directory=True)
+                linked = True
+            except OSError:
+                pass
+        if not linked:
+            # Last resort: copy the entire folder
+            shutil.copytree(str(source_path), str(dest))
         return jsonify({"status": "ok", "chat_name": chat_name, "path": str(dest)})
 
     else:
