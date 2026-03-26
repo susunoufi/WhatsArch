@@ -709,6 +709,8 @@ section {
    RESPONSIVE — MOBILE
    ============================================================ */
 @media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+
   section {
     padding: 72px 0;
   }
@@ -911,7 +913,7 @@ section {
             <span class="btn-icon">☁️</span>
             <span>התחל אונליין</span>
           </a>
-          <a href="#download" class="btn btn-secondary">
+          <a href="#download" class="btn btn-secondary desktop-only">
             <span class="btn-icon">💻</span>
             <span>הורד למחשב</span>
           </a>
@@ -1036,8 +1038,8 @@ section {
           </a>
         </div>
 
-        <!-- LOCAL CARD -->
-        <div class="compare-card card-local animate-on-scroll">
+        <!-- LOCAL CARD (hidden on mobile) -->
+        <div class="compare-card card-local animate-on-scroll desktop-only">
           <span class="compare-card-icon">💻</span>
           <div class="compare-card-badge">ללא הגבלה</div>
           <h3 class="compare-card-title">התקנה מקומית</h3>
