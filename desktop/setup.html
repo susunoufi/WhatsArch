@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>WhatsArch - התקנה ראשונית</title>
+    <title>WhatsArch - התקנה</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -12,30 +12,31 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             -webkit-app-region: drag; user-select: none; overflow: hidden;
         }
-        .logo { width: 72px; height: 72px; margin-bottom: 12px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); }
-        h1 { font-size: 1.5em; font-weight: 700; margin-bottom: 4px; }
+        .logo { width: 64px; height: 64px; margin-bottom: 10px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); }
+        h1 { font-size: 1.4em; font-weight: 700; margin-bottom: 2px; }
         h1 .arch { opacity: 0.7; }
-        .subtitle { font-size: 0.88em; opacity: 0.8; margin-bottom: 24px; }
-        .steps { width: 400px; -webkit-app-region: no-drag; }
+        .subtitle { font-size: 0.85em; opacity: 0.8; margin-bottom: 20px; }
+        .steps { width: 420px; -webkit-app-region: no-drag; }
         .step {
-            display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 8px;
-            background: rgba(255,255,255,0.1); border-radius: 10px; transition: background 0.3s;
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin-bottom: 6px;
+            background: rgba(255,255,255,0.08); border-radius: 10px; transition: background 0.3s;
         }
-        .step.active { background: rgba(255,255,255,0.2); }
-        .step.done { background: rgba(255,255,255,0.06); }
+        .step.active { background: rgba(255,255,255,0.18); }
+        .step.done { background: rgba(255,255,255,0.05); }
         .step-icon {
-            width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; flex-shrink: 0; font-size: 0.85em; background: rgba(255,255,255,0.15);
+            width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; font-size: 0.8em; background: rgba(255,255,255,0.12);
         }
         .step-info { flex: 1; min-width: 0; }
-        .step-label { font-size: 0.85em; font-weight: 600; margin-bottom: 2px; }
-        .step-status { font-size: 0.75em; opacity: 0.8; }
-        .progress-bar { width: 100%; height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 6px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #FFFFFF; border-radius: 3px; width: 0%; transition: width 0.4s ease; }
-        .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #FFF; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .step-label { font-size: 0.82em; font-weight: 600; }
+        .step-status { font-size: 0.72em; opacity: 0.75; }
+        .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #FFFFFF; border-radius: 2px; width: 0%; transition: width 0.3s ease; }
+        .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #FFF; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .footer { margin-top: 20px; font-size: 0.75em; opacity: 0.5; }
-        .num { font-size: 0.8em; opacity: 0.4; }
+        .footer { margin-top: 16px; font-size: 0.72em; opacity: 0.45; }
+        .num { font-size: 0.75em; opacity: 0.35; }
+        .check { color: #86EFAC; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -47,83 +48,97 @@
         <line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
     </svg>
     <h1><span>Whats</span><span class="arch">Arch</span></h1>
-    <p class="subtitle" id="subtitle">התקנה ראשונית - מוריד מודלים</p>
+    <p class="subtitle" id="subtitle">בודק ומתקין רכיבים...</p>
 
     <div class="steps">
-        <div class="step active" id="stepWhisper">
-            <div class="step-icon" id="whisperIcon"><div class="spinner"></div></div>
+        <div class="step active" id="step-python">
+            <div class="step-icon" id="icon-python"><div class="spinner"></div></div>
             <div class="step-info">
-                <div class="step-label">מודל זיהוי דיבור (Whisper)</div>
-                <div class="step-status" id="whisperStatus">ממתין...</div>
-                <div class="progress-bar" id="whisperBar" style="display:none"><div class="progress-fill" id="whisperFill"></div></div>
+                <div class="step-label">Python</div>
+                <div class="step-status" id="status-python">בודק...</div>
+                <div class="progress-bar" id="bar-python" style="display:none"><div class="progress-fill" id="fill-python"></div></div>
             </div>
         </div>
-        <div class="step" id="stepE5">
-            <div class="step-icon" id="e5Icon"><span class="num">2</span></div>
+        <div class="step" id="step-ffmpeg">
+            <div class="step-icon" id="icon-ffmpeg"><span class="num">2</span></div>
             <div class="step-info">
-                <div class="step-label">מודל חיפוש חכם (E5-large)</div>
-                <div class="step-status" id="e5Status">ממתין...</div>
-                <div class="progress-bar" id="e5Bar" style="display:none"><div class="progress-fill" id="e5Fill"></div></div>
+                <div class="step-label">ffmpeg</div>
+                <div class="step-status" id="status-ffmpeg">ממתין...</div>
+                <div class="progress-bar" id="bar-ffmpeg" style="display:none"><div class="progress-fill" id="fill-ffmpeg"></div></div>
             </div>
         </div>
-        <div class="step" id="stepOllama">
-            <div class="step-icon" id="ollamaIcon"><span class="num">3</span></div>
+        <div class="step" id="step-ollama">
+            <div class="step-icon" id="icon-ollama"><span class="num">3</span></div>
             <div class="step-info">
                 <div class="step-label">Ollama (AI מקומי)</div>
-                <div class="step-status" id="ollamaStatus">ממתין...</div>
-                <div class="progress-bar" id="ollamaBar" style="display:none"><div class="progress-fill" id="ollamaFill"></div></div>
+                <div class="step-status" id="status-ollama">ממתין...</div>
+                <div class="progress-bar" id="bar-ollama" style="display:none"><div class="progress-fill" id="fill-ollama"></div></div>
             </div>
         </div>
-        <div class="step" id="stepOllamaModel">
-            <div class="step-icon" id="ollamaModelIcon"><span class="num">4</span></div>
+        <div class="step" id="step-packages">
+            <div class="step-icon" id="icon-packages"><span class="num">4</span></div>
             <div class="step-info">
-                <div class="step-label">מודל AI (Qwen 2.5)</div>
-                <div class="step-status" id="ollamaModelStatus">ממתין...</div>
-                <div class="progress-bar" id="ollamaModelBar" style="display:none"><div class="progress-fill" id="ollamaModelFill"></div></div>
+                <div class="step-label">חבילות Python</div>
+                <div class="step-status" id="status-packages">ממתין...</div>
+                <div class="progress-bar" id="bar-packages" style="display:none"><div class="progress-fill" id="fill-packages"></div></div>
+            </div>
+        </div>
+        <div class="step" id="step-whisper">
+            <div class="step-icon" id="icon-whisper"><span class="num">5</span></div>
+            <div class="step-info">
+                <div class="step-label">מודל זיהוי דיבור (Whisper)</div>
+                <div class="step-status" id="status-whisper">ממתין...</div>
+                <div class="progress-bar" id="bar-whisper" style="display:none"><div class="progress-fill" id="fill-whisper"></div></div>
+            </div>
+        </div>
+        <div class="step" id="step-e5">
+            <div class="step-icon" id="icon-e5"><span class="num">6</span></div>
+            <div class="step-info">
+                <div class="step-label">מודל חיפוש חכם (E5)</div>
+                <div class="step-status" id="status-e5">ממתין...</div>
+                <div class="progress-bar" id="bar-e5" style="display:none"><div class="progress-fill" id="fill-e5"></div></div>
             </div>
         </div>
     </div>
 
-    <p class="footer">ההורדה מתבצעת פעם אחת בלבד</p>
+    <p class="footer">רכיבים שכבר מותקנים ידולגו אוטומטית</p>
 
     <script>
-        const steps = {
-            whisper: { el: 'stepWhisper', icon: 'whisperIcon', status: 'whisperStatus', bar: 'whisperBar', fill: 'whisperFill' },
-            e5: { el: 'stepE5', icon: 'e5Icon', status: 'e5Status', bar: 'e5Bar', fill: 'e5Fill' },
-            ollama: { el: 'stepOllama', icon: 'ollamaIcon', status: 'ollamaStatus', bar: 'ollamaBar', fill: 'ollamaFill' },
-            'ollama-model': { el: 'stepOllamaModel', icon: 'ollamaModelIcon', status: 'ollamaModelStatus', bar: 'ollamaModelBar', fill: 'ollamaModelFill' },
-        };
+        const allSteps = ['python', 'ffmpeg', 'ollama', 'packages', 'whisper', 'e5'];
 
         window.setupAPI.onProgress(({ step, status, message, percent }) => {
-            const s = steps[step];
-            if (!s) return;
+            const stepEl = document.getElementById('step-' + step);
+            const iconEl = document.getElementById('icon-' + step);
+            const statusEl = document.getElementById('status-' + step);
+            const barEl = document.getElementById('bar-' + step);
+            const fillEl = document.getElementById('fill-' + step);
+            if (!stepEl) return;
 
-            document.getElementById(s.status).textContent = message;
+            statusEl.textContent = message;
 
             if (status === 'downloading') {
-                document.getElementById(s.el).className = 'step active';
-                document.getElementById(s.bar).style.display = 'block';
-                document.getElementById(s.fill).style.width = percent + '%';
-                document.getElementById(s.icon).innerHTML = '<div class="spinner"></div>';
+                stepEl.className = 'step active';
+                barEl.style.display = 'block';
+                fillEl.style.width = percent + '%';
+                iconEl.innerHTML = '<div class="spinner"></div>';
             }
             if (status === 'done') {
-                document.getElementById(s.el).className = 'step done';
-                document.getElementById(s.bar).style.display = 'none';
-                document.getElementById(s.icon).innerHTML = '<span style="font-size:1em;">&#10003;</span>';
+                stepEl.className = 'step done';
+                barEl.style.display = 'none';
+                iconEl.innerHTML = '<span class="check">&#10003;</span>';
 
                 // Activate next step
-                const keys = Object.keys(steps);
-                const idx = keys.indexOf(step);
-                if (idx < keys.length - 1) {
-                    const next = steps[keys[idx + 1]];
-                    document.getElementById(next.icon).innerHTML = '<div class="spinner"></div>';
-                    document.getElementById(next.el).className = 'step active';
+                const idx = allSteps.indexOf(step);
+                if (idx < allSteps.length - 1) {
+                    const next = allSteps[idx + 1];
+                    document.getElementById('icon-' + next).innerHTML = '<div class="spinner"></div>';
+                    document.getElementById('step-' + next).className = 'step active';
                 }
             }
         });
 
         window.setupAPI.onComplete(() => {
-            document.getElementById('subtitle').textContent = 'ההתקנה הושלמה! מפעיל...';
+            document.getElementById('subtitle').textContent = 'הכל מוכן! מפעיל...';
         });
     </script>
 </body>

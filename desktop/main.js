@@ -1,12 +1,14 @@
 const { app, BrowserWindow, dialog, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn, execSync } = require('child_process');
+const { spawn, execSync, execFileSync } = require('child_process');
 const net = require('net');
+const https = require('https');
+const http = require('http');
 const treeKill = require('tree-kill');
 
 // ============================================================
-// Platform detection
+// Platform
 // ============================================================
 
 const isMac = process.platform === 'darwin';
@@ -14,41 +16,10 @@ const isWin = process.platform === 'win32';
 const PATH_SEP = isMac ? ':' : ';';
 
 // ============================================================
-// Path resolution
+// Paths
 // ============================================================
 
 function isDev() { return !app.isPackaged; }
-
-function getPythonPath() {
-  const vendorBase = isDev()
-    ? path.join(__dirname, 'vendor', 'python')
-    : path.join(process.resourcesPath, 'vendor', 'python');
-
-  if (isMac) {
-    const macBin = path.join(vendorBase, 'bin', 'python3');
-    if (fs.existsSync(macBin)) return macBin;
-    // Fallback to system python3
-    return 'python3';
-  } else {
-    const winBin = path.join(vendorBase, 'python.exe');
-    if (fs.existsSync(winBin)) return winBin;
-    return 'python';
-  }
-}
-
-function getFfmpegDir() {
-  const d = isDev()
-    ? path.join(__dirname, 'vendor', 'ffmpeg')
-    : path.join(process.resourcesPath, 'vendor', 'ffmpeg');
-  return fs.existsSync(d) ? d : null;
-}
-
-function getOllamaDir() {
-  const d = isDev()
-    ? path.join(__dirname, 'vendor', 'ollama')
-    : path.join(process.resourcesPath, 'vendor', 'ollama');
-  return fs.existsSync(d) ? d : null;
-}
 
 function getAppPath() {
   return isDev() ? path.join(__dirname, '..') : path.join(process.resourcesPath, 'app');
@@ -58,12 +29,433 @@ function getUserDataDir() {
   return path.join(app.getPath('documents'), 'WhatsArch');
 }
 
+function getLocalDir() {
+  // Where we store downloaded tools (Python, ffmpeg)
+  return path.join(app.getPath('appData'), 'WhatsArch');
+}
+
 function getModelsDir() {
-  return path.join(app.getPath('appData'), 'WhatsArch', 'models');
+  return path.join(getLocalDir(), 'models');
 }
 
 function getLogsDir() {
-  return path.join(app.getPath('appData'), 'WhatsArch', 'logs');
+  return path.join(getLocalDir(), 'logs');
+}
+
+function getPythonDir() {
+  return path.join(getLocalDir(), 'python');
+}
+
+function getFfmpegDir() {
+  return path.join(getLocalDir(), 'ffmpeg');
+}
+
+// ============================================================
+// Tool detection: check what's already installed
+// ============================================================
+
+function detectPython() {
+  // Check our local install first
+  const localBin = isMac
+    ? path.join(getPythonDir(), 'bin', 'python3')
+    : path.join(getPythonDir(), 'python.exe');
+  if (fs.existsSync(localBin)) return { found: true, path: localBin, source: 'local' };
+
+  // Check system Python
+  const cmds = isMac ? ['python3', 'python'] : ['python', 'python3'];
+  for (const cmd of cmds) {
+    try {
+      const ver = execSync(`${cmd} --version`, { stdio: 'pipe', windowsHide: true }).toString().trim();
+      const match = ver.match(/Python (\d+)\.(\d+)/);
+      if (match && parseInt(match[1]) >= 3 && parseInt(match[2]) >= 10) {
+        return { found: true, path: cmd, source: 'system', version: ver };
+      }
+    } catch (e) { /* not found */ }
+  }
+  return { found: false };
+}
+
+function detectFfmpeg() {
+  // Check local
+  const localBin = isMac
+    ? path.join(getFfmpegDir(), 'ffmpeg')
+    : path.join(getFfmpegDir(), 'ffmpeg.exe');
+  if (fs.existsSync(localBin)) return { found: true, path: path.dirname(localBin), source: 'local' };
+
+  // Check system
+  try {
+    execSync('ffmpeg -version', { stdio: 'pipe', windowsHide: true });
+    return { found: true, path: null, source: 'system' };
+  } catch (e) {
+    return { found: false };
+  }
+}
+
+function detectOllama() {
+  if (isMac && fs.existsSync('/Applications/Ollama.app')) {
+    return { found: true, source: 'system' };
+  }
+  try {
+    execSync('ollama --version', { stdio: 'pipe', windowsHide: true });
+    return { found: true, source: 'system' };
+  } catch (e) {
+    return { found: false };
+  }
+}
+
+function detectPipPackages(pythonPath) {
+  try {
+    const result = execSync(`"${pythonPath}" -c "import flask; import faster_whisper; import sentence_transformers; print('ok')"`,
+      { stdio: 'pipe', windowsHide: true, timeout: 30000 }).toString().trim();
+    return result === 'ok';
+  } catch (e) {
+    return false;
+  }
+}
+
+function checkModelsExist() {
+  const hfDir = path.join(getModelsDir(), 'hub');
+  if (!fs.existsSync(hfDir)) return { whisper: false, e5: false };
+
+  let whisper = false, e5 = false;
+  try {
+    for (const entry of fs.readdirSync(hfDir)) {
+      if (entry.toLowerCase().includes('whisper')) whisper = true;
+      if (entry.includes('multilingual-e5') || entry.includes('e5-large')) e5 = true;
+    }
+  } catch (err) { /* empty */ }
+  return { whisper, e5 };
+}
+
+// ============================================================
+// Download helper
+// ============================================================
+
+function downloadFile(url, dest, onProgress) {
+  return new Promise((resolve, reject) => {
+    const getter = url.startsWith('https') ? https : http;
+    getter.get(url, { headers: { 'User-Agent': 'WhatsArch/1.0' } }, (res) => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        return downloadFile(res.headers.location, dest, onProgress).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+      const total = parseInt(res.headers['content-length'] || '0', 10);
+      let downloaded = 0;
+      const file = fs.createWriteStream(dest);
+      res.on('data', (chunk) => {
+        downloaded += chunk.length;
+        if (total > 0 && onProgress) {
+          onProgress(Math.round(downloaded / total * 100), downloaded, total);
+        }
+      });
+      res.pipe(file);
+      file.on('finish', () => { file.close(resolve); });
+      file.on('error', (err) => { fs.unlinkSync(dest); reject(err); });
+    }).on('error', reject);
+  });
+}
+
+// ============================================================
+// Install missing tools
+// ============================================================
+
+async function installPython(sendProgress) {
+  const pythonDir = getPythonDir();
+  fs.mkdirSync(pythonDir, { recursive: true });
+  const tmpDir = path.join(getLocalDir(), 'tmp');
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  if (isWin) {
+    // Download Python embeddable for Windows
+    const url = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip';
+    const zipPath = path.join(tmpDir, 'python.zip');
+    sendProgress('מוריד Python...', 0);
+    await downloadFile(url, zipPath, (pct) => sendProgress(`מוריד Python... ${pct}%`, pct));
+
+    sendProgress('מחלץ Python...', 90);
+    execSync(`powershell -Command "Expand-Archive -Force -Path '${zipPath}' -DestinationPath '${pythonDir}'"`, { windowsHide: true });
+    fs.unlinkSync(zipPath);
+
+    // Enable site-packages
+    const pthFiles = fs.readdirSync(pythonDir).filter(f => f.endsWith('._pth'));
+    for (const f of pthFiles) {
+      const p = path.join(pythonDir, f);
+      let content = fs.readFileSync(p, 'utf-8');
+      content = content.replace(/^#\s*import site/m, 'import site');
+      if (!content.includes('Lib/site-packages')) content += '\nLib/site-packages\n';
+      fs.writeFileSync(p, content);
+    }
+    fs.mkdirSync(path.join(pythonDir, 'Lib', 'site-packages'), { recursive: true });
+
+    // Install pip
+    sendProgress('מתקין pip...', 95);
+    const getPipPath = path.join(tmpDir, 'get-pip.py');
+    await downloadFile('https://bootstrap.pypa.io/get-pip.py', getPipPath);
+    execSync(`"${path.join(pythonDir, 'python.exe')}" "${getPipPath}"`, { stdio: 'pipe', windowsHide: true });
+    fs.unlinkSync(getPipPath);
+  } else {
+    // Download python-build-standalone for Mac
+    const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
+    const url = `https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.11.12+20250317-${arch}-apple-darwin-install_only.tar.gz`;
+    const tarPath = path.join(tmpDir, 'python.tar.gz');
+    sendProgress('מוריד Python...', 0);
+    await downloadFile(url, tarPath, (pct) => sendProgress(`מוריד Python... ${pct}%`, pct));
+
+    sendProgress('מחלץ Python...', 90);
+    // Remove existing and extract fresh
+    if (fs.existsSync(pythonDir)) fs.rmSync(pythonDir, { recursive: true, force: true });
+    fs.mkdirSync(pythonDir, { recursive: true });
+    execSync(`tar -xzf "${tarPath}" -C "${getLocalDir()}"`, { stdio: 'pipe' });
+    fs.unlinkSync(tarPath);
+
+    // Make executable
+    const pyBin = path.join(pythonDir, 'bin', 'python3');
+    if (fs.existsSync(pyBin)) {
+      try { execSync(`chmod +x "${pyBin}"`, { stdio: 'pipe' }); } catch (e) { /* ok */ }
+    }
+  }
+
+  // Cleanup tmp
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* ok */ }
+  sendProgress('Python מותקן', 100);
+}
+
+async function installFfmpeg(sendProgress) {
+  const ffmpegDir = getFfmpegDir();
+  fs.mkdirSync(ffmpegDir, { recursive: true });
+  const tmpDir = path.join(getLocalDir(), 'tmp');
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  if (isWin) {
+    const url = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip';
+    const zipPath = path.join(tmpDir, 'ffmpeg.zip');
+    sendProgress('מוריד ffmpeg...', 0);
+    await downloadFile(url, zipPath, (pct) => sendProgress(`מוריד ffmpeg... ${pct}%`, pct));
+
+    sendProgress('מחלץ ffmpeg...', 90);
+    const extractDir = path.join(tmpDir, 'ffmpeg-extract');
+    execSync(`powershell -Command "Expand-Archive -Force -Path '${zipPath}' -DestinationPath '${extractDir}'"`, { windowsHide: true });
+
+    // Find ffmpeg.exe recursively
+    function findFile(dir, name) {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { const r = findFile(full, name); if (r) return r; }
+        else if (e.name === name) return full;
+      }
+      return null;
+    }
+
+    const exe = findFile(extractDir, 'ffmpeg.exe');
+    if (exe) fs.copyFileSync(exe, path.join(ffmpegDir, 'ffmpeg.exe'));
+    fs.rmSync(extractDir, { recursive: true, force: true });
+    fs.unlinkSync(zipPath);
+  } else {
+    // Mac: evermeet.cx static build (x86_64, works on arm64 via Rosetta)
+    const url = 'https://evermeet.cx/ffmpeg/ffmpeg-7.1.1.zip';
+    const zipPath = path.join(tmpDir, 'ffmpeg.zip');
+    sendProgress('מוריד ffmpeg...', 0);
+    await downloadFile(url, zipPath, (pct) => sendProgress(`מוריד ffmpeg... ${pct}%`, pct));
+
+    sendProgress('מחלץ ffmpeg...', 90);
+    try {
+      execSync(`unzip -o "${zipPath}" -d "${ffmpegDir}"`, { stdio: 'pipe' });
+    } catch (e) {
+      execSync(`tar -xf "${zipPath}" -C "${ffmpegDir}"`, { stdio: 'pipe' });
+    }
+    // Make executable
+    const bin = path.join(ffmpegDir, 'ffmpeg');
+    if (fs.existsSync(bin)) {
+      try { execSync(`chmod +x "${bin}"`, { stdio: 'pipe' }); } catch (e) { /* ok */ }
+    }
+    fs.unlinkSync(zipPath);
+  }
+
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* ok */ }
+  sendProgress('ffmpeg מותקן', 100);
+}
+
+async function installOllama(sendProgress) {
+  if (isWin) {
+    const url = 'https://ollama.com/download/OllamaSetup.exe';
+    const tmpDir = path.join(getLocalDir(), 'tmp');
+    fs.mkdirSync(tmpDir, { recursive: true });
+    const exePath = path.join(tmpDir, 'OllamaSetup.exe');
+
+    sendProgress('מוריד Ollama...', 0);
+    await downloadFile(url, exePath, (pct) => sendProgress(`מוריד Ollama... ${pct}%`, pct));
+
+    sendProgress('מתקין Ollama...', 90);
+    try {
+      execSync(`"${exePath}" /SILENT /NORESTART`, { windowsHide: true, timeout: 180000 });
+      sendProgress('Ollama מותקן', 100);
+    } catch (e) {
+      sendProgress('Ollama - התקנה נכשלה (אופציונלי)', 100);
+    }
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* ok */ }
+  } else {
+    // Mac
+    const url = 'https://ollama.com/download/Ollama-darwin.zip';
+    const tmpDir = path.join(getLocalDir(), 'tmp');
+    fs.mkdirSync(tmpDir, { recursive: true });
+    const zipPath = path.join(tmpDir, 'Ollama.zip');
+
+    sendProgress('מוריד Ollama...', 0);
+    await downloadFile(url, zipPath, (pct) => sendProgress(`מוריד Ollama... ${pct}%`, pct));
+
+    sendProgress('מתקין Ollama...', 90);
+    try {
+      execSync(`unzip -o "${zipPath}" -d /Applications/`, { stdio: 'pipe', timeout: 120000 });
+      sendProgress('Ollama מותקן', 100);
+    } catch (e) {
+      sendProgress('Ollama - התקנה נכשלה (אופציונלי)', 100);
+    }
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* ok */ }
+  }
+}
+
+async function installPipPackages(pythonPath, sendProgress) {
+  sendProgress('מתקין חבילות Python...', 0);
+  const reqs = path.join(getAppPath(), 'requirements.txt');
+
+  // Install CPU-only torch on Windows, default on Mac
+  if (isWin) {
+    sendProgress('מתקין PyTorch (CPU)...', 10);
+    try {
+      execSync(`"${pythonPath}" -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu`,
+        { stdio: 'pipe', windowsHide: true, timeout: 600000 });
+    } catch (e) { /* try regular install */ }
+  }
+
+  sendProgress('מתקין חבילות...', 40);
+  try {
+    execSync(`"${pythonPath}" -m pip install --no-cache-dir -r "${reqs}"`,
+      { stdio: 'pipe', windowsHide: true, timeout: 600000 });
+    sendProgress('חבילות Python מותקנות', 100);
+  } catch (e) {
+    sendProgress('שגיאה בהתקנת חבילות', 100);
+    throw e;
+  }
+}
+
+async function downloadModel(pythonPath, step, scriptCode, sendProgress) {
+  return new Promise((resolve) => {
+    const modelsDir = getModelsDir();
+    const modelsDirPy = modelsDir.replace(/\\/g, '/');
+    const env = { ...process.env, HF_HOME: modelsDir, XDG_CACHE_HOME: modelsDir, PYTHONIOENCODING: 'utf-8' };
+
+    const proc = spawn(pythonPath, ['-c', scriptCode.replace('{{MODELS_DIR}}', modelsDirPy)],
+      { env, windowsHide: true });
+
+    proc.stdout.on('data', (data) => {
+      const text = data.toString();
+      if (text.includes('STEP:loading')) sendProgress('טוען...', 50);
+      if (text.includes('STEP:done')) sendProgress('הותקן', 100);
+    });
+
+    proc.stderr.on('data', (data) => {
+      const m = data.toString().match(/(\d+)%/);
+      if (m) sendProgress(`מוריד... ${m[1]}%`, parseInt(m[1]));
+    });
+
+    proc.on('close', () => resolve());
+    proc.on('error', () => resolve());
+  });
+}
+
+// ============================================================
+// Main setup flow
+// ============================================================
+
+async function runSetup(win) {
+  const send = (step, status, message, percent) => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('setup-progress', { step, status, message, percent });
+    }
+  };
+
+  // Step 1: Python
+  const python = detectPython();
+  if (python.found) {
+    send('python', 'done', `Python נמצא (${python.source})`, 100);
+  } else {
+    send('python', 'downloading', 'מוריד Python...', 0);
+    await installPython((msg, pct) => send('python', pct >= 100 ? 'done' : 'downloading', msg, pct));
+  }
+
+  const pythonPath = detectPython().path;
+
+  // Step 2: ffmpeg
+  const ffmpeg = detectFfmpeg();
+  if (ffmpeg.found) {
+    send('ffmpeg', 'done', `ffmpeg נמצא (${ffmpeg.source})`, 100);
+  } else {
+    send('ffmpeg', 'downloading', 'מוריד ffmpeg...', 0);
+    await installFfmpeg((msg, pct) => send('ffmpeg', pct >= 100 ? 'done' : 'downloading', msg, pct));
+  }
+
+  // Step 3: Ollama (optional)
+  const ollama = detectOllama();
+  if (ollama.found) {
+    send('ollama', 'done', 'Ollama נמצא', 100);
+  } else {
+    send('ollama', 'downloading', 'מוריד Ollama...', 0);
+    await installOllama((msg, pct) => send('ollama', pct >= 100 ? 'done' : 'downloading', msg, pct));
+  }
+
+  // Step 4: pip packages
+  const hasPkgs = detectPipPackages(pythonPath);
+  if (hasPkgs) {
+    send('packages', 'done', 'חבילות Python מותקנות', 100);
+  } else {
+    send('packages', 'downloading', 'מתקין חבילות...', 0);
+    await installPipPackages(pythonPath, (msg, pct) => send('packages', pct >= 100 ? 'done' : 'downloading', msg, pct));
+  }
+
+  // Step 5: Whisper model
+  const models = checkModelsExist();
+  if (models.whisper) {
+    send('whisper', 'done', 'מודל Whisper נמצא', 100);
+  } else {
+    send('whisper', 'downloading', 'מוריד מודל Whisper...', 0);
+    await downloadModel(pythonPath, 'whisper', `
+import os
+os.environ['HF_HOME'] = '{{MODELS_DIR}}'
+print("STEP:loading", flush=True)
+from faster_whisper import WhisperModel
+model = WhisperModel("small", device="cpu", compute_type="int8")
+print("STEP:done", flush=True)
+`, (msg, pct) => send('whisper', pct >= 100 ? 'done' : 'downloading', `Whisper: ${msg}`, pct));
+  }
+
+  // Step 6: E5 model
+  if (models.e5) {
+    send('e5', 'done', 'מודל E5 נמצא', 100);
+  } else {
+    send('e5', 'downloading', 'מוריד מודל E5-large...', 0);
+    await downloadModel(pythonPath, 'e5', `
+import os
+os.environ['HF_HOME'] = '{{MODELS_DIR}}'
+print("STEP:loading", flush=True)
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer("intfloat/multilingual-e5-large")
+print("STEP:done", flush=True)
+`, (msg, pct) => send('e5', pct >= 100 ? 'done' : 'downloading', `E5: ${msg}`, pct));
+  }
+
+  if (win && !win.isDestroyed()) win.webContents.send('setup-complete', {});
+  await new Promise(r => setTimeout(r, 1500));
+}
+
+function needsSetup() {
+  const python = detectPython();
+  if (!python.found) return true;
+  const models = checkModelsExist();
+  if (!models.whisper || !models.e5) return true;
+  if (!detectPipPackages(python.path)) return true;
+  return false;
 }
 
 // ============================================================
@@ -97,296 +489,57 @@ function findFreePort(startPort) {
 // ============================================================
 
 function ensureDirectories() {
-  [getUserDataDir(), path.join(getUserDataDir(), 'chats'), getModelsDir(), getLogsDir()]
+  [getUserDataDir(), path.join(getUserDataDir(), 'chats'), getModelsDir(), getLogsDir(), getLocalDir()]
     .forEach(dir => fs.mkdirSync(dir, { recursive: true }));
 }
 
 function setupJunctions() {
   const appDir = getAppPath();
-  const userChatsDir = path.join(getUserDataDir(), 'chats');
-  const chatsLink = path.join(appDir, 'chats');
   const symlinkType = isMac ? 'dir' : 'junction';
 
-  // Chats symlink/junction
-  try {
-    if (!fs.existsSync(chatsLink)) {
-      fs.symlinkSync(userChatsDir, chatsLink, symlinkType);
-    }
-  } catch (err) {
-    console.error('Symlink error:', err.message);
-  }
+  // Chats
+  const chatsLink = path.join(appDir, 'chats');
+  const userChatsDir = path.join(getUserDataDir(), 'chats');
+  try { if (!fs.existsSync(chatsLink)) fs.symlinkSync(userChatsDir, chatsLink, symlinkType); }
+  catch (e) { console.error('Symlink error:', e.message); }
 
-  // .env symlink
-  const userEnvPath = path.join(getUserDataDir(), '.env');
-  const appEnvPath = path.join(appDir, '.env');
-  if (!fs.existsSync(userEnvPath)) {
-    fs.writeFileSync(userEnvPath, '# WhatsArch API Keys\n', 'utf-8');
-  }
-  try {
-    if (!fs.existsSync(appEnvPath)) fs.symlinkSync(userEnvPath, appEnvPath, 'file');
-  } catch (err) {
-    try { fs.copyFileSync(userEnvPath, appEnvPath); } catch (e) { /* ignore */ }
-  }
+  // .env
+  const userEnv = path.join(getUserDataDir(), '.env');
+  const appEnv = path.join(appDir, '.env');
+  if (!fs.existsSync(userEnv)) fs.writeFileSync(userEnv, '# WhatsArch API Keys\n', 'utf-8');
+  try { if (!fs.existsSync(appEnv)) fs.symlinkSync(userEnv, appEnv, 'file'); }
+  catch (e) { try { fs.copyFileSync(userEnv, appEnv); } catch (_) {} }
 
-  // settings.json symlink
-  const userSettingsPath = path.join(getUserDataDir(), 'settings.json');
-  const appSettingsPath = path.join(appDir, 'settings.json');
-  if (!fs.existsSync(userSettingsPath)) {
-    fs.writeFileSync(userSettingsPath, '{}', 'utf-8');
-  }
-  try {
-    if (!fs.existsSync(appSettingsPath)) fs.symlinkSync(userSettingsPath, appSettingsPath, 'file');
-  } catch (err) {
-    try { fs.copyFileSync(userSettingsPath, appSettingsPath); } catch (e) { /* ignore */ }
-  }
+  // settings.json
+  const userSettings = path.join(getUserDataDir(), 'settings.json');
+  const appSettings = path.join(appDir, 'settings.json');
+  if (!fs.existsSync(userSettings)) fs.writeFileSync(userSettings, '{}', 'utf-8');
+  try { if (!fs.existsSync(appSettings)) fs.symlinkSync(userSettings, appSettings, 'file'); }
+  catch (e) { try { fs.copyFileSync(userSettings, appSettings); } catch (_) {} }
 }
 
 // ============================================================
-// Ollama check & install
-// ============================================================
-
-function isOllamaInstalled() {
-  try {
-    if (isMac) {
-      // Check common Mac locations
-      if (fs.existsSync('/Applications/Ollama.app')) return true;
-      execSync('which ollama', { stdio: 'pipe' });
-      return true;
-    } else {
-      execSync('ollama --version', { windowsHide: true, stdio: 'pipe' });
-      return true;
-    }
-  } catch (e) {
-    return false;
-  }
-}
-
-function getOllamaBinary() {
-  if (isMac) {
-    // Ollama CLI inside the app bundle
-    const appBin = '/Applications/Ollama.app/Contents/Resources/ollama';
-    if (fs.existsSync(appBin)) return appBin;
-    return 'ollama';
-  }
-  return 'ollama';
-}
-
-function isOllamaRunning() {
-  return new Promise((resolve) => {
-    const req = require('http').get('http://localhost:11434/api/version', (res) => {
-      resolve(res.statusCode === 200);
-    });
-    req.on('error', () => resolve(false));
-    req.setTimeout(2000, () => { req.destroy(); resolve(false); });
-  });
-}
-
-function installOllama(win) {
-  return new Promise((resolve) => {
-    const sendProgress = (msg, pct) => {
-      if (win && !win.isDestroyed()) {
-        win.webContents.send('setup-progress', {
-          step: 'ollama', status: pct >= 100 ? 'done' : 'downloading', message: msg, percent: pct
-        });
-      }
-    };
-
-    const ollamaDir = getOllamaDir();
-
-    if (isMac) {
-      // Mac: look for Ollama.zip or Ollama.app in vendor
-      const zipPath = ollamaDir ? path.join(ollamaDir, 'Ollama-darwin.zip') : null;
-
-      if (zipPath && fs.existsSync(zipPath)) {
-        sendProgress('מתקין Ollama...', 30);
-        try {
-          execSync(`unzip -o "${zipPath}" -d /Applications/`, { stdio: 'pipe', timeout: 120000 });
-          sendProgress('Ollama הותקן', 100);
-        } catch (e) {
-          sendProgress('התקנת Ollama נכשלה (אופציונלי)', 100);
-        }
-        resolve();
-      } else {
-        sendProgress('Ollama לא נמצא באינסטלר (אופציונלי)', 100);
-        resolve();
-      }
-    } else {
-      // Windows: look for OllamaSetup.exe
-      const installerPath = ollamaDir ? path.join(ollamaDir, 'OllamaSetup.exe') : null;
-
-      if (installerPath && fs.existsSync(installerPath)) {
-        sendProgress('מתקין Ollama...', 30);
-        try {
-          execSync(`"${installerPath}" /SILENT /NORESTART`, { windowsHide: true, timeout: 120000 });
-          sendProgress('Ollama הותקן', 100);
-        } catch (e) {
-          sendProgress('התקנת Ollama נכשלה (אופציונלי)', 100);
-        }
-        resolve();
-      } else {
-        sendProgress('Ollama לא נמצא באינסטלר (אופציונלי)', 100);
-        resolve();
-      }
-    }
-  });
-}
-
-function pullOllamaModel(win, modelName) {
-  return new Promise((resolve) => {
-    const sendProgress = (msg, pct) => {
-      if (win && !win.isDestroyed()) {
-        win.webContents.send('setup-progress', {
-          step: 'ollama-model', status: pct >= 100 ? 'done' : 'downloading', message: msg, percent: pct
-        });
-      }
-    };
-
-    sendProgress(`מוריד מודל ${modelName}...`, 0);
-
-    const ollamaBin = getOllamaBinary();
-    const proc = spawn(ollamaBin, ['pull', modelName], { windowsHide: true });
-
-    proc.stderr.on('data', (data) => {
-      const m = data.toString().match(/(\d+)%/);
-      if (m) sendProgress(`מוריד ${modelName}... ${m[1]}%`, parseInt(m[1]));
-    });
-
-    proc.on('close', (code) => {
-      sendProgress(code === 0 ? `מודל ${modelName} הותקן` : `הורדת ${modelName} נכשלה (אופציונלי)`, 100);
-      resolve();
-    });
-
-    proc.on('error', () => {
-      sendProgress('Ollama לא זמין', 100);
-      resolve();
-    });
-  });
-}
-
-// ============================================================
-// Model checking & download
-// ============================================================
-
-function checkModelsExist() {
-  const hfDir = path.join(getModelsDir(), 'hub');
-  if (!fs.existsSync(hfDir)) return { whisper: false, e5: false };
-
-  let whisper = false, e5 = false;
-  try {
-    for (const entry of fs.readdirSync(hfDir)) {
-      if (entry.toLowerCase().includes('whisper')) whisper = true;
-      if (entry.includes('multilingual-e5') || entry.includes('e5-large')) e5 = true;
-    }
-  } catch (err) { /* empty */ }
-  return { whisper, e5 };
-}
-
-function downloadModels(win) {
-  return new Promise((resolve) => {
-    const pythonPath = getPythonPath();
-    const modelsDir = getModelsDir();
-    // Use forward slashes for Python on all platforms
-    const modelsDirPy = modelsDir.replace(/\\/g, '/');
-    const env = { ...process.env, HF_HOME: modelsDir, XDG_CACHE_HOME: modelsDir, PYTHONIOENCODING: 'utf-8' };
-
-    const sendProgress = (step, status, message, percent) => {
-      if (win && !win.isDestroyed()) {
-        win.webContents.send('setup-progress', { step, status, message, percent });
-      }
-    };
-
-    sendProgress('whisper', 'downloading', 'מוריד מודל זיהוי דיבור (Whisper)...', 0);
-
-    const whisperScript = `
-import sys, os
-os.environ['HF_HOME'] = '${modelsDirPy}'
-print("STEP:whisper:start", flush=True)
-from faster_whisper import WhisperModel
-print("STEP:whisper:loading", flush=True)
-model = WhisperModel("small", device="cpu", compute_type="int8")
-print("STEP:whisper:done", flush=True)
-`;
-
-    const whisperProc = spawn(pythonPath, ['-c', whisperScript], { env, windowsHide: true });
-
-    whisperProc.stdout.on('data', (data) => {
-      const text = data.toString();
-      if (text.includes('STEP:whisper:loading')) sendProgress('whisper', 'downloading', 'טוען מודל Whisper...', 50);
-      if (text.includes('STEP:whisper:done')) sendProgress('whisper', 'done', 'מודל Whisper הותקן', 100);
-    });
-
-    whisperProc.stderr.on('data', (data) => {
-      const m = data.toString().match(/(\d+)%/);
-      if (m) sendProgress('whisper', 'downloading', `מוריד Whisper... ${m[1]}%`, parseInt(m[1]));
-    });
-
-    whisperProc.on('close', () => {
-      sendProgress('e5', 'downloading', 'מוריד מודל חיפוש חכם (E5-large)...', 0);
-
-      const e5Script = `
-import sys, os
-os.environ['HF_HOME'] = '${modelsDirPy}'
-print("STEP:e5:start", flush=True)
-from sentence_transformers import SentenceTransformer
-print("STEP:e5:loading", flush=True)
-model = SentenceTransformer("intfloat/multilingual-e5-large")
-print("STEP:e5:done", flush=True)
-`;
-
-      const e5Proc = spawn(pythonPath, ['-c', e5Script], { env, windowsHide: true });
-
-      e5Proc.stdout.on('data', (data) => {
-        const text = data.toString();
-        if (text.includes('STEP:e5:loading')) sendProgress('e5', 'downloading', 'טוען מודל E5-large...', 50);
-        if (text.includes('STEP:e5:done')) sendProgress('e5', 'done', 'מודל E5-large הותקן', 100);
-      });
-
-      e5Proc.stderr.on('data', (data) => {
-        const m = data.toString().match(/(\d+)%/);
-        if (m) sendProgress('e5', 'downloading', `מוריד E5-large... ${m[1]}%`, parseInt(m[1]));
-      });
-
-      e5Proc.on('close', async () => {
-        // Step 3: Ollama
-        if (!isOllamaInstalled()) {
-          await installOllama(win);
-        } else {
-          sendProgress('ollama', 'done', 'Ollama כבר מותקן', 100);
-        }
-
-        // Step 4: Pull Ollama model if available
-        if (isOllamaInstalled() && await isOllamaRunning()) {
-          await pullOllamaModel(win, 'qwen2.5:7b');
-        } else {
-          sendProgress('ollama-model', 'done', 'Ollama לא פעיל (אופציונלי)', 100);
-        }
-
-        if (win && !win.isDestroyed()) win.webContents.send('setup-complete', {});
-        setTimeout(resolve, 1500);
-      });
-    });
-  });
-}
-
-// ============================================================
-// Flask process management
+// Flask
 // ============================================================
 
 function startFlask(port) {
   return new Promise((resolve, reject) => {
-    const pythonPath = getPythonPath();
+    const python = detectPython();
+    if (!python.found) return reject(new Error('Python not found'));
+
+    const pythonPath = python.path;
     const appDir = getAppPath();
     const runScript = path.join(appDir, 'run.py');
-    const ffmpegDir = getFfmpegDir();
-    const modelsDir = getModelsDir();
-    const logsDir = getLogsDir();
+    const ffmpeg = detectFfmpeg();
 
     const env = { ...process.env };
-    if (ffmpegDir && fs.existsSync(ffmpegDir)) {
-      env.PATH = ffmpegDir + PATH_SEP + (env.PATH || '');
-    }
-    env.HF_HOME = modelsDir;
-    env.XDG_CACHE_HOME = modelsDir;
+    if (ffmpeg.found && ffmpeg.path) env.PATH = ffmpeg.path + PATH_SEP + (env.PATH || '');
+    // Also add our local ffmpeg
+    const localFfmpeg = getFfmpegDir();
+    if (fs.existsSync(localFfmpeg)) env.PATH = localFfmpeg + PATH_SEP + (env.PATH || '');
+
+    env.HF_HOME = getModelsDir();
+    env.XDG_CACHE_HOME = getModelsDir();
     env.PYTHONIOENCODING = 'utf-8';
 
     const args = [runScript, '--port', String(port), '--no-browser',
@@ -395,7 +548,7 @@ function startFlask(port) {
     console.log(`Starting Flask: ${pythonPath} ${args.join(' ')}`);
     flaskProcess = spawn(pythonPath, args, { env, cwd: appDir, windowsHide: true });
 
-    const logFile = path.join(logsDir, `flask-${Date.now()}.log`);
+    const logFile = path.join(getLogsDir(), `flask-${Date.now()}.log`);
     const logStream = fs.createWriteStream(logFile, { flags: 'a' });
 
     let started = false;
@@ -431,12 +584,9 @@ function stopFlask() {
     treeKill(pid, 'SIGTERM', (err) => {
       if (err) {
         try {
-          if (isWin) {
-            execSync(`taskkill /pid ${pid} /T /F`, { windowsHide: true });
-          } else {
-            execSync(`kill -9 ${pid}`, { stdio: 'pipe' });
-          }
-        } catch (e) { /* process already dead */ }
+          if (isWin) execSync(`taskkill /pid ${pid} /T /F`, { windowsHide: true });
+          else execSync(`kill -9 ${pid}`, { stdio: 'pipe' });
+        } catch (e) {}
       }
       flaskProcess = null;
       resolve();
@@ -450,7 +600,7 @@ function stopFlask() {
 
 function createSetupWindow() {
   setupWindow = new BrowserWindow({
-    width: 500, height: 500, resizable: false, frame: false,
+    width: 520, height: 560, resizable: false, frame: false,
     backgroundColor: '#0D9488',
     icon: path.join(__dirname, 'icons', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'setup-preload.js'), contextIsolation: true, nodeIntegration: false },
@@ -476,10 +626,6 @@ function createMainWindow(port) {
   return mainWindow;
 }
 
-// ============================================================
-// Tray
-// ============================================================
-
 function createTray() {
   const iconPath = path.join(__dirname, 'icons', 'icon.png');
   let trayIcon;
@@ -490,7 +636,6 @@ function createTray() {
   } else {
     trayIcon = nativeImage.createEmpty();
   }
-
   tray = new Tray(trayIcon);
   tray.setToolTip('WhatsArch');
   tray.setContextMenu(Menu.buildFromTemplate([
@@ -498,22 +643,15 @@ function createTray() {
     { type: 'separator' },
     { label: 'יציאה', click: () => { isQuitting = true; app.quit(); } },
   ]));
-  if (!isMac) {
-    tray.on('double-click', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } });
-  }
+  if (!isMac) tray.on('double-click', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } });
 }
 
 // ============================================================
-// Mac-specific: dock menu + re-open on dock click
+// Mac dock
 // ============================================================
 
 if (isMac) {
-  app.on('activate', () => {
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
+  app.on('activate', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } });
 }
 
 // ============================================================
@@ -532,18 +670,14 @@ if (!gotTheLock) {
     try {
       ensureDirectories();
 
-      // First-run setup
-      const models = checkModelsExist();
-      if (!models.whisper || !models.e5) {
+      if (needsSetup()) {
         const win = createSetupWindow();
-        try { await downloadModels(win); } catch (err) { console.error('Model download:', err); }
+        try { await runSetup(win); } catch (err) { console.error('Setup error:', err); }
         if (setupWindow) setupWindow.close();
       }
 
-      // Setup file links in production
       if (!isDev()) setupJunctions();
 
-      // Start Flask
       flaskPort = await findFreePort(5000);
       console.log(`Using port: ${flaskPort}`);
       await startFlask(flaskPort);
@@ -565,7 +699,6 @@ if (!gotTheLock) {
   });
 
   app.on('window-all-closed', () => {
-    // On Mac, apps stay open until Cmd+Q
-    if (!isMac) { /* keep running in tray on Windows */ }
+    if (!isMac) { /* tray */ }
   });
 }

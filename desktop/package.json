@@ -55,21 +55,6 @@
     },
     "extraResources": [
       {
-        "from": "vendor/python",
-        "to": "vendor/python",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "vendor/ffmpeg",
-        "to": "vendor/ffmpeg",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "vendor/ollama",
-        "to": "vendor/ollama",
-        "filter": ["**/*"]
-      },
-      {
         "from": "../run.py",
         "to": "app/run.py"
       },
