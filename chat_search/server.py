@@ -27,7 +27,8 @@ def create_app(chats_dir: str) -> Flask:
             key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
             if url and key:
                 from supabase import create_client
-                app._supabase = create_client(url, key)
+                from supabase.lib.client_options import SyncClientOptions
+                app._supabase = create_client(url, key, options=SyncClientOptions(flow_type="implicit"))
             else:
                 app._supabase = None
         return app._supabase
@@ -269,11 +270,19 @@ def create_app(chats_dir: str) -> Flask:
 
     @app.route("/download/install.bat")
     def download_install_bat():
-        """Serve the agent installer directly from the server."""
+        """Serve the agent installer bat directly from the server."""
         agent_dir = os.path.join(os.path.dirname(chats_dir), "agent")
         return send_from_directory(agent_dir, "install.bat",
                                   as_attachment=True,
                                   download_name="WhatsArch-Agent-Install.bat")
+
+    @app.route("/download/installer.py")
+    def download_installer_py():
+        """Serve the visual installer Python script."""
+        agent_dir = os.path.join(os.path.dirname(chats_dir), "agent")
+        return send_from_directory(agent_dir, "installer.py",
+                                  as_attachment=True,
+                                  download_name="installer.py")
 
     @app.route("/app")
     def app_page():
@@ -311,7 +320,7 @@ def create_app(chats_dir: str) -> Flask:
                     <p>Authentication error: {str(e)}</p>
                     <a href="/login">Try again</a></body></html>"""
 
-        # Implicit flow fallback: token in URL hash
+        # Implicit flow: token in URL hash
         return """<!DOCTYPE html><html><head><title>WhatsArch</title></head><body>
         <script>
         const hash = window.location.hash.substring(1);
@@ -321,7 +330,13 @@ def create_app(chats_dir: str) -> Flask:
         if (token) {
             localStorage.setItem('auth_token', token);
             if (refresh) localStorage.setItem('refresh_token', refresh);
-            window.location.href = '/app';
+            // Fetch user email from token
+            fetch('/api/auth/me', {headers: {'Authorization': 'Bearer ' + token}})
+                .then(r => r.json())
+                .then(data => {
+                    if (data.email) localStorage.setItem('user_email', data.email);
+                })
+                .finally(() => { window.location.href = '/app'; });
         } else {
             document.body.innerHTML = '<p>Authentication failed. <a href="/login">Try again</a></p>';
         }
