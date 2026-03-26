@@ -898,6 +898,35 @@ def create_app(chats_dir: str) -> Flask:
     # Helpers
     # ------------------------------------------------------------------
 
+    def _convert_to_direct_url(url: str):
+        """Convert cloud storage share links to direct download URLs."""
+        import re
+        # Google Drive: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+        m = re.search(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)', url)
+        if m:
+            return f"https://drive.google.com/uc?export=download&id={m.group(1)}"
+
+        # Google Drive: https://drive.google.com/open?id=FILE_ID
+        m = re.search(r'drive\.google\.com/open\?id=([a-zA-Z0-9_-]+)', url)
+        if m:
+            return f"https://drive.google.com/uc?export=download&id={m.group(1)}"
+
+        # Dropbox: replace dl=0 with dl=1
+        if 'dropbox.com' in url:
+            return url.replace('dl=0', 'dl=1').replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+
+        # OneDrive: replace 'redir' with 'download'
+        if '1drv.ms' in url or 'onedrive.live.com' in url:
+            if '?' in url:
+                return url + '&download=1'
+            return url + '?download=1'
+
+        # Direct URL (already a direct link to a file)
+        if url.lower().endswith('.zip'):
+            return url
+
+        return None
+
     def _get_chunk_count(db_path):
         """Get the number of chunks in the database."""
         import sqlite3
@@ -1268,6 +1297,109 @@ def create_app(chats_dir: str) -> Flask:
             return jsonify({"error": "Corrupted ZIP file"}), 400
         except Exception as e:
             return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    @app.route("/api/upload/url", methods=["POST"])
+    @require_auth
+    def api_upload_url():
+        """Download a ZIP from a shared URL (Google Drive, Dropbox, OneDrive).
+
+        Accepts: {"url": "https://drive.google.com/..."} or similar share links.
+        Downloads to temp, then processes like a regular upload.
+        """
+        import zipfile
+        import shutil
+        import tempfile
+        import re
+        import urllib.request
+        from . import process_manager
+
+        data = request.get_json()
+        if not data or not data.get("url", "").strip():
+            return jsonify({"error": "Missing URL"}), 400
+
+        url = data["url"].strip()
+
+        # Convert share links to direct download URLs
+        direct_url = _convert_to_direct_url(url)
+        if not direct_url:
+            return jsonify({"error": "Unsupported URL. Use Google Drive, Dropbox, or OneDrive share links."}), 400
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            temp_zip = os.path.join(temp_dir, "download.zip")
+
+            # Download the file
+            req = urllib.request.Request(direct_url, headers={"User-Agent": "WhatsArch/1.0"})
+            with urllib.request.urlopen(req, timeout=300) as response:
+                with open(temp_zip, "wb") as f:
+                    while True:
+                        chunk = response.read(8192)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+
+            file_size_mb = os.path.getsize(temp_zip) / (1024 * 1024)
+
+            # Verify it's a valid ZIP
+            if not zipfile.is_zipfile(temp_zip):
+                return jsonify({"error": "Downloaded file is not a valid ZIP"}), 400
+
+            # Extract and detect platform
+            extract_dir = os.path.join(temp_dir, "extracted")
+            with zipfile.ZipFile(temp_zip, "r") as zf:
+                zf.extractall(extract_dir)
+
+            # Find the chat content (same logic as regular upload)
+            from . import parser
+            chat_root = extract_dir
+
+            # Check if files are in a subdirectory
+            entries = os.listdir(extract_dir)
+            if len(entries) == 1 and os.path.isdir(os.path.join(extract_dir, entries[0])):
+                chat_root = os.path.join(extract_dir, entries[0])
+
+            platform = parser.detect_platform(chat_root)
+            if not platform:
+                return jsonify({"error": "No WhatsApp (_chat.txt) or Telegram (result.json) export found in ZIP"}), 400
+
+            # Determine chat name
+            if platform == "whatsapp":
+                chat_name = os.path.basename(chat_root)
+                if chat_name == "extracted":
+                    chat_name = "uploaded_chat"
+            else:
+                chat_name = os.path.basename(chat_root)
+                if chat_name == "extracted":
+                    chat_name = "telegram_chat"
+
+            # Clean up name
+            chat_name = re.sub(r'[<>:"/\\|?*]', '_', chat_name)
+
+            # Move to chats directory
+            dest = os.path.join(chats_dir, chat_name)
+            if os.path.exists(dest):
+                chat_name = chat_name + "_" + str(int(os.path.getmtime(temp_zip)))
+                dest = os.path.join(chats_dir, chat_name)
+
+            shutil.move(chat_root, dest)
+            os.makedirs(os.path.join(dest, "data"), exist_ok=True)
+
+            return jsonify({
+                "status": "ok",
+                "chat_name": chat_name,
+                "platform": platform,
+                "file_size_mb": round(file_size_mb, 2),
+                "message": f"Chat '{chat_name}' downloaded and extracted. Use the Management tab to start processing.",
+            })
+
+        except urllib.error.URLError as e:
+            return jsonify({"error": f"Download failed: {str(e)}"}), 400
+        except zipfile.BadZipFile:
+            return jsonify({"error": "Downloaded file is not a valid ZIP"}), 400
+        except Exception as e:
+            return jsonify({"error": f"Failed: {str(e)}"}), 500
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 

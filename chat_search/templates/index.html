@@ -1274,9 +1274,13 @@
                 mgmtErrorLoading: 'שגיאה בטעינת סטטוס',
                 mgmtNoChats: 'לא נמצאו שיחות',
                 mgmtUpload: 'העלאת צ\'אט',
-                mgmtUploadDesc: 'העלה קובץ ZIP של ייצוא WhatsApp או Telegram',
+                mgmtUploadDesc: 'העלה קובץ ZIP (עד 100MB) או הדבק קישור לקבצים גדולים',
                 mgmtUploadBtn: 'בחר קובץ ZIP',
+                mgmtUploadUrl: 'הדבק קישור',
+                mgmtUploadUrlPlaceholder: 'קישור Google Drive / Dropbox / OneDrive',
+                mgmtUploadUrlBtn: 'הורד ועבד',
                 mgmtUploading: 'מעלה...',
+                mgmtDownloading: 'מוריד מהקישור...',
                 mgmtUploadSuccess: 'הועלה בהצלחה!',
                 mgmtUploadError: 'שגיאה בהעלאה',
                 mgmtErrorData: 'שגיאה בטעינת נתונים',
@@ -1455,9 +1459,13 @@
                 mgmtErrorLoading: 'Error loading status',
                 mgmtNoChats: 'No chats found',
                 mgmtUpload: 'Upload Chat',
-                mgmtUploadDesc: 'Upload a ZIP file of a WhatsApp or Telegram export',
+                mgmtUploadDesc: 'Upload ZIP (up to 100MB) or paste a link for large files',
                 mgmtUploadBtn: 'Choose ZIP file',
+                mgmtUploadUrl: 'Paste link',
+                mgmtUploadUrlPlaceholder: 'Google Drive / Dropbox / OneDrive link',
+                mgmtUploadUrlBtn: 'Download & Process',
                 mgmtUploading: 'Uploading...',
+                mgmtDownloading: 'Downloading from link...',
                 mgmtUploadSuccess: 'Uploaded successfully!',
                 mgmtUploadError: 'Upload error',
                 mgmtErrorData: 'Error loading data',
@@ -2355,9 +2363,47 @@
                     loadManagementData();
                 }, 1500);
             } catch (err) {
-                label.innerHTML = '<i class="fas fa-times"></i> ' + t('mgmtUploadError');
+                label.innerHTML = '<i class="fas fa-times"></i> ' + t('mgmtUploadError') + ': ' + err.message;
                 label.style.pointerEvents = '';
-                setTimeout(() => { label.innerHTML = origText; }, 3000);
+                setTimeout(() => { label.innerHTML = origText; }, 4000);
+            }
+        }
+
+        async function handleUrlUpload() {
+            const input = document.getElementById('uploadUrlInput');
+            const url = input ? input.value.trim() : '';
+            if (!url) return;
+
+            const btn = input.nextElementSibling;
+            const origText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('mgmtDownloading');
+            btn.disabled = true;
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                const res = await fetch('/api/upload/url', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ url: url })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Download failed');
+
+                btn.innerHTML = '<i class="fas fa-check"></i> ' + t('mgmtUploadSuccess');
+                input.value = '';
+                setTimeout(() => {
+                    loadChats();
+                    managementLoaded = false;
+                    loadManagementData();
+                }, 1500);
+            } catch (err) {
+                btn.innerHTML = '<i class="fas fa-times"></i> ' + err.message;
+                setTimeout(() => { btn.innerHTML = origText; }, 4000);
+            } finally {
+                btn.disabled = false;
             }
         }
 
@@ -2382,14 +2428,32 @@
 
                 // Always show upload card at the top
                 const uploadCard = `
-                    <div class="mgmt-chat-card" style="border: 2px dashed var(--border-color); text-align: center; padding: 30px;">
-                        <div style="font-size: 2em; margin-bottom: 10px;">📤</div>
-                        <h3 style="margin-bottom: 8px; font-size: 1em;">${t('mgmtUpload')}</h3>
-                        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 16px;">${t('mgmtUploadDesc')}</p>
-                        <label class="btn btn-primary" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-                            <i class="fas fa-file-archive"></i> ${t('mgmtUploadBtn')}
-                            <input type="file" accept=".zip" onchange="handleUpload(this)" style="display:none;">
-                        </label>
+                    <div class="mgmt-chat-card" style="border: 2px dashed var(--border-color); padding: 24px;">
+                        <div style="text-align:center; margin-bottom: 20px;">
+                            <div style="font-size: 2em; margin-bottom: 8px;">📤</div>
+                            <h3 style="font-size: 1em; margin-bottom: 6px;">${t('mgmtUpload')}</h3>
+                            <p style="font-size: 0.82em; color: var(--text-secondary);">${t('mgmtUploadDesc')}</p>
+                        </div>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:flex-start;">
+                            <div style="flex:1; min-width:200px; max-width:300px; text-align:center; padding:16px; background:var(--bg-secondary); border-radius:var(--radius); border:1px solid var(--border-color);">
+                                <div style="font-size:1.2em; margin-bottom:8px;">📁</div>
+                                <div style="font-size:0.85em; font-weight:600; margin-bottom:4px;">${t('mgmtUploadBtn')}</div>
+                                <div style="font-size:0.75em; color:var(--text-muted); margin-bottom:10px;">ZIP &bull; max 100MB</div>
+                                <label class="btn btn-primary btn-sm" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center;">
+                                    <i class="fas fa-file-archive"></i> ${t('mgmtUploadBtn')}
+                                    <input type="file" accept=".zip" onchange="handleUpload(this)" style="display:none;">
+                                </label>
+                            </div>
+                            <div style="flex:1; min-width:200px; max-width:300px; text-align:center; padding:16px; background:var(--bg-secondary); border-radius:var(--radius); border:1px solid var(--border-color);">
+                                <div style="font-size:1.2em; margin-bottom:8px;">🔗</div>
+                                <div style="font-size:0.85em; font-weight:600; margin-bottom:4px;">${t('mgmtUploadUrl')}</div>
+                                <div style="font-size:0.75em; color:var(--text-muted); margin-bottom:10px;">Google Drive / Dropbox / OneDrive</div>
+                                <input type="text" id="uploadUrlInput" placeholder="${t('mgmtUploadUrlPlaceholder')}" dir="ltr" style="width:100%; margin-bottom:8px; padding:8px; font-size:0.82em; background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-primary);">
+                                <button class="btn btn-secondary btn-sm" onclick="handleUrlUpload()" style="width:100%;">
+                                    <i class="fas fa-download"></i> ${t('mgmtUploadUrlBtn')}
+                                </button>
+                            </div>
+                        </div>
                     </div>`;
                 container.innerHTML = uploadCard + (html || '<div class="empty-state"><p>' + t('mgmtNoChats') + '</p></div>');
                 managementLoaded = true;
