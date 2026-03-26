@@ -74,7 +74,13 @@
       "preload.js",
       "setup.html",
       "setup-preload.js",
-      "icons/**"
+      "icons/**",
+      "node_modules/tree-kill/**",
+      "!node_modules/electron",
+      "!node_modules/electron/**",
+      "!node_modules/electron-builder",
+      "!node_modules/electron-builder/**",
+      "!node_modules/.package-lock.json"
     ]
   }
 }
