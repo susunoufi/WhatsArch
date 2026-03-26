@@ -1,6 +1,7 @@
 """Flask web server for multi-chat search UI."""
 
 import os
+import functools
 import mimetypes
 from flask import Flask, request, jsonify, render_template, send_from_directory, abort, Response
 
@@ -14,6 +15,192 @@ def create_app(chats_dir: str) -> Flask:
     app = Flask(__name__, template_folder="templates")
     app.config["CHATS_DIR"] = chats_dir
 
+    # ------------------------------------------------------------------
+    # Auth helpers (Supabase JWT verification)
+    # ------------------------------------------------------------------
+
+    def _get_supabase_client():
+        """Lazy-init Supabase client."""
+        if not hasattr(app, '_supabase'):
+            url = os.environ.get("SUPABASE_URL", "")
+            key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+            if url and key:
+                from supabase import create_client
+                app._supabase = create_client(url, key)
+            else:
+                app._supabase = None
+        return app._supabase
+
+    def _is_web_mode():
+        """Check if running in web/SaaS mode (Supabase configured)."""
+        return bool(os.environ.get("SUPABASE_URL"))
+
+    def get_current_user():
+        """Extract and verify user from Authorization header. Returns user dict or None."""
+        if not _is_web_mode():
+            return None  # Local mode - no auth needed
+
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return None
+
+        token = auth_header[7:]
+        sb = _get_supabase_client()
+        if not sb:
+            return None
+
+        try:
+            user = sb.auth.get_user(token)
+            return {"id": user.user.id, "email": user.user.email}
+        except Exception:
+            return None
+
+    def require_auth(f):
+        """Decorator: require authentication in web mode. Skip in local/desktop mode."""
+        @functools.wraps(f)
+        def decorated(*args, **kwargs):
+            if not _is_web_mode():
+                return f(*args, **kwargs)  # Local mode - no auth
+            user = get_current_user()
+            if not user:
+                return jsonify({"error": "Authentication required"}), 401
+            request.user = user
+            return f(*args, **kwargs)
+        return decorated
+
+    # ------------------------------------------------------------------
+    # Auth endpoints
+    # ------------------------------------------------------------------
+
+    @app.route("/api/auth/signup", methods=["POST"])
+    def auth_signup():
+        """Sign up with email + password."""
+        if not _is_web_mode():
+            return jsonify({"error": "Auth not available in local mode"}), 400
+
+        data = request.get_json()
+        if not data:
+            abort(400, "Missing JSON body")
+
+        email = data.get("email", "").strip()
+        password = data.get("password", "").strip()
+        display_name = data.get("display_name", "").strip()
+
+        if not email or not password:
+            return jsonify({"error": "Email and password required"}), 400
+        if len(password) < 6:
+            return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+        sb = _get_supabase_client()
+        if not sb:
+            return jsonify({"error": "Auth service unavailable"}), 503
+
+        try:
+            result = sb.auth.sign_up({
+                "email": email,
+                "password": password,
+                "options": {"data": {"display_name": display_name or email.split("@")[0]}}
+            })
+            return jsonify({
+                "user": {"id": result.user.id, "email": result.user.email},
+                "session": {
+                    "access_token": result.session.access_token,
+                    "refresh_token": result.session.refresh_token,
+                } if result.session else None,
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+    @app.route("/api/auth/login", methods=["POST"])
+    def auth_login():
+        """Login with email + password."""
+        if not _is_web_mode():
+            return jsonify({"error": "Auth not available in local mode"}), 400
+
+        data = request.get_json()
+        if not data:
+            abort(400, "Missing JSON body")
+
+        email = data.get("email", "").strip()
+        password = data.get("password", "").strip()
+
+        if not email or not password:
+            return jsonify({"error": "Email and password required"}), 400
+
+        sb = _get_supabase_client()
+        if not sb:
+            return jsonify({"error": "Auth service unavailable"}), 503
+
+        try:
+            result = sb.auth.sign_in_with_password({"email": email, "password": password})
+            return jsonify({
+                "user": {"id": result.user.id, "email": result.user.email},
+                "session": {
+                    "access_token": result.session.access_token,
+                    "refresh_token": result.session.refresh_token,
+                }
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 401
+
+    @app.route("/api/auth/google")
+    def auth_google():
+        """Get Google OAuth URL for redirect."""
+        if not _is_web_mode():
+            return jsonify({"error": "Auth not available in local mode"}), 400
+
+        sb = _get_supabase_client()
+        if not sb:
+            return jsonify({"error": "Auth service unavailable"}), 503
+
+        try:
+            redirect_url = request.args.get("redirect", request.host_url)
+            result = sb.auth.sign_in_with_oauth({
+                "provider": "google",
+                "options": {"redirect_to": redirect_url}
+            })
+            return jsonify({"url": result.url})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+    @app.route("/api/auth/refresh", methods=["POST"])
+    def auth_refresh():
+        """Refresh access token."""
+        if not _is_web_mode():
+            return jsonify({"error": "Auth not available in local mode"}), 400
+
+        data = request.get_json()
+        refresh_token = data.get("refresh_token", "") if data else ""
+        if not refresh_token:
+            return jsonify({"error": "refresh_token required"}), 400
+
+        sb = _get_supabase_client()
+        try:
+            result = sb.auth.refresh_session(refresh_token)
+            return jsonify({
+                "session": {
+                    "access_token": result.session.access_token,
+                    "refresh_token": result.session.refresh_token,
+                }
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 401
+
+    @app.route("/api/auth/me")
+    @require_auth
+    def auth_me():
+        """Get current user profile."""
+        return jsonify(request.user)
+
+    @app.route("/api/auth/logout", methods=["POST"])
+    def auth_logout():
+        """Logout (client-side token removal is sufficient, but this invalidates server-side)."""
+        return jsonify({"ok": True})
+
+    # ------------------------------------------------------------------
+    # Chat paths helper
+    # ------------------------------------------------------------------
+
     def get_chat_paths(chat_name):
         """Return (chat_dir, db_path) for a given chat name, or abort 404."""
         chat_dir = os.path.join(chats_dir, chat_name)
@@ -25,6 +212,31 @@ def create_app(chats_dir: str) -> Flask:
     @app.route("/")
     def index():
         return render_template("index.html")
+
+    @app.route("/login")
+    def login_page():
+        """Serve login/signup page (web mode only)."""
+        if not _is_web_mode():
+            return render_template("index.html")  # Local mode - skip auth
+        return render_template("auth.html")
+
+    @app.route("/auth/callback")
+    def auth_callback():
+        """OAuth callback page - extracts token from URL hash and stores it."""
+        return """<!DOCTYPE html><html><head><title>WhatsArch</title></head><body>
+        <script>
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const token = params.get('access_token');
+        const refresh = params.get('refresh_token');
+        if (token) {
+            localStorage.setItem('auth_token', token);
+            if (refresh) localStorage.setItem('refresh_token', refresh);
+            window.location.href = '/';
+        } else {
+            document.body.innerHTML = '<p>Authentication failed. <a href="/login">Try again</a></p>';
+        }
+        </script></body></html>"""
 
     @app.route("/api/chats")
     def api_chats():

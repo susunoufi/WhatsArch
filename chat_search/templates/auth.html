@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsArch - התחברות</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Heebo", "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #0D9488 0%, #6366F1 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+        .auth-card {
+            background: #fff; border-radius: 20px; padding: 40px; width: 420px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .logo { text-align: center; margin-bottom: 28px; }
+        .logo svg { width: 64px; height: 64px; margin-bottom: 10px; }
+        .logo h1 { font-size: 1.5em; font-weight: 700; }
+        .logo h1 .whats { color: #0D9488; }
+        .logo h1 .arch { color: #6366F1; }
+        .logo p { color: #9CA3AF; font-size: 0.88em; margin-top: 4px; }
+
+        .tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid #E5E7EB; }
+        .tab { flex: 1; padding: 10px; text-align: center; font-weight: 600; font-size: 0.92em;
+            color: #9CA3AF; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.2s; }
+        .tab.active { color: #0D9488; border-bottom-color: #0D9488; }
+
+        .form { display: none; }
+        .form.active { display: block; }
+
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 0.85em; font-weight: 500; color: #374151; margin-bottom: 6px; }
+        .field input {
+            width: 100%; padding: 12px 14px; border: 1px solid #E5E7EB; border-radius: 10px;
+            font-family: inherit; font-size: 0.92em; outline: none; transition: 0.2s;
+        }
+        .field input:focus { border-color: #0D9488; box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
+
+        .btn {
+            width: 100%; padding: 12px; border: none; border-radius: 10px; font-family: inherit;
+            font-size: 0.95em; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px;
+        }
+        .btn-primary { background: #0D9488; color: #fff; }
+        .btn-primary:hover { background: #0F766E; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-google {
+            background: #fff; color: #374151; border: 1px solid #E5E7EB; display: flex;
+            align-items: center; justify-content: center; gap: 10px; margin-top: 16px;
+        }
+        .btn-google:hover { background: #F9FAFB; border-color: #D1D5DB; }
+        .btn-google svg { width: 20px; height: 20px; }
+
+        .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #9CA3AF; font-size: 0.82em; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #E5E7EB; }
+
+        .error-msg { color: #EF4444; font-size: 0.85em; margin-top: 8px; display: none; text-align: center; }
+        .success-msg { color: #0D9488; font-size: 0.85em; margin-top: 8px; display: none; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="logo">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="#0D9488" opacity="0.9"/>
+                <rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/>
+                <rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/>
+                <circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/>
+                <line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/>
+            </svg>
+            <h1><span class="whats">Whats</span><span class="arch">Arch</span></h1>
+            <p>חיפוש חכם בשיחות WhatsApp ו-Telegram</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchAuthTab('login')">התחברות</div>
+            <div class="tab" onclick="switchAuthTab('signup')">הרשמה</div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="form active" id="loginForm">
+            <div class="field">
+                <label>אימייל</label>
+                <input type="email" id="loginEmail" placeholder="you@example.com" dir="ltr" autocomplete="email">
+            </div>
+            <div class="field">
+                <label>סיסמה</label>
+                <input type="password" id="loginPassword" placeholder="הסיסמה שלך" autocomplete="current-password">
+            </div>
+            <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">התחבר</button>
+            <div class="divider">או</div>
+            <button class="btn btn-google" onclick="doGoogleLogin()">
+                <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                התחבר עם Google
+            </button>
+            <div class="error-msg" id="loginError"></div>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="form" id="signupForm">
+            <div class="field">
+                <label>שם תצוגה</label>
+                <input type="text" id="signupName" placeholder="השם שלך" autocomplete="name">
+            </div>
+            <div class="field">
+                <label>אימייל</label>
+                <input type="email" id="signupEmail" placeholder="you@example.com" dir="ltr" autocomplete="email">
+            </div>
+            <div class="field">
+                <label>סיסמה</label>
+                <input type="password" id="signupPassword" placeholder="לפחות 6 תווים" autocomplete="new-password">
+            </div>
+            <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">הירשם</button>
+            <div class="divider">או</div>
+            <button class="btn btn-google" onclick="doGoogleLogin()">
+                <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                הירשם עם Google
+            </button>
+            <div class="error-msg" id="signupError"></div>
+            <div class="success-msg" id="signupSuccess"></div>
+        </div>
+    </div>
+
+    <script>
+        // Check if already logged in
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(r => { if (r.ok) window.location.href = '/'; });
+        }
+
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+            document.querySelector('.tab:nth-child(' + (tab === 'login' ? '1' : '2') + ')').classList.add('active');
+            document.getElementById(tab + 'Form').classList.add('active');
+        }
+
+        async function doLogin() {
+            const btn = document.getElementById('loginBtn');
+            const errEl = document.getElementById('loginError');
+            errEl.style.display = 'none';
+            btn.disabled = true; btn.textContent = 'מתחבר...';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('loginEmail').value,
+                        password: document.getElementById('loginPassword').value,
+                    })
+                });
+                const data = await res.json();
+                if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+
+                localStorage.setItem('auth_token', data.session.access_token);
+                localStorage.setItem('refresh_token', data.session.refresh_token);
+                localStorage.setItem('user_email', data.user.email);
+                window.location.href = '/';
+            } catch (e) {
+                errEl.textContent = 'שגיאה בהתחברות'; errEl.style.display = 'block';
+            } finally {
+                btn.disabled = false; btn.textContent = 'התחבר';
+            }
+        }
+
+        async function doSignup() {
+            const btn = document.getElementById('signupBtn');
+            const errEl = document.getElementById('signupError');
+            const successEl = document.getElementById('signupSuccess');
+            errEl.style.display = 'none'; successEl.style.display = 'none';
+            btn.disabled = true; btn.textContent = 'נרשם...';
+
+            try {
+                const res = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('signupEmail').value,
+                        password: document.getElementById('signupPassword').value,
+                        display_name: document.getElementById('signupName').value,
+                    })
+                });
+                const data = await res.json();
+                if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+
+                if (data.session) {
+                    localStorage.setItem('auth_token', data.session.access_token);
+                    localStorage.setItem('refresh_token', data.session.refresh_token);
+                    localStorage.setItem('user_email', data.user.email);
+                    window.location.href = '/';
+                } else {
+                    successEl.textContent = 'נשלח אימייל אימות. בדוק את תיבת הדואר שלך.';
+                    successEl.style.display = 'block';
+                }
+            } catch (e) {
+                errEl.textContent = 'שגיאה בהרשמה'; errEl.style.display = 'block';
+            } finally {
+                btn.disabled = false; btn.textContent = 'הירשם';
+            }
+        }
+
+        async function doGoogleLogin() {
+            try {
+                const res = await fetch('/api/auth/google?redirect=' + encodeURIComponent(window.location.origin + '/auth/callback'));
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+                else alert(data.error || 'שגיאה');
+            } catch (e) { alert('שגיאה בהתחברות עם Google'); }
+        }
+
+        // Handle Enter key
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const form = input.closest('.form');
+                    if (form.id === 'loginForm') doLogin();
+                    else doSignup();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
