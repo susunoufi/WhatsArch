@@ -1030,6 +1030,13 @@
                     </div>
                     <div class="settings-status" id="geminiStatus"></div>
                 </div>
+
+                <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color); display:flex; align-items:center; gap:12px;">
+                    <button class="btn btn-primary" id="saveApiKeysBtn" onclick="saveApiKeys()">
+                        <i class="fas fa-key"></i> <span data-i18n="settingsApiSave">שמור מפתחות</span>
+                    </button>
+                    <span id="apiKeySaveStatus" style="font-size:0.85em; display:none;"></span>
+                </div>
             </div>
 
             <!-- Hardware Info -->
@@ -1223,6 +1230,10 @@
                 aiContextLabel: 'הקשר ההודעה:',
                 settingsApiKeys: 'מפתחות API',
                 settingsApiNote: 'המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.',
+                settingsApiSave: 'שמור מפתחות',
+                settingsApiSaving: 'שומר...',
+                settingsApiSaved: 'מפתחות נשמרו ב-.env',
+                settingsApiNoChange: 'לא הוזנו מפתחות חדשים',
                 settingsHardware: 'זיהוי חומרה',
                 settingsHardwareAuto: 'זוהה אוטומטית',
                 settingsPresets: 'חבילות מוכנות',
@@ -1438,6 +1449,10 @@
                 aiContextLabel: 'Message context:',
                 settingsApiKeys: 'API Keys',
                 settingsApiNote: 'Keys are stored locally in the .env file and never sent anywhere.',
+                settingsApiSave: 'Save API Keys',
+                settingsApiSaving: 'Saving...',
+                settingsApiSaved: 'Keys saved to .env',
+                settingsApiNoChange: 'No new keys entered',
                 settingsHardware: 'Hardware Detection',
                 settingsHardwareAuto: 'Auto-detected',
                 settingsPresets: 'Preset Packages',
@@ -4171,6 +4186,73 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-save"></i> ' + t('settingsSave');
+            }
+        }
+
+        async function saveApiKeys() {
+            const btn = document.getElementById('saveApiKeysBtn');
+            const statusEl = document.getElementById('apiKeySaveStatus');
+
+            const aKey = document.getElementById('anthropicKeyInput').value.trim();
+            const oKey = document.getElementById('openaiKeyInput').value.trim();
+            const gKey = document.getElementById('geminiKeyInput').value.trim();
+
+            if (!aKey && !oKey && !gKey) {
+                statusEl.style.display = 'inline';
+                statusEl.style.color = 'var(--accent-amber)';
+                statusEl.innerHTML = '<i class="fas fa-info-circle"></i> ' + t('settingsApiNoChange');
+                setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('settingsApiSaving');
+
+            try {
+                const body = {};
+                if (aKey) body.anthropic_key = aKey;
+                if (oKey) body.openai_key = oKey;
+                if (gKey) body.gemini_key = gKey;
+
+                // Save to cloud server
+                const cloudRes = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                // Also save to local agent if available
+                if (agentAvailable) {
+                    try {
+                        await fetch(AGENT_URL + '/api/settings', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+                    } catch {}
+                }
+
+                // Clear inputs
+                document.getElementById('anthropicKeyInput').value = '';
+                document.getElementById('openaiKeyInput').value = '';
+                document.getElementById('geminiKeyInput').value = '';
+
+                statusEl.style.display = 'inline';
+                statusEl.style.color = 'var(--accent-green)';
+                statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + t('settingsApiSaved');
+                setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+
+                // Refresh settings display
+                loadSettings();
+                initAiChat();
+            } catch (err) {
+                statusEl.style.display = 'inline';
+                statusEl.style.color = 'var(--accent-red)';
+                statusEl.innerHTML = '<i class="fas fa-times-circle"></i> ' + t('error');
+                setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-key"></i> ' + t('settingsApiSave');
             }
         }
 
