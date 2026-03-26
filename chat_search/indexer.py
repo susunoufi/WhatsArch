@@ -29,8 +29,23 @@ def build_index_incremental(db_path: str, messages: list) -> bool:
 
         if len(messages) <= existing_count:
             if len(messages) == existing_count:
-                print(f"  Index up to date ({existing_count} messages)")
-                return True  # No changes
+                # Check if enrichment fields changed (new transcriptions, descriptions, etc.)
+                c.execute("SELECT COUNT(*) FROM messages WHERE transcription != '' AND transcription IS NOT NULL")
+                db_trans = c.fetchone()[0]
+                c.execute("SELECT COUNT(*) FROM messages WHERE visual_description != '' AND visual_description IS NOT NULL")
+                db_desc = c.fetchone()[0]
+                c.execute("SELECT COUNT(*) FROM messages WHERE pdf_text != '' AND pdf_text IS NOT NULL")
+                db_pdf = c.fetchone()[0]
+
+                new_trans = sum(1 for m in messages if m.get("transcription"))
+                new_desc = sum(1 for m in messages if m.get("visual_description"))
+                new_pdf = sum(1 for m in messages if m.get("pdf_text"))
+
+                if db_trans == new_trans and db_desc == new_desc and db_pdf == new_pdf:
+                    print(f"  Index up to date ({existing_count} messages)")
+                    return True  # No changes
+                print(f"  Enrichment changed (trans: {db_trans}->{new_trans}, desc: {db_desc}->{new_desc}, pdf: {db_pdf}->{new_pdf}), rebuilding...")
+                return False  # Force full rebuild
             return False  # Fewer messages = something changed, full rebuild
 
         # We have new messages to add
