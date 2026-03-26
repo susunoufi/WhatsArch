@@ -3359,6 +3359,15 @@
             } catch(e) {}
         }
 
+        function presetIconMap(icon) {
+            var map = {};
+            map['\uD83D\uDCB0'] = '<i class="fas fa-coins" style="color:var(--accent-amber);"></i>';
+            map['\u26A1'] = '<i class="fas fa-bolt" style="color:var(--accent-green);"></i>';
+            map['\uD83D\uDC51'] = '<i class="fas fa-crown" style="color:var(--accent-amber);"></i>';
+            map['\uD83C\uDFE0'] = '<i class="fas fa-home" style="color:var(--accent-blue);"></i>';
+            return map[icon] || icon;
+        }
+
         function renderPresets(data) {
             const grid = document.getElementById('presetsGrid');
             const estimate = document.getElementById('presetsEstimate');
@@ -3378,7 +3387,7 @@
                 html += `
                 <div class="model-card ${isRec ? 'selected' : ''}" onclick="applyPreset('${p.key}', this)" style="text-align:center;padding:20px 14px;">
                     <div class="check-mark"><i class="fas fa-check"></i></div>
-                    <div style="font-size:2em;margin-bottom:6px;">${{'💰':'<i class="fas fa-coins"></i>','⚡':'<i class="fas fa-bolt"></i>','👑':'<i class="fas fa-crown"></i>','🏠':'<i class="fas fa-home"></i>'}[p.icon] || p.icon}</div>
+                    <div style="font-size:2em;margin-bottom:6px;">${presetIconMap(p.icon)}</div>
                     <div style="font-size:1em;font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>
                     <div style="font-size:0.78em;color:var(--text-secondary);margin-bottom:10px;line-height:1.5;">${escapeHtml(desc)}</div>
                     <div style="font-size:1.1em;font-weight:700;color:var(--accent-green);">${costText}</div>
