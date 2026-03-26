@@ -21,10 +21,7 @@ RUN mkdir -p chats
 # WSGI entry point
 RUN echo "from run import create_web_app; app = create_web_app()" > wsgi.py
 
-# Set environment
 ENV PYTHONUNBUFFERED=1
-ENV PORT=5000
 
-EXPOSE 5000
-
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "300", "wsgi:app"]
+# Railway sets $PORT dynamically
+CMD gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --threads 4 --timeout 300 wsgi:app
