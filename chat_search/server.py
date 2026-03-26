@@ -267,6 +267,14 @@ def create_app(chats_dir: str) -> Flask:
                 return render_template("landing.html")
         return render_template("index.html")
 
+    @app.route("/download/install.bat")
+    def download_install_bat():
+        """Serve the agent installer directly from the server."""
+        agent_dir = os.path.join(os.path.dirname(chats_dir), "agent")
+        return send_from_directory(agent_dir, "install.bat",
+                                  as_attachment=True,
+                                  download_name="WhatsArch-Agent-Install.bat")
+
     @app.route("/app")
     def app_page():
         """Main app page. Auth checked client-side via JS token."""
