@@ -305,15 +305,16 @@ def main():
     migrate_legacy_layout()
 
     # Step 1: Discover chats
+    os.makedirs(CHATS_DIR, exist_ok=True)
     chats = discover_chats()
     if not chats:
-        print(f"Error: No chat folders found in {CHATS_DIR}")
-        print("  Place WhatsApp export folders (containing _chat.txt) inside chats/")
-        sys.exit(1)
-
-    print("=" * 60)
-    print(f"Found {len(chats)} chat(s): {', '.join(chats)}")
-    print("=" * 60)
+        print(f"No chat folders found in {CHATS_DIR}")
+        print("  Upload chats via the web UI or place WhatsApp/Telegram export folders inside chats/")
+        print("  Starting server with empty chat list...")
+    else:
+        print("=" * 60)
+        print(f"Found {len(chats)} chat(s): {', '.join(chats)}")
+        print("=" * 60)
 
     # Step 2: Process chats
     if args.chat:

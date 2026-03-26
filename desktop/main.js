@@ -497,11 +497,24 @@ function setupJunctions() {
   const appDir = getAppPath();
   const symlinkType = isMac ? 'dir' : 'junction';
 
-  // Chats
+  // Chats - remove empty dir if it exists (packaged by electron-builder), replace with symlink
   const chatsLink = path.join(appDir, 'chats');
   const userChatsDir = path.join(getUserDataDir(), 'chats');
-  try { if (!fs.existsSync(chatsLink)) fs.symlinkSync(userChatsDir, chatsLink, symlinkType); }
-  catch (e) { console.error('Symlink error:', e.message); }
+  try {
+    if (fs.existsSync(chatsLink)) {
+      const stat = fs.lstatSync(chatsLink);
+      if (!stat.isSymbolicLink()) {
+        // It's a real directory (from packaging) - remove it if empty
+        const contents = fs.readdirSync(chatsLink);
+        if (contents.length === 0) {
+          fs.rmdirSync(chatsLink);
+        }
+      }
+    }
+    if (!fs.existsSync(chatsLink)) {
+      fs.symlinkSync(userChatsDir, chatsLink, symlinkType);
+    }
+  } catch (e) { console.error('Symlink error:', e.message); }
 
   // .env
   const userEnv = path.join(getUserDataDir(), '.env');
