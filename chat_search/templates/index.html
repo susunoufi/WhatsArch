@@ -1713,11 +1713,11 @@
         document.addEventListener('DOMContentLoaded', async () => {
             applyLanguage();
             await detectAgent();  // detect local agent before loading chats
+            await checkUserRole(); // get user plan before loading UI
             await loadChats();    // merges cloud + local chats
             setupListeners();
             initAiChat();
             setupAiListeners();
-            checkUserRole();
         });
 
         function setupListeners() {
@@ -2611,7 +2611,14 @@
 
         async function checkUserRole() {
             const token = localStorage.getItem('auth_token');
-            if (!token) return;
+            if (!token) {
+                // No auth = local/desktop mode — allow everything
+                userPlan = { mode: 'both', cloud_preset: 'premium', local_vision: 'proxy', local_rag: 'proxy', is_admin: true };
+                isAdmin = true;
+                const adminTab = document.getElementById('adminTabBtn');
+                if (adminTab) adminTab.style.display = '';
+                return;
+            }
 
             // Show logout button
             const logoutBtn = document.getElementById('logoutBtn');
