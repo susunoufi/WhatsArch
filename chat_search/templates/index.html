@@ -608,6 +608,28 @@
         .task-btn-group {
             display: inline-flex; align-items: center; gap: 0;
         }
+        .live-status-panel {
+            margin-top: 12px; padding: 14px 16px; border-radius: var(--radius);
+            background: linear-gradient(135deg, rgba(13,148,136,0.08), rgba(99,102,241,0.08));
+            border: 1px solid rgba(13,148,136,0.25);
+            animation: lspFadeIn 0.3s ease;
+        }
+        @keyframes lspFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+        .lsp-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+        .lsp-task-name { font-weight:600; font-size:0.95em; color:var(--accent-green); }
+        .lsp-badge {
+            display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
+            border-radius:20px; font-size:0.78em; font-weight:500;
+        }
+        .lsp-badge.cloud { background:rgba(99,102,241,0.15); color:#a5b4fc; }
+        .lsp-badge.local { background:rgba(13,148,136,0.15); color:#5eead4; }
+        .lsp-badge.model { background:rgba(255,255,255,0.08); color:var(--text-secondary); }
+        .lsp-progress-wrap { margin-bottom:8px; }
+        .lsp-progress-bar { height:6px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden; }
+        .lsp-progress-fill { height:100%; border-radius:3px; transition:width 0.5s ease; background:linear-gradient(90deg, var(--accent-green), var(--accent-blue)); }
+        .lsp-stats { display:flex; justify-content:space-between; align-items:center; font-size:0.82em; color:var(--text-secondary); margin-top:6px; flex-wrap:wrap; gap:4px; }
+        .lsp-file { font-size:0.78em; color:var(--text-muted); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:ltr; }
+        .lsp-file i { margin-right:4px; }
         .task-btn-group .btn-action {
             border-radius: 0 var(--radius) var(--radius) 0;
             border-left: none;
@@ -1283,6 +1305,13 @@
                 mgmtMinutes: 'דקות',
                 mgmtSeconds: 'שניות',
                 mgmtRemaining: 'נותרו ~',
+                mgmtProvider: 'מנוע',
+                mgmtModel: 'מודל',
+                mgmtEngine: 'ריצה',
+                mgmtEngineLocal: 'מקומי',
+                mgmtEngineCloud: 'ענן',
+                mgmtCurrentFile: 'קובץ נוכחי',
+                mgmtElapsed: 'עבר',
                 mgmtErrorLoading: 'שגיאה בטעינת סטטוס',
                 mgmtNoChats: 'לא נמצאו שיחות',
                 tabAdmin: 'ניהול משתמשים',
@@ -1491,6 +1520,13 @@
                 mgmtMinutes: 'minutes',
                 mgmtSeconds: 'seconds',
                 mgmtRemaining: '~',
+                mgmtProvider: 'Engine',
+                mgmtModel: 'Model',
+                mgmtEngine: 'Runtime',
+                mgmtEngineLocal: 'Local',
+                mgmtEngineCloud: 'Cloud',
+                mgmtCurrentFile: 'Current file',
+                mgmtElapsed: 'Elapsed',
                 mgmtErrorLoading: 'Error loading status',
                 mgmtNoChats: 'No chats found',
                 tabAdmin: 'User Management',
@@ -2996,6 +3032,7 @@
                         ${renderActionBtn(chatName, 'index', t('mgmtIndex'), 'fa-database', runningTask)}
                         ${renderActionBtn(chatName, 'embeddings', t('mgmtEmbeddings'), 'fa-brain', runningTask)}
                     </div>
+                    <div id="${cardId}-live-status"></div>
                 </div>
             </div>`;
         }
@@ -3154,6 +3191,9 @@
                         stopBtn.disabled = true;
                         stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('mgmtStopping');
                     }
+                    // Clear live status panel
+                    const lsp = document.getElementById(cardId + '-live-status');
+                    if (lsp) lsp.innerHTML = '';
                     // Update the running button text too
                     const runningBtn = actions.querySelector('.btn-action.running');
                     if (runningBtn) {
@@ -3200,26 +3240,104 @@
             }
         }
 
+        function formatDuration(seconds) {
+            if (seconds > 3600) return Math.round(seconds / 3600) + ' ' + t('mgmtHours');
+            if (seconds > 60) return Math.round(seconds / 60) + ' ' + t('mgmtMinutes');
+            return seconds + ' ' + t('mgmtSeconds');
+        }
+
+        const TASK_ICONS = {
+            transcribe: 'fa-microphone', images: 'fa-image', videos: 'fa-video',
+            pdfs: 'fa-file-pdf', index: 'fa-database', embeddings: 'fa-brain',
+        };
+        const TASK_LABELS_HE = {
+            transcribe: 'תמלול הקלטות', images: 'עיבוד תמונות', videos: 'עיבוד סרטונים',
+            pdfs: 'חילוץ PDF', index: 'בניית אינדקס', embeddings: 'חיפוש חכם',
+        };
+        const TASK_LABELS_EN = {
+            transcribe: 'Transcribing', images: 'Processing images', videos: 'Processing videos',
+            pdfs: 'Extracting PDFs', index: 'Building index', embeddings: 'Building embeddings',
+        };
+
+        const PROVIDER_ICONS = {
+            anthropic: 'fa-a', openai: 'fa-robot', gemini: 'fa-google',
+            ollama: 'fa-server', whisper: 'fa-microphone-lines', pymupdf: 'fa-file-pdf',
+            sqlite: 'fa-database', 'sentence-transformers': 'fa-brain', proxy: 'fa-cloud',
+        };
+
         function updateRunningButton(chatName, taskInfo) {
             const cardId = 'mgmt-' + chatName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
             const actions = document.getElementById(cardId + '-actions');
             if (!actions) return;
+
+            // Update the button with short progress
             const runningBtn = actions.querySelector('.btn-action.running');
             if (runningBtn && taskInfo.total > 0) {
-                let progressText = `${taskInfo.processed}/${taskInfo.total}`;
-                if (taskInfo.eta_seconds != null && taskInfo.eta_seconds > 0) {
-                    let etaText = '';
-                    if (taskInfo.eta_seconds > 3600) {
-                        etaText = Math.round(taskInfo.eta_seconds / 3600) + ' ' + t('mgmtHours');
-                    } else if (taskInfo.eta_seconds > 60) {
-                        etaText = Math.round(taskInfo.eta_seconds / 60) + ' ' + t('mgmtMinutes');
-                    } else {
-                        etaText = taskInfo.eta_seconds + ' ' + t('mgmtSeconds');
-                    }
-                    progressText += ' — ' + t('mgmtRemaining') + etaText;
-                }
-                runningBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progressText}`;
+                const pct = Math.round(taskInfo.processed / taskInfo.total * 100);
+                runningBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${pct}% (${taskInfo.processed}/${taskInfo.total})`;
             }
+
+            // Render live status panel
+            const lspContainer = document.getElementById(cardId + '-live-status');
+            if (!lspContainer) return;
+
+            const task = taskInfo.task || '';
+            const pct = taskInfo.total > 0 ? Math.round(taskInfo.processed / taskInfo.total * 100) : 0;
+            const isLocal = taskInfo.engine === 'local';
+            const taskLabel = (currentLang === 'he' ? TASK_LABELS_HE : TASK_LABELS_EN)[task] || task;
+            const taskIcon = TASK_ICONS[task] || 'fa-cog';
+            const providerIcon = PROVIDER_ICONS[taskInfo.provider] || 'fa-cog';
+
+            // Engine badge
+            const engineBadge = taskInfo.engine
+                ? `<span class="lsp-badge ${isLocal ? 'local' : 'cloud'}"><i class="fas ${isLocal ? 'fa-desktop' : 'fa-cloud'}"></i> ${isLocal ? t('mgmtEngineLocal') : t('mgmtEngineCloud')}</span>`
+                : '';
+
+            // Model badge
+            const modelBadge = taskInfo.model
+                ? `<span class="lsp-badge model"><i class="fas ${providerIcon}"></i> ${taskInfo.model}</span>`
+                : '';
+
+            // ETA
+            let etaHtml = '';
+            if (taskInfo.eta_seconds != null && taskInfo.eta_seconds > 0) {
+                etaHtml = `<span>${t('mgmtRemaining')}${formatDuration(taskInfo.eta_seconds)}</span>`;
+            }
+
+            // Elapsed
+            let elapsedHtml = '';
+            if (taskInfo.start_time) {
+                const elapsed = Math.round(Date.now() / 1000 - taskInfo.start_time);
+                if (elapsed > 0) {
+                    elapsedHtml = `<span>${t('mgmtElapsed')}: ${formatDuration(elapsed)}</span>`;
+                }
+            }
+
+            // Current file
+            let fileHtml = '';
+            if (taskInfo.current_file) {
+                const fname = taskInfo.current_file.length > 45 ? '...' + taskInfo.current_file.slice(-42) : taskInfo.current_file;
+                fileHtml = `<div class="lsp-file"><i class="fas fa-file"></i> ${escapeHtml(fname)}</div>`;
+            }
+
+            lspContainer.innerHTML = `
+                <div class="live-status-panel">
+                    <div class="lsp-header">
+                        <span class="lsp-task-name"><i class="fas ${taskIcon}"></i> ${taskLabel}</span>
+                        ${engineBadge}
+                        ${modelBadge}
+                    </div>
+                    <div class="lsp-progress-wrap">
+                        <div class="lsp-progress-bar"><div class="lsp-progress-fill" style="width:${pct}%"></div></div>
+                        <div class="lsp-stats">
+                            <span>${taskInfo.processed}/${taskInfo.total} (${pct}%)</span>
+                            ${etaHtml}
+                            ${elapsedHtml}
+                        </div>
+                    </div>
+                    ${fileHtml}
+                </div>
+            `;
         }
 
         function checkAndPollProgress(chatName) {

@@ -282,6 +282,9 @@ def start_processing(chat_name: str, task: str, chats_dir: str, model_size: str 
             "error": None,
             "start_time": time.time(),
             "eta_seconds": None,
+            "provider": None,
+            "model": None,
+            "engine": None,  # "local" or "cloud"
         }
 
     thread = threading.Thread(
@@ -306,6 +309,16 @@ def stop_processing(chat_name: str) -> bool:
         if cancel_event:
             cancel_event.set()
         return True
+
+
+def _update_task_meta(chat_name: str, provider: str, model: str, engine: str):
+    """Update provider/model/engine metadata on a running task."""
+    with _processing_lock:
+        state = _processing_state.get(chat_name)
+        if state:
+            state["provider"] = provider
+            state["model"] = model
+            state["engine"] = engine
 
 
 def _make_progress_callback(chat_name: str):
@@ -345,6 +358,7 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
         if task == "transcribe":
             from .transcribe import transcribe_audio_files
             cache_path = os.path.join(data_dir, "transcriptions.json")
+            _update_task_meta(chat_name, provider="whisper", model=f"faster-whisper ({model_size})", engine="local")
             transcribe_audio_files(chat_dir, cache_path, model_size=model_size, progress_callback=callback, cancel_event=cancel_event)
 
         elif task == "images":
@@ -373,6 +387,8 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
                 pass
 
             api_key = "" if provider == "proxy" else _get_api_key_for_provider(provider)
+            is_local = provider in ("ollama", "proxy")
+            _update_task_meta(chat_name, provider=provider, model=model or "default", engine="local" if is_local else "cloud")
             process_images(chat_dir, cache_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, progress_callback=callback, cancel_event=cancel_event, proxy_url=proxy_url, proxy_token=proxy_token)
 
         elif task == "videos":
@@ -386,17 +402,22 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
             ollama_url = settings.get("ollama_base_url")
             desc_path = os.path.join(data_dir, "descriptions.json")
             vtrans_path = os.path.join(data_dir, "video_transcriptions.json")
+            is_local = provider == "ollama"
+            _update_task_meta(chat_name, provider=provider, model=model or "default", engine="local" if is_local else "cloud")
             process_videos(chat_dir, desc_path, vtrans_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, model_size=model_size, progress_callback=callback, cancel_event=cancel_event)
 
         elif task == "pdfs":
             from .vision import process_pdfs
             cache_path = os.path.join(data_dir, "pdf_texts.json")
+            _update_task_meta(chat_name, provider="pymupdf", model="PyMuPDF", engine="local")
             process_pdfs(chat_dir, cache_path, progress_callback=callback, cancel_event=cancel_event)
 
         elif task == "index":
+            _update_task_meta(chat_name, provider="sqlite", model="FTS5 Trigram", engine="local")
             _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event)
 
         elif task == "embeddings":
+            _update_task_meta(chat_name, provider="sentence-transformers", model="multilingual-e5-large", engine="local")
             _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event)
 
         # Check if we were cancelled (for tasks that break from loop instead of raising)
