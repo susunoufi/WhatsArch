@@ -447,7 +447,13 @@ def _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
 
     _check_cancel(cancel_event)
     callback("Parsing messages...", 1, 5)
-    messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
+    # Load sender aliases from settings
+    from . import config
+    project_root = os.path.dirname(os.path.dirname(data_dir))
+    settings = config.load_settings(project_root)
+    chat_name_for_aliases = os.path.basename(os.path.dirname(data_dir))
+    sender_aliases = settings.get("sender_aliases", {}).get(chat_name_for_aliases, {})
+    messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts, sender_aliases=sender_aliases)
 
     _check_cancel(cancel_event)
     callback("Building index...", 2, 5)

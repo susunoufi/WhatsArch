@@ -55,6 +55,9 @@ def create_app(chats_dir: str) -> Flask:
         except Exception:
             return None
 
+    ADMIN_EMAIL = "susunoufi@gmail.com"
+    DEFAULT_USER_PRESET = "budget"  # New users get the cheapest plan
+
     def require_auth(f):
         """Decorator: require authentication in web mode. Skip in local/desktop mode."""
         @functools.wraps(f)
@@ -67,6 +70,51 @@ def create_app(chats_dir: str) -> Flask:
             request.user = user
             return f(*args, **kwargs)
         return decorated
+
+    def require_admin(f):
+        """Decorator: require admin authentication."""
+        @functools.wraps(f)
+        def decorated(*args, **kwargs):
+            if not _is_web_mode():
+                return f(*args, **kwargs)  # Local mode - no restriction
+            user = get_current_user()
+            if not user:
+                return jsonify({"error": "Authentication required"}), 401
+            if user.get("email") != ADMIN_EMAIL:
+                return jsonify({"error": "Admin access required"}), 403
+            request.user = user
+            return f(*args, **kwargs)
+        return decorated
+
+    def get_user_preset(user_email: str) -> str:
+        """Get the preset assigned to a user. Admin gets 'premium', others get their assigned plan."""
+        if user_email == ADMIN_EMAIL:
+            return "premium"  # Admin gets full access
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        user_plans = settings.get("user_plans", {})
+        return user_plans.get(user_email, DEFAULT_USER_PRESET)
+
+    def enforce_user_preset():
+        """In web mode, override settings with the user's assigned preset."""
+        if not _is_web_mode():
+            return  # Local mode - no restriction
+        user = get_current_user()
+        if not user:
+            return
+        preset_key = get_user_preset(user["email"])
+        preset = config.PRESETS.get(preset_key)
+        if not preset:
+            return
+        # Override the provider/model settings for this request
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        settings["vision_provider"] = preset["vision_provider"]
+        settings["vision_model"] = preset["vision_model"]
+        settings["video_provider"] = preset["video_provider"]
+        settings["video_model"] = preset["video_model"]
+        settings["rag_provider"] = preset["rag_provider"]
+        settings["rag_model"] = preset["rag_model"]
 
     # ------------------------------------------------------------------
     # Auth endpoints
@@ -916,6 +964,189 @@ def create_app(chats_dir: str) -> Flask:
     def api_models():
         """Get available model options for each task."""
         return jsonify(config.PROVIDER_MODELS)
+
+    @app.route("/api/presets")
+    def api_presets():
+        """Get preset packages with cost estimates for a chat."""
+        chat_name = request.args.get("chat", "").strip()
+
+        # Get media counts
+        image_count = 0
+        video_count = 0
+        if chat_name:
+            chat_dir = os.path.join(chats_dir, chat_name)
+            if os.path.isdir(chat_dir):
+                from . import process_manager
+                try:
+                    scan = process_manager.scan_chat_files(chat_dir)
+                    image_count = len(scan.get("images", []))
+                    video_count = len(scan.get("videos", []))
+                except Exception:
+                    pass
+
+        # Get hardware for recommendation
+        hw = config.detect_hardware()
+        recommended = config.recommend_preset(image_count, video_count, hw)
+
+        # Build preset list with costs
+        presets = []
+        for key, preset in config.PRESETS.items():
+            costs = config.estimate_preset_cost(key, image_count, video_count)
+            presets.append({
+                "key": key,
+                "icon": preset["icon"],
+                "name_he": preset["name_he"],
+                "name_en": preset["name_en"],
+                "description_he": preset["description_he"],
+                "description_en": preset["description_en"],
+                "costs": costs,
+                "recommended": key == recommended,
+            })
+
+        return jsonify({
+            "presets": presets,
+            "chat_name": chat_name,
+            "image_count": image_count,
+            "video_count": video_count,
+            "recommended": recommended,
+        })
+
+    # ------------------------------------------------------------------
+    # Admin: User Management
+    # ------------------------------------------------------------------
+
+    @app.route("/api/admin/users")
+    @require_admin
+    def api_admin_users():
+        """List all users with their plans. Admin only."""
+        sb = _get_supabase_client()
+        if not sb:
+            return jsonify({"users": []})
+
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        user_plans = settings.get("user_plans", {})
+
+        try:
+            # Get all users from Supabase auth
+            users_response = sb.auth.admin.list_users()
+            users = []
+            for u in users_response:
+                email = u.email or ""
+                user_meta = u.user_metadata or {}
+                users.append({
+                    "id": u.id,
+                    "email": email,
+                    "display_name": user_meta.get("display_name", email.split("@")[0]),
+                    "preset": user_plans.get(email, DEFAULT_USER_PRESET),
+                    "is_admin": email == ADMIN_EMAIL,
+                    "created_at": str(u.created_at) if u.created_at else "",
+                    "last_sign_in": str(u.last_sign_in_at) if u.last_sign_in_at else "",
+                })
+            return jsonify({"users": users})
+        except Exception as e:
+            return jsonify({"users": [], "error": str(e)})
+
+    @app.route("/api/admin/users", methods=["POST"])
+    @require_admin
+    def api_admin_update_user():
+        """Update a user's plan. Admin only."""
+        data = request.get_json()
+        if not data:
+            abort(400, "Missing JSON body")
+
+        email = data.get("email", "").strip()
+        preset = data.get("preset", "").strip()
+
+        if not email or not preset:
+            abort(400, "Missing email or preset")
+
+        if preset not in config.PRESETS:
+            abort(400, f"Invalid preset: {preset}. Must be one of: {', '.join(config.PRESETS.keys())}")
+
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        if "user_plans" not in settings:
+            settings["user_plans"] = {}
+        settings["user_plans"][email] = preset
+        config.save_settings(project_root, settings)
+
+        return jsonify({"status": "ok", "email": email, "preset": preset})
+
+    @app.route("/api/admin/users", methods=["DELETE"])
+    @require_admin
+    def api_admin_delete_user():
+        """Remove a user's plan (reset to default). Admin only."""
+        data = request.get_json()
+        if not data:
+            abort(400)
+        email = data.get("email", "").strip()
+        if not email:
+            abort(400)
+
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        user_plans = settings.get("user_plans", {})
+        user_plans.pop(email, None)
+        settings["user_plans"] = user_plans
+        config.save_settings(project_root, settings)
+
+        return jsonify({"status": "ok", "email": email, "preset": DEFAULT_USER_PRESET})
+
+    @app.route("/api/user/plan")
+    @require_auth
+    def api_user_plan():
+        """Get the current user's assigned plan/preset."""
+        user = request.user
+        preset_key = get_user_preset(user["email"])
+        preset = config.PRESETS.get(preset_key, {})
+        return jsonify({
+            "preset": preset_key,
+            "name_he": preset.get("name_he", ""),
+            "name_en": preset.get("name_en", ""),
+            "icon": preset.get("icon", ""),
+            "is_admin": user["email"] == ADMIN_EMAIL,
+        })
+
+    @app.route("/api/aliases")
+    def api_aliases():
+        """Get sender aliases for a chat."""
+        chat_name = request.args.get("chat", "").strip()
+        if not chat_name:
+            abort(400, "Missing chat parameter")
+
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        aliases = settings.get("sender_aliases", {}).get(chat_name, {})
+
+        # Also return the list of actual senders from stats
+        _, db_path = get_chat_paths(chat_name)
+        stats = indexer.get_stats(db_path)
+        senders = list(stats.get("senders", {}).keys())
+
+        return jsonify({"chat": chat_name, "senders": senders, "aliases": aliases})
+
+    @app.route("/api/aliases", methods=["POST"])
+    def api_aliases_update():
+        """Update sender aliases for a chat. Applied on next index rebuild."""
+        data = request.get_json()
+        if not data:
+            abort(400, "Missing JSON body")
+
+        chat_name = data.get("chat", "").strip()
+        aliases = data.get("aliases", {})
+
+        if not chat_name:
+            abort(400, "Missing chat name")
+
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        if "sender_aliases" not in settings:
+            settings["sender_aliases"] = {}
+        settings["sender_aliases"][chat_name] = aliases
+        config.save_settings(project_root, settings)
+
+        return jsonify({"status": "ok", "note": "Aliases saved. Run 'Update Search' to apply."})
 
     # ------------------------------------------------------------------
     # File upload (ZIP) endpoint

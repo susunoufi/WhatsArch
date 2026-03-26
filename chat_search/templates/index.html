@@ -874,20 +874,12 @@
                 <div class="filter-dropdown-content" id="senderDropdownContent"></div>
             </div>
             <div class="date-group">
-                <label for="dateFrom" data-i18n="filterFrom">מ-</label>
-                <div class="date-input-wrapper">
-                    <input type="text" id="dateFrom" placeholder="dd/mm/yyyy" maxlength="10" dir="ltr">
-                    <button type="button" class="date-picker-btn" onclick="document.getElementById('dateFromPicker').showPicker()"><i class="fas fa-calendar-alt"></i></button>
-                    <input type="date" id="dateFromPicker" tabindex="-1">
-                </div>
+                <label data-i18n="filterFrom">מ-</label>
+                <input type="date" id="dateFrom" dir="ltr" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius);font-family:inherit;font-size:0.85em;background:var(--bg-secondary);color:var(--text-primary);min-width:150px;cursor:pointer;">
             </div>
             <div class="date-group">
-                <label for="dateTo" data-i18n="filterTo">עד</label>
-                <div class="date-input-wrapper">
-                    <input type="text" id="dateTo" placeholder="dd/mm/yyyy" maxlength="10" dir="ltr">
-                    <button type="button" class="date-picker-btn" onclick="document.getElementById('dateToPicker').showPicker()"><i class="fas fa-calendar-alt"></i></button>
-                    <input type="date" id="dateToPicker" tabindex="-1">
-                </div>
+                <label data-i18n="filterTo">עד</label>
+                <input type="date" id="dateTo" dir="ltr" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius);font-family:inherit;font-size:0.85em;background:var(--bg-secondary);color:var(--text-primary);min-width:150px;cursor:pointer;">
             </div>
             <button class="btn btn-primary" id="searchBtn" onclick="performSearch(true)">
                 <i class="fas fa-search"></i> <span data-i18n="tabSearch">חיפוש</span>
@@ -998,10 +990,21 @@
                 <div id="hwInfo"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
             </div>
 
+            <!-- Preset Packages -->
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-box-open" style="color:var(--accent-amber);"></i> <span data-i18n="settingsPresets">חבילות מוכנות</span></span>
+                </div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:12px;" data-i18n="settingsPresetsDesc">בחר חבילה מוכנה או התאם ידנית למטה.</p>
+                <div id="presetsGrid" class="model-grid"></div>
+                <div id="presetsEstimate" style="margin-top:12px;"></div>
+            </div>
+
             <!-- Model Selection -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
                     <span class="mgmt-chat-name"><i class="fas fa-cogs" style="color:var(--accent-blue);"></i> <span data-i18n="settingsModels">בחירת מודלים</span></span>
+                    <span style="font-size:0.75em;color:var(--text-muted);" data-i18n="settingsManualOverride">התאמה ידנית</span>
                 </div>
 
                 <div class="section-title">📷 <span data-i18n="settingsVision">תיאור תמונות</span></div>
@@ -1159,7 +1162,11 @@
                 settingsApiNote: 'המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.',
                 settingsHardware: 'זיהוי חומרה',
                 settingsHardwareAuto: 'זוהה אוטומטית',
+                settingsPresets: 'חבילות מוכנות',
+                settingsPresetsDesc: 'בחר חבילה מוכנה או התאם ידנית למטה.',
+                settingsManualOverride: 'התאמה ידנית',
                 settingsModels: 'בחירת מודלים',
+                presetRecommended: 'מומלץ לצ\'אט הזה',
                 settingsVision: 'תיאור תמונות',
                 settingsVisionDesc: 'AI "מסתכל" על כל תמונה וכותב תיאור שלה — כך אפשר למצוא תמונות בחיפוש.',
                 settingsVideo: 'תיאור סרטונים',
@@ -1237,6 +1244,12 @@
                 mgmtRemaining: 'נותרו ~',
                 mgmtErrorLoading: 'שגיאה בטעינת סטטוס',
                 mgmtNoChats: 'לא נמצאו שיחות',
+                mgmtUpload: 'העלאת צ\'אט',
+                mgmtUploadDesc: 'העלה קובץ ZIP של ייצוא WhatsApp או Telegram',
+                mgmtUploadBtn: 'בחר קובץ ZIP',
+                mgmtUploading: 'מעלה...',
+                mgmtUploadSuccess: 'הועלה בהצלחה!',
+                mgmtUploadError: 'שגיאה בהעלאה',
                 mgmtErrorData: 'שגיאה בטעינת נתונים',
                 mgmtErrorTask: 'שגיאה בהפעלת המשימה',
                 mgmtErrorStop: 'שגיאה בעצירת המשימה',
@@ -1330,7 +1343,11 @@
                 settingsApiNote: 'Keys are stored locally in the .env file and never sent anywhere.',
                 settingsHardware: 'Hardware Detection',
                 settingsHardwareAuto: 'Auto-detected',
+                settingsPresets: 'Preset Packages',
+                settingsPresetsDesc: 'Choose a preset or customize manually below.',
+                settingsManualOverride: 'Manual override',
                 settingsModels: 'Model Selection',
+                presetRecommended: 'Recommended for this chat',
                 settingsVision: 'Image Description',
                 settingsVisionDesc: 'AI "looks" at each image and writes a description, making images searchable by text.',
                 settingsVideo: 'Video Description',
@@ -1408,6 +1425,12 @@
                 mgmtRemaining: '~',
                 mgmtErrorLoading: 'Error loading status',
                 mgmtNoChats: 'No chats found',
+                mgmtUpload: 'Upload Chat',
+                mgmtUploadDesc: 'Upload a ZIP file of a WhatsApp or Telegram export',
+                mgmtUploadBtn: 'Choose ZIP file',
+                mgmtUploading: 'Uploading...',
+                mgmtUploadSuccess: 'Uploaded successfully!',
+                mgmtUploadError: 'Upload error',
                 mgmtErrorData: 'Error loading data',
                 mgmtErrorTask: 'Error starting task',
                 mgmtErrorStop: 'Error stopping task',
@@ -1587,25 +1610,9 @@
                 debounceTimer = setTimeout(() => performSearch(true), 300);
             });
 
-            // Auto-format date inputs as dd/mm/yyyy + sync with native picker
-            function setupDateInput(textEl, pickerEl) {
-                textEl.addEventListener('input', function() {
-                    let v = this.value.replace(/[^\d]/g, '');
-                    if (v.length > 8) v = v.slice(0, 8);
-                    if (v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
-                    else if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
-                    this.value = v;
-                    if (v.length === 10) performSearch(true);
-                });
-                pickerEl.addEventListener('change', function() {
-                    if (!this.value) return;
-                    const [y, m, d] = this.value.split('-');
-                    textEl.value = d + '/' + m + '/' + y;
-                    performSearch(true);
-                });
-            }
-            setupDateInput($dateFrom, document.getElementById('dateFromPicker'));
-            setupDateInput($dateTo, document.getElementById('dateToPicker'));
+            // Date inputs — native date picker, auto-search on change
+            $dateFrom.addEventListener('change', () => performSearch(true));
+            $dateTo.addEventListener('change', () => performSearch(true));
 
             $chatSelector.addEventListener('change', () => {
                 // Clear progress pollers from previous chat
@@ -1829,6 +1836,10 @@
             const types = getSelectedTypes();
             // Convert dd/mm/yyyy to YYYY-MM-DD for API
             function dateToISO(v) {
+                if (!v) return '';
+                // Native date input returns yyyy-mm-dd
+                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+                // Legacy dd/mm/yyyy format
                 const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
                 return m ? m[3] + '-' + m[2] + '-' + m[1] : '';
             }
@@ -1894,6 +1905,10 @@
             const senders = getSelectedSenders();
             const types = getSelectedTypes();
             function dateToISO(v) {
+                if (!v) return '';
+                // Native date input returns yyyy-mm-dd
+                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+                // Legacy dd/mm/yyyy format
                 const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
                 return m ? m[3] + '-' + m[2] + '-' + m[1] : '';
             }
@@ -2287,6 +2302,36 @@
         // ============================================================
         // MANAGEMENT SCREEN
         // ============================================================
+        async function handleUpload(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const label = input.parentElement;
+            const origText = label.innerHTML;
+            label.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('mgmtUploading');
+            label.style.pointerEvents = 'none';
+            try {
+                const form = new FormData();
+                form.append('file', file);
+                const res = await fetch('/api/upload', { method: 'POST', body: form });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Upload failed');
+                }
+                label.innerHTML = '<i class="fas fa-check"></i> ' + t('mgmtUploadSuccess');
+                label.style.pointerEvents = '';
+                // Reload chats and management
+                setTimeout(() => {
+                    loadChats();
+                    managementLoaded = false;
+                    loadManagementData();
+                }, 1500);
+            } catch (err) {
+                label.innerHTML = '<i class="fas fa-times"></i> ' + t('mgmtUploadError');
+                label.style.pointerEvents = '';
+                setTimeout(() => { label.innerHTML = origText; }, 3000);
+            }
+        }
+
         async function loadManagementData() {
             const container = document.getElementById('managementContent');
             container.innerHTML = '<div class="spinner-overlay active"><div class="spinner"></div></div>';
@@ -2306,7 +2351,18 @@
                     }
                 }
 
-                container.innerHTML = html || '<div class="empty-state"><p>' + t('mgmtNoChats') + '</p></div>';
+                // Always show upload card at the top
+                const uploadCard = `
+                    <div class="mgmt-chat-card" style="border: 2px dashed var(--border-color); text-align: center; padding: 30px;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📤</div>
+                        <h3 style="margin-bottom: 8px; font-size: 1em;">${t('mgmtUpload')}</h3>
+                        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 16px;">${t('mgmtUploadDesc')}</p>
+                        <label class="btn btn-primary" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                            <i class="fas fa-file-archive"></i> ${t('mgmtUploadBtn')}
+                            <input type="file" accept=".zip" onchange="handleUpload(this)" style="display:none;">
+                        </label>
+                    </div>`;
+                container.innerHTML = uploadCard + (html || '<div class="empty-state"><p>' + t('mgmtNoChats') + '</p></div>');
                 managementLoaded = true;
 
                 // Start polling for any active tasks
@@ -3020,9 +3076,94 @@
 
                 updateCostCalculators();
                 updateCostSummary();
+
+                // Load presets
+                loadPresets();
             } catch (err) {
                 console.error('loadSettings error:', err);
             }
+        }
+
+        async function loadPresets() {
+            const chatForPresets = currentChat && currentChat !== '__all__' ? currentChat : '';
+            try {
+                const res = await fetch('/api/presets?chat=' + encodeURIComponent(chatForPresets));
+                if (!res.ok) return;
+                const data = await res.json();
+                renderPresets(data);
+            } catch(e) {}
+        }
+
+        function renderPresets(data) {
+            const grid = document.getElementById('presetsGrid');
+            const estimate = document.getElementById('presetsEstimate');
+            if (!grid) return;
+
+            const isHe = currentLang === 'he';
+            let html = '';
+            data.presets.forEach(p => {
+                const name = isHe ? p.name_he : p.name_en;
+                const desc = isHe ? p.description_he : p.description_en;
+                const costText = p.costs.total === 0 ? t('settingsFree') : '$' + p.costs.total.toFixed(2);
+                const isRec = p.recommended;
+
+                html += `
+                <div class="model-card ${isRec ? 'selected' : ''}" onclick="applyPreset('${p.key}', this)" style="text-align:center;padding:20px 14px;">
+                    <div class="check-mark"><i class="fas fa-check"></i></div>
+                    <div style="font-size:2em;margin-bottom:6px;">${p.icon}</div>
+                    <div style="font-size:1em;font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>
+                    <div style="font-size:0.78em;color:var(--text-secondary);margin-bottom:10px;line-height:1.5;">${escapeHtml(desc)}</div>
+                    <div style="font-size:1.1em;font-weight:700;color:var(--accent-green);">${costText}</div>
+                    ${isRec ? '<div style="margin-top:6px;"><span class="model-badge recommended">' + t('presetRecommended') + '</span></div>' : ''}
+                </div>`;
+            });
+            grid.innerHTML = html;
+
+            // Show estimate summary
+            if (data.image_count > 0 || data.video_count > 0) {
+                estimate.innerHTML = '<div style="font-size:0.82em;color:var(--text-muted);">📊 ' +
+                    (data.chat_name ? escapeHtml(data.chat_name) + ' — ' : '') +
+                    data.image_count + ' ' + t('settingsImages') + ', ' +
+                    data.video_count + ' ' + t('settingsVideos') + '</div>';
+            } else {
+                estimate.innerHTML = '';
+            }
+        }
+
+        function applyPreset(key, cardEl) {
+            // Visual selection
+            const grid = cardEl.parentElement;
+            grid.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+            cardEl.classList.add('selected');
+
+            // Fetch preset config and apply to settings
+            fetch('/api/presets?chat=' + encodeURIComponent(currentChat || ''))
+                .then(r => r.json())
+                .then(data => {
+                    const preset = data.presets.find(p => p.key === key);
+                    if (!preset) return;
+
+                    // We need the full preset data from config — fetch from a known mapping
+                    const presetSettings = {
+                        budget: { vision_provider: 'gemini', vision_model: 'gemini-2.0-flash', video_provider: 'gemini', video_model: 'gemini-2.0-flash', rag_provider: 'gemini', rag_model: 'gemini-2.0-flash' },
+                        balanced: { vision_provider: 'gemini', vision_model: 'gemini-2.0-flash', video_provider: 'gemini', video_model: 'gemini-2.0-flash', rag_provider: 'openai', rag_model: 'gpt-4o-mini' },
+                        premium: { vision_provider: 'anthropic', vision_model: 'claude-sonnet-4-20250514', video_provider: 'anthropic', video_model: 'claude-sonnet-4-20250514', rag_provider: 'anthropic', rag_model: 'claude-opus-4-6' },
+                        local: { vision_provider: 'ollama', vision_model: 'llama3.2-vision', video_provider: 'ollama', video_model: 'llama3.2-vision', rag_provider: 'ollama', rag_model: 'qwen2.5:14b' },
+                    };
+
+                    const s = presetSettings[key];
+                    if (!s) return;
+
+                    // Update settingsData
+                    Object.assign(settingsData, s);
+
+                    // Re-render model cards to reflect selection
+                    renderModelCards('vision', modelsData.vision || []);
+                    renderModelCards('video', modelsData.video || []);
+                    renderModelCards('rag', modelsData.rag || []);
+                    updateCostCalculators();
+                    updateCostSummary();
+                });
         }
 
         function renderApiKeyStatus(keys) {

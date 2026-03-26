@@ -15,16 +15,116 @@ import subprocess
 
 
 DEFAULT_SETTINGS = {
-    "vision_provider": "anthropic",
-    "vision_model": "claude-sonnet-4-20250514",
-    "video_provider": "anthropic",
-    "video_model": "claude-sonnet-4-20250514",
-    "rag_provider": "anthropic",
-    "rag_model": "claude-opus-4-6",
+    "vision_provider": "gemini",
+    "vision_model": "gemini-2.0-flash",
+    "video_provider": "gemini",
+    "video_model": "gemini-2.0-flash",
+    "rag_provider": "gemini",
+    "rag_model": "gemini-2.0-flash",
     "ollama_base_url": "http://localhost:11434",
     "ollama_vision_model": "llama3.2-vision",
     "ollama_rag_model": "qwen2.5:14b",
+    "sender_aliases": {},  # {"chat_name": {"original_name": "display_name", ...}}
+    "user_plans": {},      # {"user@email.com": "budget|balanced|premium|local"}
 }
+
+PRESETS = {
+    "budget": {
+        "name_he": "חסכוני",
+        "name_en": "Budget",
+        "icon": "💰",
+        "vision_provider": "gemini", "vision_model": "gemini-2.0-flash",
+        "video_provider": "gemini", "video_model": "gemini-2.0-flash",
+        "rag_provider": "gemini", "rag_model": "gemini-2.0-flash",
+        "description_he": "הכי זול — Gemini Flash לכל דבר. איכות טובה, מחיר מינימלי.",
+        "description_en": "Cheapest — Gemini Flash for everything. Good quality, minimal cost.",
+    },
+    "balanced": {
+        "name_he": "מאוזן",
+        "name_en": "Balanced",
+        "icon": "⚡",
+        "vision_provider": "gemini", "vision_model": "gemini-2.0-flash",
+        "video_provider": "gemini", "video_model": "gemini-2.0-flash",
+        "rag_provider": "openai", "rag_model": "gpt-4o-mini",
+        "description_he": "איזון מצוין — Gemini Flash לתמונות, GPT-4o-mini לשאלות. מהיר ואיכותי.",
+        "description_en": "Great balance — Gemini Flash for vision, GPT-4o-mini for Q&A. Fast and quality.",
+    },
+    "premium": {
+        "name_he": "פרימיום",
+        "name_en": "Premium",
+        "icon": "👑",
+        "vision_provider": "anthropic", "vision_model": "claude-sonnet-4-20250514",
+        "video_provider": "anthropic", "video_model": "claude-sonnet-4-20250514",
+        "rag_provider": "anthropic", "rag_model": "claude-opus-4-6",
+        "description_he": "הכי חכם — Claude Sonnet לתמונות, Opus לשאלות. הכי מדויק בעברית.",
+        "description_en": "Smartest — Claude Sonnet for vision, Opus for Q&A. Best Hebrew accuracy.",
+    },
+    "local": {
+        "name_he": "לוקאלי",
+        "name_en": "Local",
+        "icon": "🏠",
+        "vision_provider": "ollama", "vision_model": "llama3.2-vision",
+        "video_provider": "ollama", "video_model": "llama3.2-vision",
+        "rag_provider": "ollama", "rag_model": "qwen2.5:14b",
+        "description_he": "חינם לגמרי — הכל רץ על המחשב. דורש Ollama + GPU מומלץ.",
+        "description_en": "Completely free — runs locally. Requires Ollama + GPU recommended.",
+    },
+}
+
+
+def estimate_preset_cost(preset_key: str, image_count: int, video_count: int, question_count: int = 100) -> dict:
+    """Estimate cost for a preset given media counts."""
+    preset = PRESETS.get(preset_key)
+    if not preset:
+        return {"total": 0, "vision": 0, "video": 0, "rag": 0}
+
+    # Find cost rates from PROVIDER_MODELS
+    vision_cost = 0.0
+    video_cost = 0.0
+    rag_cost = 0.0
+
+    for m in PROVIDER_MODELS.get("vision", []):
+        if m["provider"] == preset["vision_provider"] and m["model"] == preset["vision_model"]:
+            vision_cost = m.get("cost_per_image", 0) * image_count
+            break
+
+    for m in PROVIDER_MODELS.get("video", []):
+        if m["provider"] == preset["video_provider"] and m["model"] == preset["video_model"]:
+            video_cost = m.get("cost_per_minute", 0) * video_count
+            break
+
+    for m in PROVIDER_MODELS.get("rag", []):
+        if m["provider"] == preset["rag_provider"] and m["model"] == preset["rag_model"]:
+            rag_cost = m.get("cost_per_query", 0) * question_count
+            break
+
+    total = vision_cost + video_cost + rag_cost
+    return {
+        "total": round(total, 4),
+        "vision": round(vision_cost, 4),
+        "video": round(video_cost, 4),
+        "rag": round(rag_cost, 4),
+    }
+
+
+def recommend_preset(image_count: int, video_count: int, hardware: dict = None) -> str:
+    """Recommend a preset based on chat size and hardware."""
+    total_media = image_count + video_count
+
+    # If very little media, premium is cheap enough
+    if total_media < 50:
+        return "premium"
+
+    # If hardware has dedicated GPU, local is viable
+    if hardware and hardware.get("gpu_dedicated") and hardware.get("ram_gb", 0) >= 16:
+        return "local"
+
+    # Default: balanced for medium, budget for large
+    if total_media > 500:
+        return "budget"
+
+    return "balanced"
+
 
 PROVIDER_MODELS = {
     "vision": [

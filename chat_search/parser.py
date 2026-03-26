@@ -129,6 +129,7 @@ def parse_chat(
     visual_descriptions: dict = None,
     video_transcriptions: dict = None,
     pdf_texts: dict = None,
+    sender_aliases: dict = None,
 ) -> list:
     """Parse _chat.txt and return list of message dicts.
 
@@ -136,7 +137,11 @@ def parse_chat(
       date, time, datetime, sender, text, attachment, media_type,
       transcription, visual_description, video_transcription, pdf_text,
       mentioned_sender
+
+    sender_aliases: optional dict {original_name: display_name} to rename senders.
     """
+    if sender_aliases is None:
+        sender_aliases = {}
     if transcriptions is None:
         transcriptions = {}
     if visual_descriptions is None:
@@ -203,11 +208,14 @@ def parse_chat(
                 if media_type == "pdf" and attachment:
                     pdf_text = pdf_texts.get(attachment, "")
 
+                # Apply sender alias if configured
+                display_sender = sender_aliases.get(sender, sender)
+
                 current = {
                     "date": date_str,
                     "time": time_str,
                     "datetime": dt.isoformat(),
-                    "sender": sender,
+                    "sender": display_sender,
                     "text": display_text,
                     "attachment": attachment,
                     "media_type": media_type,
@@ -272,6 +280,7 @@ def parse_telegram(
     visual_descriptions: dict = None,
     video_transcriptions: dict = None,
     pdf_texts: dict = None,
+    sender_aliases: dict = None,
 ) -> list:
     """Parse Telegram Desktop export (result.json) and return list of message dicts.
 
@@ -280,6 +289,8 @@ def parse_telegram(
 
     Returns same format as parse_chat() for full compatibility.
     """
+    if sender_aliases is None:
+        sender_aliases = {}
     if transcriptions is None:
         transcriptions = {}
     if visual_descriptions is None:
@@ -376,11 +387,14 @@ def parse_telegram(
         if media_type == "pdf" and attachment:
             pdf_text = pdf_texts.get(attachment, "")
 
+        # Apply sender alias if configured
+        display_sender = sender_aliases.get(sender, sender)
+
         messages.append({
             "date": dt.strftime("%d/%m/%Y"),
             "time": dt.strftime("%H:%M:%S"),
             "datetime": dt.isoformat(),
-            "sender": sender,
+            "sender": display_sender,
             "text": text,
             "attachment": attachment,
             "media_type": media_type,
