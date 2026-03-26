@@ -1,13 +1,18 @@
 {
   "name": "whatsarch",
   "version": "1.0.0",
-  "description": "WhatsArch - WhatsApp Chat Archive Search Engine",
+  "description": "WhatsArch - Multi-Platform Chat Archive Search Engine",
   "main": "main.js",
   "scripts": {
     "start": "node start.js",
     "setup-vendor": "node scripts/setup-vendor.js",
+    "setup-vendor:mac-arm64": "node scripts/setup-vendor-mac.js --arch=arm64",
+    "setup-vendor:mac-x64": "node scripts/setup-vendor-mac.js --arch=x64",
     "build": "electron-builder",
-    "build:win": "electron-builder --win"
+    "build:win": "electron-builder --win",
+    "build:mac-arm64": "electron-builder --mac --arm64",
+    "build:mac-x64": "electron-builder --mac --x64",
+    "build:mac-zip": "electron-builder --mac zip"
   },
   "author": "WhatsArch",
   "license": "MIT",
@@ -24,6 +29,22 @@
     "win": {
       "target": "nsis",
       "icon": "icons/icon.ico"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
+      ],
+      "icon": "icons/icon.icns",
+      "identity": null,
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
     },
     "nsis": {
       "oneClick": false,

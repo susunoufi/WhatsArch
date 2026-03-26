@@ -1,0 +1,46 @@
+name: Build Mac App
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  push:
+    tags:
+      - 'v*'  # Auto-trigger on version tags
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Download Mac vendor binaries (${{ matrix.arch }})
+        working-directory: desktop
+        run: node scripts/setup-vendor-mac.js --arch=${{ matrix.arch }}
+
+      - name: Build Mac app (${{ matrix.arch }})
+        working-directory: desktop
+        run: npx electron-builder --mac dmg zip --${{ matrix.arch }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhatsArch-mac-${{ matrix.arch }}
+          path: |
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+          retention-days: 30

@@ -6,34 +6,48 @@ const net = require('net');
 const treeKill = require('tree-kill');
 
 // ============================================================
+// Platform detection
+// ============================================================
+
+const isMac = process.platform === 'darwin';
+const isWin = process.platform === 'win32';
+const PATH_SEP = isMac ? ':' : ';';
+
+// ============================================================
 // Path resolution
 // ============================================================
 
 function isDev() { return !app.isPackaged; }
 
 function getPythonPath() {
-  if (isDev()) {
-    const vendorPython = path.join(__dirname, 'vendor', 'python', 'python.exe');
-    if (fs.existsSync(vendorPython)) return vendorPython;
+  const vendorBase = isDev()
+    ? path.join(__dirname, 'vendor', 'python')
+    : path.join(process.resourcesPath, 'vendor', 'python');
+
+  if (isMac) {
+    const macBin = path.join(vendorBase, 'bin', 'python3');
+    if (fs.existsSync(macBin)) return macBin;
+    // Fallback to system python3
+    return 'python3';
+  } else {
+    const winBin = path.join(vendorBase, 'python.exe');
+    if (fs.existsSync(winBin)) return winBin;
     return 'python';
   }
-  return path.join(process.resourcesPath, 'vendor', 'python', 'python.exe');
 }
 
 function getFfmpegDir() {
-  if (isDev()) {
-    const d = path.join(__dirname, 'vendor', 'ffmpeg');
-    return fs.existsSync(d) ? d : null;
-  }
-  return path.join(process.resourcesPath, 'vendor', 'ffmpeg');
+  const d = isDev()
+    ? path.join(__dirname, 'vendor', 'ffmpeg')
+    : path.join(process.resourcesPath, 'vendor', 'ffmpeg');
+  return fs.existsSync(d) ? d : null;
 }
 
 function getOllamaDir() {
-  if (isDev()) {
-    const d = path.join(__dirname, 'vendor', 'ollama');
-    return fs.existsSync(d) ? d : null;
-  }
-  return path.join(process.resourcesPath, 'vendor', 'ollama');
+  const d = isDev()
+    ? path.join(__dirname, 'vendor', 'ollama')
+    : path.join(process.resourcesPath, 'vendor', 'ollama');
+  return fs.existsSync(d) ? d : null;
 }
 
 function getAppPath() {
@@ -91,14 +105,15 @@ function setupJunctions() {
   const appDir = getAppPath();
   const userChatsDir = path.join(getUserDataDir(), 'chats');
   const chatsLink = path.join(appDir, 'chats');
+  const symlinkType = isMac ? 'dir' : 'junction';
 
-  // Chats junction
+  // Chats symlink/junction
   try {
     if (!fs.existsSync(chatsLink)) {
-      fs.symlinkSync(userChatsDir, chatsLink, 'junction');
+      fs.symlinkSync(userChatsDir, chatsLink, symlinkType);
     }
   } catch (err) {
-    console.error('Junction error:', err.message);
+    console.error('Symlink error:', err.message);
   }
 
   // .env symlink
@@ -132,11 +147,28 @@ function setupJunctions() {
 
 function isOllamaInstalled() {
   try {
-    execSync('ollama --version', { windowsHide: true, stdio: 'pipe' });
-    return true;
+    if (isMac) {
+      // Check common Mac locations
+      if (fs.existsSync('/Applications/Ollama.app')) return true;
+      execSync('which ollama', { stdio: 'pipe' });
+      return true;
+    } else {
+      execSync('ollama --version', { windowsHide: true, stdio: 'pipe' });
+      return true;
+    }
   } catch (e) {
     return false;
   }
+}
+
+function getOllamaBinary() {
+  if (isMac) {
+    // Ollama CLI inside the app bundle
+    const appBin = '/Applications/Ollama.app/Contents/Resources/ollama';
+    if (fs.existsSync(appBin)) return appBin;
+    return 'ollama';
+  }
+  return 'ollama';
 }
 
 function isOllamaRunning() {
@@ -159,23 +191,42 @@ function installOllama(win) {
       }
     };
 
-    // Check if bundled installer exists
     const ollamaDir = getOllamaDir();
-    const installerPath = ollamaDir ? path.join(ollamaDir, 'OllamaSetup.exe') : null;
 
-    if (installerPath && fs.existsSync(installerPath)) {
-      sendProgress('מתקין Ollama...', 30);
-      try {
-        execSync(`"${installerPath}" /SILENT /NORESTART`, { windowsHide: true, timeout: 120000 });
-        sendProgress('Ollama הותקן', 100);
-      } catch (e) {
-        sendProgress('התקנת Ollama נכשלה (אופציונלי)', 100);
+    if (isMac) {
+      // Mac: look for Ollama.zip or Ollama.app in vendor
+      const zipPath = ollamaDir ? path.join(ollamaDir, 'Ollama-darwin.zip') : null;
+
+      if (zipPath && fs.existsSync(zipPath)) {
+        sendProgress('מתקין Ollama...', 30);
+        try {
+          execSync(`unzip -o "${zipPath}" -d /Applications/`, { stdio: 'pipe', timeout: 120000 });
+          sendProgress('Ollama הותקן', 100);
+        } catch (e) {
+          sendProgress('התקנת Ollama נכשלה (אופציונלי)', 100);
+        }
+        resolve();
+      } else {
+        sendProgress('Ollama לא נמצא באינסטלר (אופציונלי)', 100);
+        resolve();
       }
-      resolve();
     } else {
-      // Ollama not bundled - skip silently
-      sendProgress('Ollama לא נמצא באינסטלר (אופציונלי)', 100);
-      resolve();
+      // Windows: look for OllamaSetup.exe
+      const installerPath = ollamaDir ? path.join(ollamaDir, 'OllamaSetup.exe') : null;
+
+      if (installerPath && fs.existsSync(installerPath)) {
+        sendProgress('מתקין Ollama...', 30);
+        try {
+          execSync(`"${installerPath}" /SILENT /NORESTART`, { windowsHide: true, timeout: 120000 });
+          sendProgress('Ollama הותקן', 100);
+        } catch (e) {
+          sendProgress('התקנת Ollama נכשלה (אופציונלי)', 100);
+        }
+        resolve();
+      } else {
+        sendProgress('Ollama לא נמצא באינסטלר (אופציונלי)', 100);
+        resolve();
+      }
     }
   });
 }
@@ -192,20 +243,16 @@ function pullOllamaModel(win, modelName) {
 
     sendProgress(`מוריד מודל ${modelName}...`, 0);
 
-    const proc = spawn('ollama', ['pull', modelName], { windowsHide: true });
+    const ollamaBin = getOllamaBinary();
+    const proc = spawn(ollamaBin, ['pull', modelName], { windowsHide: true });
 
     proc.stderr.on('data', (data) => {
-      const text = data.toString();
-      const m = text.match(/(\d+)%/);
+      const m = data.toString().match(/(\d+)%/);
       if (m) sendProgress(`מוריד ${modelName}... ${m[1]}%`, parseInt(m[1]));
     });
 
     proc.on('close', (code) => {
-      if (code === 0) {
-        sendProgress(`מודל ${modelName} הותקן`, 100);
-      } else {
-        sendProgress(`הורדת ${modelName} נכשלה (אופציונלי)`, 100);
-      }
+      sendProgress(code === 0 ? `מודל ${modelName} הותקן` : `הורדת ${modelName} נכשלה (אופציונלי)`, 100);
       resolve();
     });
 
@@ -238,6 +285,8 @@ function downloadModels(win) {
   return new Promise((resolve) => {
     const pythonPath = getPythonPath();
     const modelsDir = getModelsDir();
+    // Use forward slashes for Python on all platforms
+    const modelsDirPy = modelsDir.replace(/\\/g, '/');
     const env = { ...process.env, HF_HOME: modelsDir, XDG_CACHE_HOME: modelsDir, PYTHONIOENCODING: 'utf-8' };
 
     const sendProgress = (step, status, message, percent) => {
@@ -248,15 +297,15 @@ function downloadModels(win) {
 
     sendProgress('whisper', 'downloading', 'מוריד מודל זיהוי דיבור (Whisper)...', 0);
 
-    const whisperScript = [
-      `import sys, os`,
-      `os.environ['HF_HOME'] = r'${modelsDir.replace(/\\/g, '\\\\')}'`,
-      `print("STEP:whisper:start", flush=True)`,
-      `from faster_whisper import WhisperModel`,
-      `print("STEP:whisper:loading", flush=True)`,
-      `model = WhisperModel("small", device="cpu", compute_type="int8")`,
-      `print("STEP:whisper:done", flush=True)`,
-    ].join('\n');
+    const whisperScript = `
+import sys, os
+os.environ['HF_HOME'] = '${modelsDirPy}'
+print("STEP:whisper:start", flush=True)
+from faster_whisper import WhisperModel
+print("STEP:whisper:loading", flush=True)
+model = WhisperModel("small", device="cpu", compute_type="int8")
+print("STEP:whisper:done", flush=True)
+`;
 
     const whisperProc = spawn(pythonPath, ['-c', whisperScript], { env, windowsHide: true });
 
@@ -274,15 +323,15 @@ function downloadModels(win) {
     whisperProc.on('close', () => {
       sendProgress('e5', 'downloading', 'מוריד מודל חיפוש חכם (E5-large)...', 0);
 
-      const e5Script = [
-        `import sys, os`,
-        `os.environ['HF_HOME'] = r'${modelsDir.replace(/\\/g, '\\\\')}'`,
-        `print("STEP:e5:start", flush=True)`,
-        `from sentence_transformers import SentenceTransformer`,
-        `print("STEP:e5:loading", flush=True)`,
-        `model = SentenceTransformer("intfloat/multilingual-e5-large")`,
-        `print("STEP:e5:done", flush=True)`,
-      ].join('\n');
+      const e5Script = `
+import sys, os
+os.environ['HF_HOME'] = '${modelsDirPy}'
+print("STEP:e5:start", flush=True)
+from sentence_transformers import SentenceTransformer
+print("STEP:e5:loading", flush=True)
+model = SentenceTransformer("intfloat/multilingual-e5-large")
+print("STEP:e5:done", flush=True)
+`;
 
       const e5Proc = spawn(pythonPath, ['-c', e5Script], { env, windowsHide: true });
 
@@ -305,7 +354,7 @@ function downloadModels(win) {
           sendProgress('ollama', 'done', 'Ollama כבר מותקן', 100);
         }
 
-        // Step 4: Pull Ollama model if Ollama is available
+        // Step 4: Pull Ollama model if available
         if (isOllamaInstalled() && await isOllamaRunning()) {
           await pullOllamaModel(win, 'qwen2.5:7b');
         } else {
@@ -333,7 +382,9 @@ function startFlask(port) {
     const logsDir = getLogsDir();
 
     const env = { ...process.env };
-    if (ffmpegDir && fs.existsSync(ffmpegDir)) env.PATH = ffmpegDir + ';' + (env.PATH || '');
+    if (ffmpegDir && fs.existsSync(ffmpegDir)) {
+      env.PATH = ffmpegDir + PATH_SEP + (env.PATH || '');
+    }
     env.HF_HOME = modelsDir;
     env.XDG_CACHE_HOME = modelsDir;
     env.PYTHONIOENCODING = 'utf-8';
@@ -378,7 +429,15 @@ function stopFlask() {
     if (!flaskProcess) return resolve();
     const pid = flaskProcess.pid;
     treeKill(pid, 'SIGTERM', (err) => {
-      if (err) { try { execSync(`taskkill /pid ${pid} /T /F`, { windowsHide: true }); } catch (e) { /* dead */ } }
+      if (err) {
+        try {
+          if (isWin) {
+            execSync(`taskkill /pid ${pid} /T /F`, { windowsHide: true });
+          } else {
+            execSync(`kill -9 ${pid}`, { stdio: 'pipe' });
+          }
+        } catch (e) { /* process already dead */ }
+      }
       flaskProcess = null;
       resolve();
     });
@@ -407,10 +466,11 @@ function createMainWindow(port) {
     width: 1200, height: 800, minWidth: 800, minHeight: 600,
     backgroundColor: '#FAFAF8',
     icon: path.join(__dirname, 'icons', 'icon.png'),
+    titleBarStyle: isMac ? 'hiddenInset' : 'default',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
   mainWindow.loadURL(`http://localhost:${port}`);
-  mainWindow.setMenuBarVisibility(false);
+  if (!isMac) mainWindow.setMenuBarVisibility(false);
   mainWindow.on('close', (e) => { if (!isQuitting) { e.preventDefault(); mainWindow.hide(); } });
   mainWindow.on('closed', () => { mainWindow = null; });
   return mainWindow;
@@ -422,9 +482,14 @@ function createMainWindow(port) {
 
 function createTray() {
   const iconPath = path.join(__dirname, 'icons', 'icon.png');
-  let trayIcon = fs.existsSync(iconPath)
-    ? nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
-    : nativeImage.createEmpty();
+  let trayIcon;
+  if (fs.existsSync(iconPath)) {
+    const size = isMac ? { width: 18, height: 18 } : { width: 16, height: 16 };
+    trayIcon = nativeImage.createFromPath(iconPath).resize(size);
+    if (isMac) trayIcon.setTemplateImage(true);
+  } else {
+    trayIcon = nativeImage.createEmpty();
+  }
 
   tray = new Tray(trayIcon);
   tray.setToolTip('WhatsArch');
@@ -433,7 +498,22 @@ function createTray() {
     { type: 'separator' },
     { label: 'יציאה', click: () => { isQuitting = true; app.quit(); } },
   ]));
-  tray.on('double-click', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } });
+  if (!isMac) {
+    tray.on('double-click', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } });
+  }
+}
+
+// ============================================================
+// Mac-specific: dock menu + re-open on dock click
+// ============================================================
+
+if (isMac) {
+  app.on('activate', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
 }
 
 // ============================================================
@@ -484,5 +564,8 @@ if (!gotTheLock) {
     if (flaskProcess) { e.preventDefault(); await stopFlask(); app.quit(); }
   });
 
-  app.on('window-all-closed', () => { /* tray */ });
+  app.on('window-all-closed', () => {
+    // On Mac, apps stay open until Cmd+Q
+    if (!isMac) { /* keep running in tray on Windows */ }
+  });
 }

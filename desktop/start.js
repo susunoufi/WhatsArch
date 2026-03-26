@@ -1,26 +1,32 @@
 #!/usr/bin/env node
 /**
- * Dev launcher for WhatsArch Electron app.
+ * Dev launcher for WhatsArch Electron app. Cross-platform (Windows + Mac).
  *
- * Two issues must be solved for require('electron') to work inside electron.exe:
- * 1. ELECTRON_RUN_AS_NODE env var (set by npm/npx) makes electron.exe behave as
+ * Two issues must be solved for require('electron') to work inside the Electron binary:
+ * 1. ELECTRON_RUN_AS_NODE env var (set by npm/npx) makes the binary behave as
  *    plain Node.js, skipping all Electron initialization. Must be unset.
  * 2. node_modules/electron/index.js (npm helper) shadows the built-in 'electron'
  *    module. Must be moved out of the way before launching.
- *
- * In production (packaged app), neither issue exists because:
- * - electron.exe is launched directly (no npm)
- * - node_modules/electron is not bundled
  */
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
+const isMac = process.platform === 'darwin';
 const npmElectronDir = path.join(__dirname, 'node_modules', 'electron');
 const hiddenDir = path.join(__dirname, 'node_modules', '_electron_pkg');
 
-// Compute the binary path before moving
-const electronBin = path.join(npmElectronDir, 'dist', 'electron.exe');
+// Get the Electron binary path (platform-aware) before moving anything
+function getElectronBin(fromDir) {
+  if (isMac) {
+    // On Mac, the binary is inside Electron.app
+    const macBin = path.join(fromDir, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+    if (fs.existsSync(macBin)) return macBin;
+    // Fallback: some versions put it directly in dist/
+    return path.join(fromDir, 'dist', 'electron');
+  }
+  return path.join(fromDir, 'dist', 'electron.exe');
+}
 
 // Step 1: Move the npm electron package out of the way
 let moved = false;
@@ -33,10 +39,8 @@ try {
   console.error('Warning: cannot move electron package:', e.message);
 }
 
-// Step 2: Spawn electron.exe WITHOUT ELECTRON_RUN_AS_NODE
-const bin = moved
-  ? path.join(hiddenDir, 'dist', 'electron.exe')
-  : electronBin;
+// Step 2: Spawn Electron WITHOUT ELECTRON_RUN_AS_NODE
+const bin = getElectronBin(moved ? hiddenDir : npmElectronDir);
 
 const env = Object.assign({}, process.env);
 delete env.ELECTRON_RUN_AS_NODE;
@@ -52,7 +56,6 @@ const child = spawn(bin, ['.'], {
 
 function restore() {
   if (moved && fs.existsSync(hiddenDir)) {
-    // Retry a few times (electron.exe may still hold a lock briefly)
     for (let i = 0; i < 5; i++) {
       try {
         if (!fs.existsSync(npmElectronDir)) {
@@ -61,7 +64,6 @@ function restore() {
         return;
       } catch (e) {
         if (i < 4) {
-          // Sync sleep 500ms
           const end = Date.now() + 500;
           while (Date.now() < end) { /* busy wait */ }
         }
