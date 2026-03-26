@@ -350,5 +350,12 @@ def main():
     app.run(host="0.0.0.0", port=args.port, debug=False)
 
 
+def create_web_app():
+    """Create Flask app for production deployment (Railway/gunicorn)."""
+    from chat_search.server import create_app
+    os.makedirs(CHATS_DIR, exist_ok=True)
+    return create_app(CHATS_DIR)
+
+
 if __name__ == "__main__":
     main()
