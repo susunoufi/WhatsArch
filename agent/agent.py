@@ -31,8 +31,18 @@ if sys.stdout is None or (hasattr(sys.stdout, 'encoding') and sys.stdout.encodin
     except Exception:
         pass
 
+# Load .env from project root or agent data dir
+from dotenv import load_dotenv as _load_dotenv
+_agent_data = Path.home() / "Documents" / "WhatsArch"
+_project_root = Path(__file__).resolve().parent.parent
+# Try agent data dir first, then project root
+for _env_path in [_agent_data / ".env", _project_root / ".env"]:
+    if _env_path.exists():
+        _load_dotenv(str(_env_path))
+        break
+
 # Add project root to sys.path so we can import chat_search modules
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = _project_root
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from flask import Flask, request, jsonify, send_from_directory, abort, Response
