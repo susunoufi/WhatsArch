@@ -9,9 +9,7 @@ const treeKill = require('tree-kill');
 // Path resolution
 // ============================================================
 
-function isDev() {
-  return !app.isPackaged;
-}
+function isDev() { return !app.isPackaged; }
 
 function getPythonPath() {
   if (isDev()) {
@@ -24,18 +22,22 @@ function getPythonPath() {
 
 function getFfmpegDir() {
   if (isDev()) {
-    const vendorFfmpeg = path.join(__dirname, 'vendor', 'ffmpeg');
-    if (fs.existsSync(vendorFfmpeg)) return vendorFfmpeg;
-    return null;
+    const d = path.join(__dirname, 'vendor', 'ffmpeg');
+    return fs.existsSync(d) ? d : null;
   }
   return path.join(process.resourcesPath, 'vendor', 'ffmpeg');
 }
 
-function getAppPath() {
+function getOllamaDir() {
   if (isDev()) {
-    return path.join(__dirname, '..');
+    const d = path.join(__dirname, 'vendor', 'ollama');
+    return fs.existsSync(d) ? d : null;
   }
-  return path.join(process.resourcesPath, 'app');
+  return path.join(process.resourcesPath, 'vendor', 'ollama');
+}
+
+function getAppPath() {
+  return isDev() ? path.join(__dirname, '..') : path.join(process.resourcesPath, 'app');
 }
 
 function getUserDataDir() {
@@ -72,14 +74,12 @@ function findFreePort(startPort) {
       const port = server.address().port;
       server.close(() => resolve(port));
     });
-    server.on('error', () => {
-      resolve(findFreePort(startPort + 1));
-    });
+    server.on('error', () => resolve(findFreePort(startPort + 1)));
   });
 }
 
 // ============================================================
-// Directory setup
+// Directory & config setup
 // ============================================================
 
 function ensureDirectories() {
@@ -92,29 +92,128 @@ function setupJunctions() {
   const userChatsDir = path.join(getUserDataDir(), 'chats');
   const chatsLink = path.join(appDir, 'chats');
 
+  // Chats junction
   try {
     if (!fs.existsSync(chatsLink)) {
       fs.symlinkSync(userChatsDir, chatsLink, 'junction');
     }
   } catch (err) {
-    console.error('Junction creation failed:', err.message);
+    console.error('Junction error:', err.message);
   }
 
   // .env symlink
   const userEnvPath = path.join(getUserDataDir(), '.env');
   const appEnvPath = path.join(appDir, '.env');
-
   if (!fs.existsSync(userEnvPath)) {
     fs.writeFileSync(userEnvPath, '# WhatsArch API Keys\n', 'utf-8');
   }
-
   try {
-    if (!fs.existsSync(appEnvPath)) {
-      fs.symlinkSync(userEnvPath, appEnvPath, 'file');
-    }
+    if (!fs.existsSync(appEnvPath)) fs.symlinkSync(userEnvPath, appEnvPath, 'file');
   } catch (err) {
     try { fs.copyFileSync(userEnvPath, appEnvPath); } catch (e) { /* ignore */ }
   }
+
+  // settings.json symlink
+  const userSettingsPath = path.join(getUserDataDir(), 'settings.json');
+  const appSettingsPath = path.join(appDir, 'settings.json');
+  if (!fs.existsSync(userSettingsPath)) {
+    fs.writeFileSync(userSettingsPath, '{}', 'utf-8');
+  }
+  try {
+    if (!fs.existsSync(appSettingsPath)) fs.symlinkSync(userSettingsPath, appSettingsPath, 'file');
+  } catch (err) {
+    try { fs.copyFileSync(userSettingsPath, appSettingsPath); } catch (e) { /* ignore */ }
+  }
+}
+
+// ============================================================
+// Ollama check & install
+// ============================================================
+
+function isOllamaInstalled() {
+  try {
+    execSync('ollama --version', { windowsHide: true, stdio: 'pipe' });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function isOllamaRunning() {
+  return new Promise((resolve) => {
+    const req = require('http').get('http://localhost:11434/api/version', (res) => {
+      resolve(res.statusCode === 200);
+    });
+    req.on('error', () => resolve(false));
+    req.setTimeout(2000, () => { req.destroy(); resolve(false); });
+  });
+}
+
+function installOllama(win) {
+  return new Promise((resolve) => {
+    const sendProgress = (msg, pct) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('setup-progress', {
+          step: 'ollama', status: pct >= 100 ? 'done' : 'downloading', message: msg, percent: pct
+        });
+      }
+    };
+
+    // Check if bundled installer exists
+    const ollamaDir = getOllamaDir();
+    const installerPath = ollamaDir ? path.join(ollamaDir, 'OllamaSetup.exe') : null;
+
+    if (installerPath && fs.existsSync(installerPath)) {
+      sendProgress('מתקין Ollama...', 30);
+      try {
+        execSync(`"${installerPath}" /SILENT /NORESTART`, { windowsHide: true, timeout: 120000 });
+        sendProgress('Ollama הותקן', 100);
+      } catch (e) {
+        sendProgress('התקנת Ollama נכשלה (אופציונלי)', 100);
+      }
+      resolve();
+    } else {
+      // Ollama not bundled - skip silently
+      sendProgress('Ollama לא נמצא באינסטלר (אופציונלי)', 100);
+      resolve();
+    }
+  });
+}
+
+function pullOllamaModel(win, modelName) {
+  return new Promise((resolve) => {
+    const sendProgress = (msg, pct) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('setup-progress', {
+          step: 'ollama-model', status: pct >= 100 ? 'done' : 'downloading', message: msg, percent: pct
+        });
+      }
+    };
+
+    sendProgress(`מוריד מודל ${modelName}...`, 0);
+
+    const proc = spawn('ollama', ['pull', modelName], { windowsHide: true });
+
+    proc.stderr.on('data', (data) => {
+      const text = data.toString();
+      const m = text.match(/(\d+)%/);
+      if (m) sendProgress(`מוריד ${modelName}... ${m[1]}%`, parseInt(m[1]));
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        sendProgress(`מודל ${modelName} הותקן`, 100);
+      } else {
+        sendProgress(`הורדת ${modelName} נכשלה (אופציונלי)`, 100);
+      }
+      resolve();
+    });
+
+    proc.on('error', () => {
+      sendProgress('Ollama לא זמין', 100);
+      resolve();
+    });
+  });
 }
 
 // ============================================================
@@ -198,7 +297,21 @@ function downloadModels(win) {
         if (m) sendProgress('e5', 'downloading', `מוריד E5-large... ${m[1]}%`, parseInt(m[1]));
       });
 
-      e5Proc.on('close', () => {
+      e5Proc.on('close', async () => {
+        // Step 3: Ollama
+        if (!isOllamaInstalled()) {
+          await installOllama(win);
+        } else {
+          sendProgress('ollama', 'done', 'Ollama כבר מותקן', 100);
+        }
+
+        // Step 4: Pull Ollama model if Ollama is available
+        if (isOllamaInstalled() && await isOllamaRunning()) {
+          await pullOllamaModel(win, 'qwen2.5:7b');
+        } else {
+          sendProgress('ollama-model', 'done', 'Ollama לא פעיל (אופציונלי)', 100);
+        }
+
         if (win && !win.isDestroyed()) win.webContents.send('setup-complete', {});
         setTimeout(resolve, 1500);
       });
@@ -220,9 +333,7 @@ function startFlask(port) {
     const logsDir = getLogsDir();
 
     const env = { ...process.env };
-    if (ffmpegDir && fs.existsSync(ffmpegDir)) {
-      env.PATH = ffmpegDir + ';' + (env.PATH || '');
-    }
+    if (ffmpegDir && fs.existsSync(ffmpegDir)) env.PATH = ffmpegDir + ';' + (env.PATH || '');
     env.HF_HOME = modelsDir;
     env.XDG_CACHE_HOME = modelsDir;
     env.PYTHONIOENCODING = 'utf-8';
@@ -231,7 +342,6 @@ function startFlask(port) {
       '--skip-transcribe', '--skip-vision', '--skip-embeddings', '--skip-chunking'];
 
     console.log(`Starting Flask: ${pythonPath} ${args.join(' ')}`);
-
     flaskProcess = spawn(pythonPath, args, { env, cwd: appDir, windowsHide: true });
 
     const logFile = path.join(logsDir, `flask-${Date.now()}.log`);
@@ -250,28 +360,11 @@ function startFlask(port) {
       }
     }
 
-    flaskProcess.stdout.on('data', (data) => {
-      const text = data.toString();
-      logStream.write(text);
-      checkStarted(text);
-    });
-
-    flaskProcess.stderr.on('data', (data) => {
-      const text = data.toString();
-      logStream.write('[STDERR] ' + text);
-      checkStarted(text);
-    });
-
-    flaskProcess.on('error', (err) => {
-      clearTimeout(timeout);
-      logStream.write('[ERROR] ' + err.message + '\n');
-      reject(err);
-    });
-
+    flaskProcess.stdout.on('data', (d) => { const t = d.toString(); logStream.write(t); checkStarted(t); });
+    flaskProcess.stderr.on('data', (d) => { const t = d.toString(); logStream.write('[STDERR] ' + t); checkStarted(t); });
+    flaskProcess.on('error', (err) => { clearTimeout(timeout); logStream.write('[ERROR] ' + err.message + '\n'); reject(err); });
     flaskProcess.on('close', (code) => {
-      logStream.write(`[EXIT] code ${code}\n`);
-      logStream.end();
-      flaskProcess = null;
+      logStream.write(`[EXIT] code ${code}\n`); logStream.end(); flaskProcess = null;
       if (!isQuitting && mainWindow) {
         dialog.showErrorBox('WhatsArch', 'השרת נכבה באופן לא צפוי. האפליקציה תיסגר.');
         app.quit();
@@ -285,9 +378,7 @@ function stopFlask() {
     if (!flaskProcess) return resolve();
     const pid = flaskProcess.pid;
     treeKill(pid, 'SIGTERM', (err) => {
-      if (err) {
-        try { execSync(`taskkill /pid ${pid} /T /F`, { windowsHide: true }); } catch (e) { /* dead */ }
-      }
+      if (err) { try { execSync(`taskkill /pid ${pid} /T /F`, { windowsHide: true }); } catch (e) { /* dead */ } }
       flaskProcess = null;
       resolve();
     });
@@ -295,18 +386,15 @@ function stopFlask() {
 }
 
 // ============================================================
-// Window creation
+// Windows
 // ============================================================
 
 function createSetupWindow() {
   setupWindow = new BrowserWindow({
-    width: 500, height: 420, resizable: false, frame: false,
+    width: 500, height: 500, resizable: false, frame: false,
     backgroundColor: '#0D9488',
     icon: path.join(__dirname, 'icons', 'icon.png'),
-    webPreferences: {
-      preload: path.join(__dirname, 'setup-preload.js'),
-      contextIsolation: true, nodeIntegration: false,
-    },
+    webPreferences: { preload: path.join(__dirname, 'setup-preload.js'), contextIsolation: true, nodeIntegration: false },
   });
   setupWindow.loadFile(path.join(__dirname, 'setup.html'));
   setupWindow.setMenuBarVisibility(false);
@@ -319,16 +407,11 @@ function createMainWindow(port) {
     width: 1200, height: 800, minWidth: 800, minHeight: 600,
     backgroundColor: '#FAFAF8',
     icon: path.join(__dirname, 'icons', 'icon.png'),
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, nodeIntegration: false,
-    },
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
   mainWindow.loadURL(`http://localhost:${port}`);
   mainWindow.setMenuBarVisibility(false);
-  mainWindow.on('close', (e) => {
-    if (!isQuitting) { e.preventDefault(); mainWindow.hide(); }
-  });
+  mainWindow.on('close', (e) => { if (!isQuitting) { e.preventDefault(); mainWindow.hide(); } });
   mainWindow.on('closed', () => { mainWindow = null; });
   return mainWindow;
 }
@@ -339,12 +422,9 @@ function createMainWindow(port) {
 
 function createTray() {
   const iconPath = path.join(__dirname, 'icons', 'icon.png');
-  let trayIcon;
-  if (fs.existsSync(iconPath)) {
-    trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
-  } else {
-    trayIcon = nativeImage.createEmpty();
-  }
+  let trayIcon = fs.existsSync(iconPath)
+    ? nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+    : nativeImage.createEmpty();
 
   tray = new Tray(trayIcon);
   tray.setToolTip('WhatsArch');
@@ -365,18 +445,14 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus(); }
   });
 
   app.on('ready', async () => {
     try {
       ensureDirectories();
 
-      // Check if models need downloading
+      // First-run setup
       const models = checkModelsExist();
       if (!models.whisper || !models.e5) {
         const win = createSetupWindow();
@@ -384,10 +460,10 @@ if (!gotTheLock) {
         if (setupWindow) setupWindow.close();
       }
 
-      // Setup junctions in production
+      // Setup file links in production
       if (!isDev()) setupJunctions();
 
-      // Find free port and start Flask
+      // Start Flask
       flaskPort = await findFreePort(5000);
       console.log(`Using port: ${flaskPort}`);
       await startFlask(flaskPort);
@@ -405,12 +481,8 @@ if (!gotTheLock) {
 
   app.on('before-quit', async (e) => {
     isQuitting = true;
-    if (flaskProcess) {
-      e.preventDefault();
-      await stopFlask();
-      app.quit();
-    }
+    if (flaskProcess) { e.preventDefault(); await stopFlask(); app.quit(); }
   });
 
-  app.on('window-all-closed', () => { /* keep running in tray */ });
+  app.on('window-all-closed', () => { /* tray */ });
 }

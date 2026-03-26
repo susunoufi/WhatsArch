@@ -44,6 +44,11 @@
         "filter": ["**/*"]
       },
       {
+        "from": "vendor/ollama",
+        "to": "vendor/ollama",
+        "filter": ["**/*"]
+      },
+      {
         "from": "../run.py",
         "to": "app/run.py"
       },
@@ -59,6 +64,7 @@
     ],
     "files": [
       "main.js",
+      "start.js",
       "preload.js",
       "setup.html",
       "setup-preload.js",

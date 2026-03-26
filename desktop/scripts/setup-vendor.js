@@ -112,11 +112,27 @@ async function setupFfmpeg() {
   log('ffmpeg setup complete!');
 }
 
+async function setupOllama() {
+  log('=== Setting up Ollama ===');
+  const OLLAMA_DIR = path.join(VENDOR_DIR, 'ollama');
+
+  if (fs.existsSync(path.join(OLLAMA_DIR, 'OllamaSetup.exe'))) { log('Already exists'); return; }
+
+  fs.mkdirSync(OLLAMA_DIR, { recursive: true });
+
+  const OLLAMA_URL = 'https://ollama.com/download/OllamaSetup.exe';
+  const dest = path.join(OLLAMA_DIR, 'OllamaSetup.exe');
+
+  await downloadFile(OLLAMA_URL, dest);
+  log('Ollama installer downloaded!');
+}
+
 async function main() {
   fs.mkdirSync(VENDOR_DIR, { recursive: true });
   try {
     await setupPython();
     await setupFfmpeg();
+    await setupOllama();
     log('=== All done! Run "npm run build" to create the installer. ===');
   } catch (err) {
     console.error('Setup failed:', err);
