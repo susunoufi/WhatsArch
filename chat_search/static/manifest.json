@@ -1,7 +1,7 @@
 {
     "name": "WhatsArch",
     "short_name": "WhatsArch",
-    "description": "WhatsApp Chat Archive Search Engine",
+    "description": "Search your WhatsApp & Telegram chats with AI",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#FAFAF8",
@@ -18,5 +18,18 @@
             "sizes": "512x512",
             "type": "image/svg+xml"
         }
-    ]
+    ],
+    "share_target": {
+        "action": "/api/upload/share",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "files": [
+                {
+                    "name": "shared-file",
+                    "accept": [".zip", ".txt", ".json", "application/zip", "text/plain", "application/json"]
+                }
+            ]
+        }
+    }
 }

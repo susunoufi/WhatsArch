@@ -895,4 +895,129 @@ def create_app(chats_dir: str) -> Flask:
         """Get available model options for each task."""
         return jsonify(config.PROVIDER_MODELS)
 
+    # ------------------------------------------------------------------
+    # File upload (ZIP) endpoint
+    # ------------------------------------------------------------------
+
+    @app.route("/api/upload", methods=["POST"])
+    @require_auth
+    def api_upload():
+        """Upload a WhatsApp/Telegram export ZIP file for processing.
+
+        In web mode: saves to user's directory, starts background processing.
+        In local mode: saves to chats/ directory.
+        """
+        import zipfile
+        import shutil
+        import tempfile
+        from . import process_manager
+
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        file = request.files["file"]
+        if not file.filename:
+            return jsonify({"error": "Empty filename"}), 400
+
+        # Optional chat name override
+        chat_name = request.form.get("chat_name", "").strip()
+
+        # Save uploaded file to temp
+        temp_dir = tempfile.mkdtemp()
+        temp_zip = os.path.join(temp_dir, "upload.zip")
+        try:
+            file.save(temp_zip)
+            file_size_mb = os.path.getsize(temp_zip) / (1024 * 1024)
+
+            # Extract ZIP
+            if not zipfile.is_zipfile(temp_zip):
+                return jsonify({"error": "File is not a valid ZIP archive"}), 400
+
+            extract_dir = os.path.join(temp_dir, "extracted")
+            with zipfile.ZipFile(temp_zip, "r") as zf:
+                zf.extractall(extract_dir)
+
+            # Find the chat content (might be in a subfolder)
+            from .parser import detect_platform
+            chat_root = extract_dir
+
+            # Check if content is in a subfolder
+            entries = os.listdir(extract_dir)
+            if len(entries) == 1 and os.path.isdir(os.path.join(extract_dir, entries[0])):
+                subfolder = os.path.join(extract_dir, entries[0])
+                if detect_platform(subfolder) != "unknown":
+                    chat_root = subfolder
+
+            platform = detect_platform(chat_root)
+            if platform == "unknown":
+                return jsonify({"error": "Could not find WhatsApp (_chat.txt) or Telegram (result.json) export in ZIP"}), 400
+
+            # Determine chat name
+            if not chat_name:
+                if len(entries) == 1:
+                    chat_name = entries[0]
+                else:
+                    chat_name = os.path.splitext(file.filename)[0]
+            # Sanitize
+            chat_name = "".join(c for c in chat_name if c not in '<>:"/\\|?*').strip()
+            if not chat_name:
+                chat_name = "uploaded_chat"
+
+            # Move to chats directory
+            dest_dir = os.path.join(chats_dir, chat_name)
+            if os.path.exists(dest_dir):
+                # Append number to avoid collision
+                i = 2
+                while os.path.exists(f"{dest_dir}_{i}"):
+                    i += 1
+                chat_name = f"{chat_name}_{i}"
+                dest_dir = os.path.join(chats_dir, chat_name)
+
+            shutil.copytree(chat_root, dest_dir)
+
+            # Register in Supabase if web mode
+            user = getattr(request, "user", None)
+            if user and _is_web_mode():
+                sb = _get_supabase_client()
+                if sb:
+                    try:
+                        sb.table("user_chats").insert({
+                            "user_id": user["id"],
+                            "chat_name": chat_name,
+                            "platform": platform,
+                            "status": "uploaded",
+                            "file_size_mb": round(file_size_mb, 2),
+                            "storage_path": dest_dir,
+                        }).execute()
+                    except Exception as e:
+                        print(f"Supabase insert error: {e}")
+
+            return jsonify({
+                "status": "ok",
+                "chat_name": chat_name,
+                "platform": platform,
+                "file_size_mb": round(file_size_mb, 2),
+                "message": f"Chat '{chat_name}' uploaded successfully. Use the Management tab to start processing.",
+            })
+
+        except zipfile.BadZipFile:
+            return jsonify({"error": "Corrupted ZIP file"}), 400
+        except Exception as e:
+            return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    @app.route("/api/upload/share", methods=["POST"])
+    @require_auth
+    def api_upload_share():
+        """PWA Share Target endpoint - receives shared files from mobile."""
+        # Same as upload but handles multipart from share target
+        if "file" in request.files:
+            return api_upload()
+        # Share target may send as 'shared-file'
+        if "shared-file" in request.files:
+            request.files["file"] = request.files["shared-file"]
+            return api_upload()
+        return jsonify({"error": "No file received"}), 400
+
     return app
