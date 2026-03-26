@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsArch — חיפוש חכם בשיחות צ'אט</title>
+<meta name="description" content="WhatsArch — מנוע חיפוש חכם מבוסס AI לשיחות WhatsApp ו-Telegram. חיפוש טקסט, תמלול הקלטות, זיהוי תמונות ועוד.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES
+   ============================================================ */
+:root {
+  --teal: #0D9488;
+  --teal-light: #14B8A6;
+  --indigo: #6366F1;
+  --indigo-light: #818CF8;
+  --bg-deep: #050A12;
+  --bg-card: rgba(15, 23, 42, 0.65);
+  --bg-card-hover: rgba(20, 30, 55, 0.8);
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border-subtle: rgba(99, 102, 241, 0.15);
+  --border-glow: rgba(13, 148, 136, 0.3);
+  --glass-bg: rgba(15, 23, 42, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --green-start: #059669;
+  --green-end: #0D9488;
+  --gradient-main: linear-gradient(135deg, var(--teal), var(--indigo));
+  --gradient-text: linear-gradient(135deg, var(--teal-light), var(--indigo-light));
+  --gradient-green: linear-gradient(135deg, var(--green-start), var(--teal));
+  --shadow-glow-teal: 0 0 40px rgba(13, 148, 136, 0.2);
+  --shadow-glow-indigo: 0 0 40px rgba(99, 102, 241, 0.2);
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Heebo', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ============================================================
+   ANIMATED BACKGROUND — GRADIENT MESH
+   ============================================================ */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-mesh .blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.25;
+  animation: blobFloat 20s ease-in-out infinite alternate;
+}
+
+.bg-mesh .blob-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--teal), transparent 70%);
+  top: -10%; right: -10%;
+  animation-duration: 22s;
+}
+
+.bg-mesh .blob-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--indigo), transparent 70%);
+  bottom: -10%; left: -10%;
+  animation-duration: 26s;
+  animation-delay: -5s;
+}
+
+.bg-mesh .blob-3 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #7C3AED, transparent 70%);
+  top: 40%; left: 30%;
+  animation-duration: 30s;
+  animation-delay: -10s;
+  opacity: 0.12;
+}
+
+@keyframes blobFloat {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(60px, -40px) scale(1.1); }
+  66%  { transform: translate(-30px, 50px) scale(0.95); }
+  100% { transform: translate(20px, -20px) scale(1.05); }
+}
+
+/* ============================================================
+   FLOATING CHAT BUBBLES (HERO BACKGROUND)
+   ============================================================ */
+.floating-bubbles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.floating-bubbles .bubble {
+  position: absolute;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  animation: floatUp 18s ease-in-out infinite;
+}
+
+.bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 12px;
+  width: 12px; height: 12px;
+  background: inherit;
+  border: inherit;
+  border-radius: 0 0 0 var(--radius-sm);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.bubble-1 { width: 120px; height: 40px; right: 8%; top: 20%; animation-delay: 0s; animation-duration: 20s; }
+.bubble-2 { width: 90px; height: 35px; left: 12%; top: 35%; animation-delay: -4s; animation-duration: 22s; }
+.bubble-3 { width: 150px; height: 45px; right: 20%; bottom: 30%; animation-delay: -8s; animation-duration: 18s; }
+.bubble-4 { width: 80px; height: 32px; left: 5%; bottom: 20%; animation-delay: -12s; animation-duration: 24s; }
+.bubble-5 { width: 110px; height: 38px; right: 35%; top: 60%; animation-delay: -16s; animation-duration: 19s; }
+
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(30px) rotate(-2deg); }
+  10%  { opacity: 0.15; }
+  50%  { opacity: 0.2; transform: translateY(-20px) rotate(1deg); }
+  90%  { opacity: 0.15; }
+  100% { opacity: 0; transform: translateY(30px) rotate(-2deg); }
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.page-content {
+  position: relative;
+  z-index: 1;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+section {
+  padding: 100px 0;
+}
+
+/* ============================================================
+   INLINE SVG LOGO
+   ============================================================ */
+.logo-svg {
+  display: inline-block;
+}
+
+.logo-svg svg {
+  display: block;
+}
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 80px 0;
+}
+
+.hero-inner {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-logo {
+  margin: 0 auto 40px;
+  animation: logoFloat 6s ease-in-out infinite;
+  width: 160px;
+  height: 160px;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+
+.hero-title {
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+.hero-tagline {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.hero-subtitle {
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: var(--text-secondary);
+  margin-bottom: 48px;
+  font-weight: 300;
+  direction: ltr;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  border-radius: 60px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  min-height: 54px;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.btn:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-primary {
+  background: var(--gradient-green);
+  color: #fff;
+  box-shadow: 0 4px 24px rgba(5, 150, 105, 0.3);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 40px rgba(5, 150, 105, 0.45);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 2px solid var(--border-subtle);
+  backdrop-filter: blur(8px);
+}
+
+.btn-secondary:hover {
+  border-color: var(--indigo-light);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.btn-sm {
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  min-height: 46px;
+}
+
+.btn-icon {
+  font-size: 1.2em;
+}
+
+/* ============================================================
+   SECTION HEADERS
+   ============================================================ */
+.section-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.section-badge {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(99, 102, 241, 0.15));
+  border: 1px solid var(--border-subtle);
+  color: var(--teal-light);
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.section-title .gradient {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-desc {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ============================================================
+   HOW IT WORKS — 3 STEPS
+   ============================================================ */
+.steps-section {
+  position: relative;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  position: relative;
+}
+
+.steps-grid::before {
+  content: '';
+  position: absolute;
+  top: 60px;
+  right: 16.66%;
+  left: 16.66%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--indigo));
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.step-card {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all var(--transition-slow);
+}
+
+.step-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.step-number {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradient-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 auto 24px;
+  position: relative;
+  box-shadow: 0 0 30px rgba(13, 148, 136, 0.3);
+}
+
+.step-number::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(99, 102, 241, 0.2);
+}
+
+.step-icon {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.step-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.step-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   FEATURES GRID
+   ============================================================ */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 36px 28px;
+  backdrop-filter: blur(12px);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.feature-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.05), rgba(99, 102, 241, 0.05));
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.feature-card:hover {
+  border-color: var(--border-glow);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-glow-teal);
+}
+
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+.feature-icon {
+  font-size: 2.2rem;
+  margin-bottom: 18px;
+  display: block;
+}
+
+.feature-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.feature-desc {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+/* ============================================================
+   COMPARISON — ONLINE vs LOCAL
+   ============================================================ */
+.compare-section {
+  position: relative;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.compare-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 44px 36px;
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-base);
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.compare-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.compare-card:hover {
+  transform: translateY(-4px);
+}
+
+.compare-card.card-online {
+  border-color: rgba(13, 148, 136, 0.25);
+}
+
+.compare-card.card-online:hover {
+  box-shadow: var(--shadow-glow-teal);
+}
+
+.compare-card.card-local {
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.compare-card.card-local:hover {
+  box-shadow: var(--shadow-glow-indigo);
+}
+
+.compare-card-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.card-online .compare-card-badge {
+  background: rgba(13, 148, 136, 0.15);
+  color: var(--teal-light);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+.card-local .compare-card-badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--indigo-light);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.compare-card-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.compare-card-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 24px;
+}
+
+.compare-list {
+  list-style: none;
+  margin-bottom: 32px;
+}
+
+.compare-list li {
+  padding: 8px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.compare-list li::before {
+  content: '✓';
+  color: var(--teal-light);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.card-local .compare-list li::before {
+  color: var(--indigo-light);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  border-top: 1px solid var(--glass-border);
+  padding: 48px 0 36px;
+  text-align: center;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  transition: color var(--transition-base);
+}
+
+.footer-links a:hover {
+  color: var(--teal-light);
+}
+
+.footer-copy {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.footer-love {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   SCROLL ANIMATIONS
+   ============================================================ */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--transition-slow);
+}
+
+.animate-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.stagger-children .animate-on-scroll:nth-child(1) { transition-delay: 0s; }
+.stagger-children .animate-on-scroll:nth-child(2) { transition-delay: 0.12s; }
+.stagger-children .animate-on-scroll:nth-child(3) { transition-delay: 0.24s; }
+.stagger-children .animate-on-scroll:nth-child(4) { transition-delay: 0.36s; }
+.stagger-children .animate-on-scroll:nth-child(5) { transition-delay: 0.48s; }
+.stagger-children .animate-on-scroll:nth-child(6) { transition-delay: 0.60s; }
+
+/* ============================================================
+   RESPONSIVE — TABLET
+   ============================================================ */
+@media (max-width: 1024px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE
+   ============================================================ */
+@media (max-width: 768px) {
+  section {
+    padding: 72px 0;
+  }
+
+  .hero {
+    min-height: calc(100vh - 40px);
+    padding: 60px 0;
+  }
+
+  .hero-logo {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 28px;
+  }
+
+  .hero-cta {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .steps-grid::before {
+    display: none;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .compare-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+  }
+
+  .compare-card {
+    padding: 32px 24px;
+  }
+
+  .section-header {
+    margin-bottom: 48px;
+  }
+
+  .bg-mesh .blob {
+    filter: blur(80px);
+    opacity: 0.18;
+  }
+
+  .bg-mesh .blob-1 { width: 350px; height: 350px; }
+  .bg-mesh .blob-2 { width: 300px; height: 300px; }
+  .bg-mesh .blob-3 { width: 250px; height: 250px; }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .hero-title {
+    font-size: 2.8rem;
+  }
+
+  .feature-card {
+    padding: 28px 22px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND GRADIENT MESH -->
+<div class="bg-mesh" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<!-- PAGE CONTENT -->
+<div class="page-content">
+
+  <!-- =====================================================
+       HERO SECTION
+       ===================================================== -->
+  <section class="hero">
+    <div class="floating-bubbles" aria-hidden="true">
+      <div class="bubble bubble-1"></div>
+      <div class="bubble bubble-2"></div>
+      <div class="bubble bubble-3"></div>
+      <div class="bubble bubble-4"></div>
+      <div class="bubble bubble-5"></div>
+    </div>
+
+    <div class="container">
+      <div class="hero-inner">
+        <!-- INLINE SVG LOGO -->
+        <div class="hero-logo">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="WhatsArch Logo">
+            <defs>
+              <linearGradient id="grad-main" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#14B8A6"/>
+                <stop offset="100%" style="stop-color:#818CF8"/>
+              </linearGradient>
+              <linearGradient id="grad-spark" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#5EEAD4"/>
+                <stop offset="100%" style="stop-color:#A5B4FC"/>
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Chat bubble — modern angular shape -->
+            <path d="
+              M 40 30
+              L 160 30
+              Q 175 30 175 45
+              L 175 125
+              Q 175 140 160 140
+              L 85 140
+              L 55 168
+              L 60 140
+              L 40 140
+              Q 25 140 25 125
+              L 25 45
+              Q 25 30 40 30
+              Z
+            " fill="url(#grad-main)" opacity="0.9"/>
+
+            <!-- Inner chat bubble highlight -->
+            <path d="
+              M 40 30
+              L 160 30
+              Q 175 30 175 45
+              L 175 125
+              Q 175 140 160 140
+              L 85 140
+              L 55 168
+              L 60 140
+              L 40 140
+              Q 25 140 25 125
+              L 25 45
+              Q 25 30 40 30
+              Z
+            " fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+
+            <!-- Magnifying glass -->
+            <circle cx="108" cy="82" r="28" fill="none" stroke="#fff" stroke-width="5.5" opacity="0.95"/>
+            <line x1="130" y1="104" x2="148" y2="122" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity="0.95"/>
+
+            <!-- Search dot (center of glass) -->
+            <circle cx="108" cy="82" r="4" fill="#fff" opacity="0.5"/>
+
+            <!-- AI sparkle — top right -->
+            <g filter="url(#glow)" transform="translate(150, 22)">
+              <path d="M 0 -14 L 3 -3 L 14 0 L 3 3 L 0 14 L -3 3 L -14 0 L -3 -3 Z"
+                    fill="url(#grad-spark)" opacity="0.95"/>
+            </g>
+
+            <!-- AI sparkle — smaller, left -->
+            <g filter="url(#glow)" transform="translate(38, 18) scale(0.55)">
+              <path d="M 0 -14 L 3 -3 L 14 0 L 3 3 L 0 14 L -3 3 L -14 0 L -3 -3 Z"
+                    fill="url(#grad-spark)" opacity="0.8"/>
+            </g>
+
+            <!-- AI sparkle — small, near handle -->
+            <g filter="url(#glow)" transform="translate(160, 135) scale(0.4)">
+              <path d="M 0 -14 L 3 -3 L 14 0 L 3 3 L 0 14 L -3 3 L -14 0 L -3 -3 Z"
+                    fill="url(#grad-spark)" opacity="0.7"/>
+            </g>
+
+            <!-- Three dots inside bubble (chat indicator) -->
+            <circle cx="60" cy="78" r="5" fill="#fff" opacity="0.4"/>
+            <circle cx="78" cy="78" r="5" fill="#fff" opacity="0.3"/>
+          </svg>
+        </div>
+
+        <h1 class="hero-title">WhatsArch</h1>
+        <p class="hero-tagline">חיפוש חכם בשיחות WhatsApp ו-Telegram</p>
+        <p class="hero-subtitle">AI-Powered Chat Archive Search Engine</p>
+
+        <div class="hero-cta">
+          <a href="/login" class="btn btn-primary">
+            <span class="btn-icon">☁️</span>
+            <span>התחל אונליין</span>
+          </a>
+          <a href="#download" class="btn btn-secondary">
+            <span class="btn-icon">💻</span>
+            <span>הורד למחשב</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       HOW IT WORKS
+       ===================================================== -->
+  <section class="steps-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-badge">איך זה עובד</div>
+        <h2 class="section-title">שלושה צעדים <span class="gradient">פשוטים</span></h2>
+        <p class="section-desc">מייצוא הצ'אט ועד לתשובות מ-AI — תוך דקות</p>
+      </div>
+
+      <div class="steps-grid stagger-children">
+        <div class="step-card animate-on-scroll">
+          <div class="step-number">1</div>
+          <span class="step-icon">📤</span>
+          <h3 class="step-title">ייצא את הצ'אט</h3>
+          <p class="step-desc">ייצא שיחת WhatsApp או Telegram כולל מדיה ישירות מהטלפון</p>
+        </div>
+
+        <div class="step-card animate-on-scroll">
+          <div class="step-number">2</div>
+          <span class="step-icon">🔍</span>
+          <h3 class="step-title">העלה וחפש</h3>
+          <p class="step-desc">העלה את הקובץ וקבל חיפוש מיידי בכל ההודעות, תמלולים ותמונות</p>
+        </div>
+
+        <div class="step-card animate-on-scroll">
+          <div class="step-number">3</div>
+          <span class="step-icon">🤖</span>
+          <h3 class="step-title">שאל את ה-AI</h3>
+          <p class="step-desc">שאל שאלות בשפה חופשית וקבל תשובות מדויקות עם מקורות מהשיחה</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       FEATURES
+       ===================================================== -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-badge">יכולות</div>
+        <h2 class="section-title">כל מה שצריך <span class="gradient">במקום אחד</span></h2>
+        <p class="section-desc">טכנולוגיית AI מתקדמת שהופכת כל שיחה לנגישה</p>
+      </div>
+
+      <div class="features-grid stagger-children">
+        <div class="feature-card animate-on-scroll">
+          <span class="feature-icon">🔍</span>
+          <h3 class="feature-title">חיפוש חכם</h3>
+          <p class="feature-desc">חיפוש טקסט מלא + חיפוש סמנטי חכם בכל ההודעות, כולל סינון לפי שולח, תאריך וסוג תוכן</p>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <span class="feature-icon">🎙️</span>
+          <h3 class="feature-title">תמלול הקלטות</h3>
+          <p class="feature-desc">הודעות קוליות מתומללות אוטומטית עם זיהוי שפה, כך שגם הקלטות הופכות לניתנות לחיפוש</p>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <span class="feature-icon">🖼️</span>
+          <h3 class="feature-title">זיהוי תמונות</h3>
+          <p class="feature-desc">AI מתאר כל תמונה וסרטון — חפש לפי מה שמופיע בתמונה, גם בלי לזכור מתי נשלחה</p>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <span class="feature-icon">💬</span>
+          <h3 class="feature-title">צ'אט AI</h3>
+          <p class="feature-desc">שאל שאלות על השיחה בשפה טבעית וקבל תשובות מדויקות עם ציטוט מקורות</p>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <span class="feature-icon">📊</span>
+          <h3 class="feature-title">אנליטיקס</h3>
+          <p class="feature-desc">גרפים, סטטיסטיקות שולחים, דפוסי פעילות לפי שעות — תראה את השיחה מזווית חדשה</p>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+          <span class="feature-icon">🔒</span>
+          <h3 class="feature-title">פרטיות מלאה</h3>
+          <p class="feature-desc">בהתקנה מקומית — הכל רץ אצלך. אין שרת חיצוני, אין גישה לנתונים שלך, שליטה מלאה</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       ONLINE vs LOCAL
+       ===================================================== -->
+  <section class="compare-section" id="download">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <div class="section-badge">בחר את המסלול</div>
+        <h2 class="section-title">אונליין או <span class="gradient">מקומי</span>?</h2>
+        <p class="section-desc">שני מסלולים, אותה חוויה מדהימה</p>
+      </div>
+
+      <div class="compare-grid stagger-children">
+        <!-- ONLINE CARD -->
+        <div class="compare-card card-online animate-on-scroll">
+          <span class="compare-card-icon">☁️</span>
+          <div class="compare-card-badge">מהיר להתחלה</div>
+          <h3 class="compare-card-title">אונליין</h3>
+          <ul class="compare-list">
+            <li>העלה ZIP ועובד מיד</li>
+            <li>עד 100MB לשיחה</li>
+            <li>חיפוש + AI מובנה</li>
+            <li>צריך חשבון (חינם)</li>
+            <li>גישה מכל מכשיר</li>
+          </ul>
+          <a href="/login" class="btn btn-primary btn-sm" style="width:100%; justify-content: center;">
+            התחל עכשיו
+          </a>
+        </div>
+
+        <!-- LOCAL CARD -->
+        <div class="compare-card card-local animate-on-scroll">
+          <span class="compare-card-icon">💻</span>
+          <div class="compare-card-badge">ללא הגבלה</div>
+          <h3 class="compare-card-title">התקנה מקומית</h3>
+          <ul class="compare-list">
+            <li>ללא הגבלת גודל</li>
+            <li>כל הכלים כולל Ollama</li>
+            <li>פרטיות מלאה — הכל רץ אצלך</li>
+            <li>חינם לנצח</li>
+            <li>התקנה בדקה אחת</li>
+          </ul>
+          <a href="https://github.com/whatsarch/whatsarch/releases" class="btn btn-secondary btn-sm" style="width:100%; justify-content: center;">
+            הורד ל-Windows
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       FOOTER
+       ===================================================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-links">
+        <a href="https://github.com/whatsarch/whatsarch">GitHub</a>
+        <a href="/privacy">פרטיות</a>
+        <a href="/contact">צור קשר</a>
+      </div>
+      <p class="footer-copy">WhatsArch &copy; 2026</p>
+      <p class="footer-love">Built with ❤️ and AI</p>
+    </div>
+  </footer>
+
+</div><!-- .page-content -->
+
+<!-- =====================================================
+     SCROLL ANIMATIONS — IntersectionObserver
+     ===================================================== -->
+<script>
+(function() {
+  'use strict';
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, {
+    threshold: 0.12,
+    rootMargin: '0px 0px -40px 0px'
+  });
+
+  document.querySelectorAll('.animate-on-scroll, .step-card, .feature-card, .compare-card').forEach(function(el) {
+    observer.observe(el);
+  });
+})();
+</script>
+
+</body>
+</html>

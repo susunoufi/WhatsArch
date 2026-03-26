@@ -14,6 +14,7 @@ mimetypes.add_type("audio/ogg", ".opus")
 def create_app(chats_dir: str) -> Flask:
     app = Flask(__name__, template_folder="templates")
     app.config["CHATS_DIR"] = chats_dir
+    app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500MB max upload
 
     # ------------------------------------------------------------------
     # Auth helpers (Supabase JWT verification)
@@ -259,6 +260,17 @@ def create_app(chats_dir: str) -> Flask:
 
     @app.route("/")
     def index():
+        # In web mode, show landing page to unauthenticated users
+        if _is_web_mode():
+            user = get_current_user()
+            if not user:
+                return render_template("landing.html")
+        return render_template("index.html")
+
+    @app.route("/app")
+    @require_auth
+    def app_page():
+        """Main app (authenticated users)."""
         return render_template("index.html")
 
     @app.route("/login")
