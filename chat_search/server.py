@@ -222,7 +222,29 @@ def create_app(chats_dir: str) -> Flask:
 
     @app.route("/auth/callback")
     def auth_callback():
-        """OAuth callback page - extracts token from URL hash and stores it."""
+        """OAuth callback - handles both PKCE (code in query) and implicit (token in hash)."""
+        code = request.args.get("code")
+        if code:
+            # PKCE flow: exchange code for session server-side
+            sb = _get_supabase_client()
+            if sb:
+                try:
+                    result = sb.auth.exchange_code_for_session({"auth_code": code})
+                    if result.session:
+                        # Return page that stores tokens and redirects
+                        return f"""<!DOCTYPE html><html><head><title>WhatsArch</title></head><body>
+                        <script>
+                        localStorage.setItem('auth_token', '{result.session.access_token}');
+                        localStorage.setItem('refresh_token', '{result.session.refresh_token}');
+                        localStorage.setItem('user_email', '{result.user.email}');
+                        window.location.href = '/';
+                        </script></body></html>"""
+                except Exception as e:
+                    return f"""<!DOCTYPE html><html><body>
+                    <p>Authentication error: {str(e)}</p>
+                    <a href="/login">Try again</a></body></html>"""
+
+        # Implicit flow fallback: token in URL hash
         return """<!DOCTYPE html><html><head><title>WhatsArch</title></head><body>
         <script>
         const hash = window.location.hash.substring(1);
