@@ -1920,7 +1920,7 @@
                     const opt = document.createElement('option');
                     opt.value = chat.name;
                     const badge = chat.source === 'local' ? ' \uD83D\uDCBB' : '';
-                    opt.textContent = chat.name + badge + (chat.total_messages ? ` (${chat.total_messages.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')})` : ' (' + t('notReady') + ')');
+                    opt.textContent = chat.name + badge + (chat.total_messages != null && chat.total_messages > 0 ? ` (${chat.total_messages.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')})` : chat.ready ? '' : ' (' + t('notReady') + ')');
                     opt.disabled = !chat.ready;
                     $chatSelector.appendChild(opt);
                 });
