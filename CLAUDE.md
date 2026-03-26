@@ -5,7 +5,8 @@
 WhatsArch is a multi-platform (WhatsApp + Telegram) chat archive search engine with AI-powered Q&A. It processes exported chat folders, transcribes voice messages, describes images/videos using multi-provider vision AI, extracts PDF text, indexes everything into a searchable database, and serves a web UI for full-text search + AI chat.
 
 **Supports:** WhatsApp exports (`_chat.txt` + media) and Telegram exports (`result.json` + media).
-**Multilingual:** Auto-detects chat language. UI in Hebrew (RTL), AI prompts in 9 languages.
+**Multilingual:** Auto-detects chat language. UI supports Hebrew (RTL) and English (LTR). AI prompts in 9 languages.
+**Admin:** `susunoufi@gmail.com` is the admin/owner.
 
 ### Tech Stack
 
@@ -21,10 +22,13 @@ WhatsArch is a multi-platform (WhatsApp + Telegram) chat archive search engine w
 | RAG LLM | Multi-provider: Anthropic, OpenAI, Google Gemini, Ollama |
 | PDF extraction | PyMuPDF (`pymupdf`) |
 | Video processing | ffmpeg (frame extraction + audio extraction) |
-| Frontend | Vanilla HTML/CSS/JS (React migration planned) |
+| Frontend (current) | Vanilla HTML/CSS/JS, dark theme, Font Awesome icons |
+| Frontend (planned) | React + TypeScript + Vite + Tailwind (in `frontend/`) |
 | Desktop | Electron wrapper with embedded Python/ffmpeg/Ollama |
+| Local Agent | Lightweight Flask service on localhost:11470 (in `agent/`) |
 | Deployment | Railway (backend), Supabase (DB + auth + storage) |
-| PWA | Share Target for direct sharing from WhatsApp on mobile |
+| PWA | Maskable icons, Share Target, service worker |
+| Logo | DALL-E 3 generated (teal/indigo glass-morphism) |
 
 ### Dependencies (`requirements.txt`)
 
@@ -45,44 +49,61 @@ WhatsArch/
   wsgi.py                         # Gunicorn entry (auto-generated in Docker)
   Dockerfile                      # Railway deployment
   .env                            # API keys + Supabase + Railway credentials
-  settings.json                   # Provider/model preferences (auto-created)
+  settings.json                   # Provider/model preferences + user plans (auto-created)
   requirements.txt
+  UPGRADE_PLAN.md                 # Architecture upgrade roadmap
   chat_search/
     __init__.py                   # Empty package marker
-    config.py                     # Settings system, hardware detection, cost calculator, provider models
-    parser.py                     # WhatsApp + Telegram parser, platform detection, language detection
+    config.py                     # Settings, hardware detection, presets, cost calculator, provider models
+    parser.py                     # WhatsApp + Telegram parser, platform/language detection, sender aliases
     transcribe.py                 # Audio transcription (Whisper)
-    vision.py                     # Multi-provider image/video/PDF processing
-    indexer.py                    # SQLite FTS5 index + semantic embeddings + analytics
+    vision.py                     # Multi-provider image/video/PDF processing (parallel)
+    indexer.py                    # SQLite FTS5 index + semantic embeddings + incremental indexing
     chunker.py                    # Conversation-aware chunking (1-on-1 + group thread detection)
-    ai_chat.py                    # Multi-provider RAG pipeline + multilingual NLP + streaming
-    server.py                     # Flask web server + REST API + Auth + Upload
-    process_manager.py            # Background processing orchestrator + progress tracking
+    ai_chat.py                    # Multi-provider RAG pipeline + multilingual NLP + SSE streaming
+    server.py                     # Flask web server + REST API + Auth + Upload + Admin
+    process_manager.py            # Background processing orchestrator + progress tracking + ETA
     templates/
-      index.html                  # Main SPA (search, management, settings, gallery, analytics)
+      landing.html                # Landing page (dark theme, animated, bilingual)
+      index.html                  # Main SPA (search, management, settings, gallery, analytics, admin)
       auth.html                   # Login/signup page (email + Google OAuth)
     static/
-      manifest.json               # PWA manifest with share_target
-      sw.js                       # Service worker
-      icon-192.svg, icon-512.svg  # PWA icons
+      manifest.json               # PWA manifest with maskable icons + share_target
+      sw.js                       # Service worker (network-first caching)
+      logo_final2.png             # Main logo (DALL-E 3, 1024x1024)
+      icon-192.png                # PWA icon (maskable, rounded)
+      icon-512.png                # PWA icon (maskable, rounded)
+      apple-touch-icon.png        # iOS home screen icon (180x180)
+      favicon.png                 # Browser tab icon (32x32)
+      icon-48.png                 # Header logo (48x48)
+  frontend/                       # React + TypeScript + Vite (planned replacement for vanilla HTML)
+    package.json                  # React 19, Zustand, TanStack Query, Tailwind, Recharts
+    vite.config.ts                # Vite dev proxy to Flask :5000
+    src/
+      App.tsx                     # Main app with tab routing
+      api/client.ts               # Typed API client for all endpoints
+      types/index.ts              # TypeScript interfaces for all API responses
+      stores/                     # Zustand: chatStore, searchStore, settingsStore, authStore
+      components/                 # Search, AIChat, Management, Settings, Gallery, Analytics
+      utils/                      # i18n (he/en), formatters
+  agent/                          # Local agent for background compute
+    agent.py                      # Flask on localhost:11470 (Whisper, Ollama, file upload)
+    install.bat                   # Windows installer (startup + dependencies)
+    requirements.txt
   desktop/
-    main.js                       # Electron main process (Flask subprocess, model download, Ollama)
-    start.js                      # Dev launcher (solves npm electron module conflict)
-    setup.html                    # First-run setup UI (4 steps: Whisper, E5, Ollama, AI model)
-    setup-preload.js              # IPC bridge for setup window
-    preload.js                    # Main window preload
+    main.js                       # Electron main process
+    start.js                      # Dev launcher
+    setup.html                    # First-run setup UI
     package.json                  # Electron + electron-builder config
-    scripts/
-      setup-vendor.js             # Build: downloads Python + ffmpeg + Ollama
   chats/
     <chat_name>/                  # One folder per exported chat
       _chat.txt                   # WhatsApp export (or result.json for Telegram)
       *.opus, *.jpg, *.mp4, etc.  # Media files
       data/
-        chat.db                   # SQLite search index (messages + chunks + metadata)
-        chat_chunk_embeddings.npy # Chunk semantic embeddings (numpy, 1024-dim)
+        chat.db                   # SQLite search index
+        chat_chunk_embeddings.npy # Chunk semantic embeddings
         transcriptions.json       # Audio transcription cache
-        descriptions.json         # Image + video visual description cache
+        descriptions.json         # Image + video description cache
         video_transcriptions.json # Video audio transcription cache
         pdf_texts.json            # PDF text extraction cache
 ```
@@ -94,21 +115,24 @@ run.py
   -> parser.py:detect_platform()  (Step 0: WhatsApp or Telegram?)
   -> transcribe.py                (Step 1: audio -> text)
   -> vision.py                    (Step 2: images/videos/PDFs -> descriptions, multi-provider)
-  -> parser.py:parse_chat/parse_telegram  (Step 3: export + caches -> messages)
+  -> parser.py:parse_chat/parse_telegram  (Step 3: export + caches -> messages + sender aliases)
   -> parser.py:detect_chat_language       (Step 3b: auto-detect language)
   -> parser.py:detect_chat_type           (Step 4: 1on1/group)
-  -> indexer.py:build_index               (Step 5: messages -> SQLite FTS5 + metadata)
+  -> indexer.py:build_index               (Step 5: messages -> SQLite FTS5 + incremental)
   -> chunker.py                           (Step 6: messages -> conversation chunks)
   -> indexer.py:build_chunks + build_chunk_embeddings  (Step 7: chunks -> DB + embeddings)
   -> server.py                            (Step 8: Flask web server)
-       -> indexer.py      (search, stats, context, semantic_search, analytics)
-       -> ai_chat.py      (RAG pipeline with multilingual support + streaming)
-       -> config.py       (settings, hardware detection, provider models)
+       -> indexer.py      (search, stats, context, semantic_search, analytics, export)
+       -> ai_chat.py      (RAG pipeline with multilingual support + SSE streaming)
+       -> config.py       (settings, hardware detection, presets, provider models)
        -> Supabase        (auth, user data, cloud storage)
 ```
 
 ### Entry Points
 
+**Landing page:** `/` → `landing.html` (unauthenticated users in web mode)
+**Main app:** `/app` → `index.html` (authenticated users or local mode)
+**Login:** `/login` → `auth.html` (web mode only)
 **Local CLI:** `run.py:main()` - processes chats then starts Flask server
 **Production:** `run.py:create_web_app()` - Flask app factory for Gunicorn/Railway
 **Desktop:** `desktop/main.js` - Electron wrapper, spawns Flask as subprocess
@@ -122,17 +146,33 @@ run.py
 Settings stored in `settings.json` (project root):
 ```json
 {
-  "vision_provider": "anthropic",    // anthropic, openai, gemini, ollama
-  "vision_model": "claude-sonnet-4-20250514",
-  "video_provider": "anthropic",
-  "video_model": "claude-sonnet-4-20250514",
-  "rag_provider": "anthropic",
-  "rag_model": "claude-opus-4-6",
+  "vision_provider": "gemini",
+  "vision_model": "gemini-2.0-flash",
+  "video_provider": "gemini",
+  "video_model": "gemini-2.0-flash",
+  "rag_provider": "gemini",
+  "rag_model": "gemini-2.0-flash",
   "ollama_base_url": "http://localhost:11434",
   "ollama_vision_model": "llama3.2-vision",
-  "ollama_rag_model": "qwen2.5:14b"
+  "ollama_rag_model": "qwen2.5:14b",
+  "sender_aliases": {},
+  "user_plans": {}
 }
 ```
+
+Default provider is **Gemini Flash** (cheapest option).
+
+### Preset Packages
+
+| Preset | Vision | RAG | Use Case |
+|--------|--------|-----|----------|
+| **Budget** (default) | Gemini Flash | Gemini Flash | Cheapest, good quality |
+| **Balanced** | Gemini Flash | GPT-4o-mini | Fast + better Hebrew |
+| **Premium** | Claude Sonnet | Claude Opus | Best quality, most expensive |
+| **Local** | Ollama llava | Ollama qwen2.5 | Free, requires GPU |
+
+`config.recommend_preset()` auto-recommends based on chat size + hardware.
+`config.estimate_preset_cost()` calculates cost per chat.
 
 ### Supported Providers
 
@@ -158,9 +198,15 @@ Samples message text, detects by character ranges (Hebrew, Arabic, Cyrillic, CJK
 
 Stored in `chat_metadata.language`. Passed to RAG and Vision.
 
-### Dynamic Prompts
+### UI Internationalization (i18n)
 
-- **Vision** (`vision.py`): `IMAGE_PROMPTS` dict with prompts in 9 languages (he, ar, en, es, fr, de, ru, pt, zh)
+Frontend supports Hebrew (RTL) and English (LTR) with language toggle button.
+Translation system: `TRANSLATIONS` dict with ~150 keys, `t(key)` function, `applyLanguage()` for DOM updates.
+Language preference saved in `localStorage('whatsarch_lang')`.
+
+### Dynamic AI Prompts
+
+- **Vision** (`vision.py`): `IMAGE_PROMPTS` dict with prompts in 9 languages
 - **RAG** (`ai_chat.py`): `get_system_prompt(chat_name, language)` returns language-appropriate system prompt
 - **Stop words** (`ai_chat.py`): `STOP_WORDS` dict with sets for he, en, es, fr, de, ru, pt
 - **Keyword extraction**: `extract_keywords(question, language)` uses language-specific stop words
@@ -173,11 +219,13 @@ Stored in `chat_metadata.language`. Passed to RAG and Vision.
 - Parses `_chat.txt` with regex: `[DD/MM/YYYY, HH:MM:SS] Sender: Message`
 - Handles multi-line messages, `<attached: filename>` tags
 - Name mention detection for group thread linking
+- **Sender aliases**: optional name mapping applied at parse time
 
 ### Telegram (`parser.py:parse_telegram()`)
 - Parses `result.json` (Telegram Desktop export)
 - Handles text segments (plain + formatted), media type mapping
 - Media in subdirectories (`photos/`, `voice_messages/`, etc.)
+- **Sender aliases**: same support as WhatsApp
 
 ### Auto-Detection (`parser.py:detect_platform()`)
 - `_chat.txt` present → WhatsApp
@@ -191,18 +239,19 @@ Stored in `chat_metadata.language`. Passed to RAG and Vision.
 ### Core Search
 | Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/` | Serve main SPA |
-| GET | `/api/chats` | List all chats (WhatsApp + Telegram) with platform, language |
+| GET | `/` | Landing page (unauth) or main app (local mode) |
+| GET | `/app` | Main SPA (authenticated) |
+| GET | `/api/chats` | List all chats with platform, language |
 | GET | `/api/search?chat=&q=&sender=&from=&to=&type=&page=` | FTS5 search, 50/page |
-| GET | `/api/search/all?q=&...` | Cross-chat search (all chats) |
+| GET | `/api/search/all?q=&...` | Cross-chat search |
 | GET | `/api/context/<id>?chat=` | Surrounding messages |
 | GET | `/api/stats?chat=` | Chat statistics |
 
 ### AI Chat
 | Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/api/ai/status` | Provider availability |
-| POST | `/api/ai/chat` | RAG Q&A (blocking) |
+| GET | `/api/ai/status` | Provider availability + current settings |
+| POST | `/api/ai/chat` | RAG Q&A (blocking) with debug info |
 | POST | `/api/ai/chat/stream` | RAG Q&A (SSE streaming) |
 
 ### Processing
@@ -210,7 +259,7 @@ Stored in `chat_metadata.language`. Passed to RAG and Vision.
 |--------|-------|-------------|
 | GET | `/api/process/status?chat=` | Processing status with per-file detail |
 | POST | `/api/process/start` | Start background task |
-| GET | `/api/process/progress?chat=` | Poll active task progress |
+| GET | `/api/process/progress?chat=` | Poll progress with ETA |
 | POST | `/api/process/stop` | Cancel running task |
 
 ### Media & Content
@@ -229,6 +278,9 @@ Stored in `chat_metadata.language`. Passed to RAG and Vision.
 | POST | `/api/settings` | Update settings and/or API keys |
 | GET | `/api/hardware` | Hardware detection + Ollama performance |
 | GET | `/api/models` | Available provider models catalog |
+| GET | `/api/presets?chat=` | Preset packages with cost estimates |
+| GET | `/api/aliases?chat=` | Sender name aliases |
+| POST | `/api/aliases` | Update sender aliases |
 
 ### Auth (Web mode only)
 | Method | Route | Description |
@@ -239,33 +291,58 @@ Stored in `chat_metadata.language`. Passed to RAG and Vision.
 | POST | `/api/auth/refresh` | Refresh access token |
 | GET | `/api/auth/me` | Current user profile |
 | GET | `/login` | Login/signup page |
-| GET | `/auth/callback` | OAuth callback handler |
+| GET | `/auth/callback` | OAuth callback → redirects to `/app` |
+
+### Admin (susunoufi@gmail.com only)
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/admin/users` | List all users with plans |
+| POST | `/api/admin/users` | Set user preset `{email, preset}` |
+| DELETE | `/api/admin/users` | Reset user to default plan |
+| GET | `/api/user/plan` | Current user's assigned plan |
 
 ### Upload
 | Method | Route | Description |
 |--------|-------|-------------|
-| POST | `/api/upload` | Upload ZIP (WhatsApp/Telegram export) |
+| POST | `/api/upload` | Upload ZIP (max 500MB) |
+| POST | `/api/upload/url` | Download from Google Drive/Dropbox/OneDrive link |
 | POST | `/api/upload/share` | PWA Share Target handler |
 
 ### Auth Middleware
 
-`@require_auth` decorator: enforced only in web mode (when `SUPABASE_URL` is set). Local/desktop mode skips auth entirely. Uses Supabase JWT verification via `Authorization: Bearer <token>` header.
+- `@require_auth` — enforced only in web mode (when `SUPABASE_URL` is set)
+- `@require_admin` — requires `susunoufi@gmail.com`
+- `get_user_preset()` — returns user's allowed preset
+- `enforce_user_preset()` — overrides settings based on user plan
+- New users default to **budget** preset
 
 ---
 
-## 7. Frontend (`chat_search/templates/index.html`)
+## 7. Frontend
 
-Single-page application, ~2800 lines, vanilla JS. 5 tabs:
+### Landing Page (`templates/landing.html`)
+Dark theme with animated gradient mesh background. Sections: hero (logo + CTAs), how it works (3 steps), features grid (6), online vs local comparison. Mobile: hides "download" option.
 
-1. **Search** - Full-text search with filters (sender, date, type), message cards, context viewer
-2. **Management** - Per-chat processing status, action buttons, progress bars, file upload
-3. **Settings** - Provider/model selection cards, API key management, hardware info, cost calculator
-4. **Gallery** - Media browser with type filter and pagination
-5. **Analytics** - Sender stats, monthly activity, hourly heatmap, media breakdown
+### Main App (`templates/index.html`)
+Dark theme SPA, ~3200 lines. 6 tabs:
 
-**AI Chat Panel** - Floating sidebar with SSE streaming, source citations, thread context.
+1. **Search** - Full-text search with filters, result type badges, context viewer, export (CSV/JSON)
+2. **Management** - Per-chat processing, action buttons, progress bars with ETA, file upload (ZIP + URL link)
+3. **Settings** - Preset packages, model selection cards, API key management, hardware info, cost calculator
+4. **Gallery** - Media grid with type filter, lightbox, pagination
+5. **Analytics** - Sender bar charts, hourly heatmap, busiest days, media breakdown
+6. **Admin** - User management table (admin only), preset assignment
 
-**Theme:** Light theme (#FAFAF8 background), teal/indigo gradient header, RTL Hebrew.
+**AI Chat Panel** - Floating sidebar with SSE streaming, source citation modal, RAG debug ("why this answer?").
+
+**i18n** - Hebrew/English toggle, RTL/LTR switching, ~150 translated strings.
+
+**Icons** - Font Awesome 6.5 (no emojis).
+
+**Theme:** Dark (#0a0f1a), glass-morphism cards, teal/indigo gradients.
+
+### React Frontend (`frontend/`)
+Planned replacement. Built with Vite + React 19 + TypeScript + Tailwind + Zustand + TanStack Query. Builds successfully (259KB JS). Not yet deployed — vanilla HTML is the active frontend.
 
 ---
 
@@ -276,15 +353,13 @@ Single-page application, ~2800 lines, vanilla JS. 5 tabs:
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `ANTHROPIC_API_KEY` | For Anthropic provider | Vision + RAG |
-| `OPENAI_API_KEY` | For OpenAI provider | Vision + RAG |
+| `OPENAI_API_KEY` | For OpenAI provider | Vision + RAG + DALL-E logo |
 | `GOOGLE_API_KEY` | For Gemini provider | Vision + RAG |
 | `SUPABASE_URL` | For web mode | Enables auth + cloud features |
 | `SUPABASE_ANON_KEY` | For web mode | Client-side Supabase access |
 | `SUPABASE_SERVICE_ROLE_KEY` | For web mode | Server-side Supabase access |
-| `SUPABASE_DB_PASSWORD` | For DB management | Direct PostgreSQL access |
 | `GOOGLE_OAUTH_CLIENT_ID` | For Google login | OAuth provider |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | For Google login | OAuth provider |
-| `RAILWAY_TOKEN` | For deployment | Railway CLI access |
 
 ### Supabase Schema
 
@@ -298,62 +373,70 @@ All tables have Row Level Security: each user sees only their own data.
 
 ---
 
-## 9. Desktop App (`desktop/`)
+## 9. Key Features Added in Recent Sessions
 
-Electron wrapper for Windows. Bundles Python + ffmpeg + Ollama.
+### Session 1 (this codebase session):
+- Multi-provider AI (Ollama, Gemini, OpenAI, Anthropic) for RAG + Vision
+- Settings page with model selection, hardware detection, cost calculator
+- Preset packages (budget/balanced/premium/local) with smart recommendation
+- Admin user management (plan assignment per user)
+- Sender name aliases (applied at parse time, before indexing)
+- SSE streaming for AI chat responses
+- RAG transparency ("why this answer?" debug view)
+- Cross-chat search
+- Media gallery tab
+- Analytics dashboard (charts, heatmaps)
+- Incremental indexing (skip rebuild when no changes)
+- Parallel Vision API processing (ThreadPoolExecutor)
+- ETA for processing tasks
+- CSV/JSON export
+- i18n (Hebrew/English with RTL/LTR)
+- PWA with maskable icons
+- Dark theme UI overhaul
+- DALL-E 3 generated logo
+- Font Awesome icons (replaced all emojis)
+- URL-based upload (Google Drive/Dropbox/OneDrive links)
+- Upload button always visible in management tab
+- Landing page with dark animated design
+- Local agent service (agent/)
+- Login redirect fix (OAuth → /app)
 
-**First-run setup** (4 steps with progress bars):
-1. Download Whisper model (~500MB)
-2. Download E5-large model (~2GB)
-3. Install Ollama (silent)
-4. Pull AI model (qwen2.5:7b)
-
-**Key detail:** `start.js` solves a critical issue where `node_modules/electron` shadows the built-in Electron module. It temporarily moves the npm package and unsets `ELECTRON_RUN_AS_NODE` before launching `electron.exe`.
-
-**User data:** `Documents/WhatsArch/chats/`, `AppData/WhatsArch/models/`, symlinked to app via junctions.
-
-**Build:** `cd desktop && npm run setup-vendor && npm run build:win` → produces NSIS installer.
+### Session 2 (parallel session):
+- Telegram support (parser + auto-detection)
+- 9-language multilingual support
+- Supabase Auth (Google OAuth + email/password)
+- Railway deployment + Dockerfile
+- Electron desktop wrapper
+- ZIP upload endpoint + PWA Share Target
+- OAuth PKCE callback fix
 
 ---
 
-## 10. Deployment
-
-### Railway (Production Web)
-
-- **URL:** `https://whatsarch-production.up.railway.app`
-- **Docker:** Python 3.11-slim + ffmpeg + CPU-only PyTorch
-- **Entry:** Gunicorn with 2 workers, 4 threads
-- **Auto-deploy:** Triggered on every GitHub push to main
-
-### Local Development
-
-```bash
-python run.py                      # Process all chats + serve on :5000
-python run.py --skip-transcribe    # Skip Whisper, use cached
-python run.py --port 8080          # Different port
-cd desktop && npm start            # Electron desktop app
-```
-
----
-
-## 11. Current Status & Known Issues
+## 10. Current Status & Known Issues
 
 ### Working
-- Multi-provider Vision + RAG (Anthropic, OpenAI, Gemini, Ollama)
+- Multi-provider Vision + RAG (4 providers, configurable per user)
 - WhatsApp + Telegram parsing with auto-detection
 - 9-language support (auto-detect + dynamic prompts)
 - SSE streaming for AI chat
-- Cross-chat search
-- Background processing with cancellation
-- Upload ZIP via API + PWA Share Target
+- Cross-chat search + export
+- Background processing with ETA and cancellation
+- Upload ZIP + URL link (Google Drive/Dropbox/OneDrive)
 - Supabase Auth (Google OAuth + email/password)
-- Railway deployment (live)
-- Electron desktop wrapper (tested on Windows)
+- Admin user management with preset enforcement
+- Railway deployment (live, auto-deploy on push)
+- Dark theme UI with DALL-E logo
+- i18n (Hebrew RTL / English LTR)
+- PWA with maskable icons
+- Incremental indexing
+- Sender name aliases
 
 ### Known Limitations
-- Frontend is vanilla HTML/JS (~2800 lines) — React migration planned
+- Frontend is vanilla HTML/JS (~3200 lines) — React migration in `frontend/` is built but not deployed
 - FTS5 trigram requires 3+ char queries
 - Embeddings loaded fully into memory
 - No re-ranking model after retrieval
-- Desktop build not yet produced (setup-vendor + build:win needed)
-- PWA Share Target needs testing on actual mobile device
+- Desktop build not yet produced
+- Local agent not yet connected to web UI
+- Upload via URL may timeout for very large files on Railway
+- Mobile UI needs more polish
