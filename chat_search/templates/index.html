@@ -612,8 +612,8 @@
             margin-top: 12px; padding: 14px 16px; border-radius: var(--radius);
             background: linear-gradient(135deg, rgba(13,148,136,0.08), rgba(99,102,241,0.08));
             border: 1px solid rgba(13,148,136,0.25);
-            animation: lspFadeIn 0.3s ease;
         }
+        .live-status-panel.lsp-new { animation: lspFadeIn 0.3s ease; }
         @keyframes lspFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
         .lsp-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
         .lsp-task-name { font-weight:600; font-size:0.95em; color:var(--accent-green); }
@@ -3277,7 +3277,7 @@
                 runningBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${pct}% (${taskInfo.processed}/${taskInfo.total})`;
             }
 
-            // Render live status panel
+            // Live status panel — update in-place to avoid flicker
             const lspContainer = document.getElementById(cardId + '-live-status');
             if (!lspContainer) return;
 
@@ -3288,32 +3288,65 @@
             const taskIcon = TASK_ICONS[task] || 'fa-cog';
             const providerIcon = PROVIDER_ICONS[taskInfo.provider] || 'fa-cog';
 
-            // Engine badge
+            // If panel already exists, update in-place (no re-render)
+            const existingPanel = lspContainer.querySelector('.live-status-panel');
+            if (existingPanel) {
+                // Update progress bar
+                const fill = existingPanel.querySelector('.lsp-progress-fill');
+                if (fill) fill.style.width = pct + '%';
+
+                // Update stats text
+                const stats = existingPanel.querySelector('.lsp-stats');
+                if (stats) {
+                    let etaText = '';
+                    if (taskInfo.eta_seconds != null && taskInfo.eta_seconds > 0) {
+                        etaText = `<span>${t('mgmtRemaining')}${formatDuration(taskInfo.eta_seconds)}</span>`;
+                    }
+                    let elapsedText = '';
+                    if (taskInfo.start_time) {
+                        const elapsed = Math.round(Date.now() / 1000 - taskInfo.start_time);
+                        if (elapsed > 0) elapsedText = `<span>${t('mgmtElapsed')}: ${formatDuration(elapsed)}</span>`;
+                    }
+                    stats.innerHTML = `<span>${taskInfo.processed}/${taskInfo.total} (${pct}%)</span>${etaText}${elapsedText}`;
+                }
+
+                // Update current file
+                let fileEl = existingPanel.querySelector('.lsp-file');
+                if (taskInfo.current_file) {
+                    const fname = taskInfo.current_file.length > 45 ? '...' + taskInfo.current_file.slice(-42) : taskInfo.current_file;
+                    if (fileEl) {
+                        fileEl.innerHTML = `<i class="fas fa-file"></i> ${escapeHtml(fname)}`;
+                    } else {
+                        existingPanel.insertAdjacentHTML('beforeend', `<div class="lsp-file"><i class="fas fa-file"></i> ${escapeHtml(fname)}</div>`);
+                    }
+                }
+
+                // Update badges if they arrived late
+                const header = existingPanel.querySelector('.lsp-header');
+                if (header && taskInfo.engine && !header.querySelector('.lsp-badge')) {
+                    const engineBadge = `<span class="lsp-badge ${isLocal ? 'local' : 'cloud'}"><i class="fas ${isLocal ? 'fa-desktop' : 'fa-cloud'}"></i> ${isLocal ? t('mgmtEngineLocal') : t('mgmtEngineCloud')}</span>`;
+                    const modelBadge = taskInfo.model ? `<span class="lsp-badge model"><i class="fas ${providerIcon}"></i> ${taskInfo.model}</span>` : '';
+                    header.insertAdjacentHTML('beforeend', engineBadge + modelBadge);
+                }
+                return;
+            }
+
+            // First render — create panel with animation
             const engineBadge = taskInfo.engine
                 ? `<span class="lsp-badge ${isLocal ? 'local' : 'cloud'}"><i class="fas ${isLocal ? 'fa-desktop' : 'fa-cloud'}"></i> ${isLocal ? t('mgmtEngineLocal') : t('mgmtEngineCloud')}</span>`
                 : '';
-
-            // Model badge
             const modelBadge = taskInfo.model
                 ? `<span class="lsp-badge model"><i class="fas ${providerIcon}"></i> ${taskInfo.model}</span>`
                 : '';
-
-            // ETA
             let etaHtml = '';
             if (taskInfo.eta_seconds != null && taskInfo.eta_seconds > 0) {
                 etaHtml = `<span>${t('mgmtRemaining')}${formatDuration(taskInfo.eta_seconds)}</span>`;
             }
-
-            // Elapsed
             let elapsedHtml = '';
             if (taskInfo.start_time) {
                 const elapsed = Math.round(Date.now() / 1000 - taskInfo.start_time);
-                if (elapsed > 0) {
-                    elapsedHtml = `<span>${t('mgmtElapsed')}: ${formatDuration(elapsed)}</span>`;
-                }
+                if (elapsed > 0) elapsedHtml = `<span>${t('mgmtElapsed')}: ${formatDuration(elapsed)}</span>`;
             }
-
-            // Current file
             let fileHtml = '';
             if (taskInfo.current_file) {
                 const fname = taskInfo.current_file.length > 45 ? '...' + taskInfo.current_file.slice(-42) : taskInfo.current_file;
@@ -3321,7 +3354,7 @@
             }
 
             lspContainer.innerHTML = `
-                <div class="live-status-panel">
+                <div class="live-status-panel lsp-new">
                     <div class="lsp-header">
                         <span class="lsp-task-name"><i class="fas ${taskIcon}"></i> ${taskLabel}</span>
                         ${engineBadge}
