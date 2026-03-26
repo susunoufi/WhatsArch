@@ -476,8 +476,9 @@ def api_search():
     search_type = request.args.get("type", "all").strip()
     page = int(request.args.get("page", 1))
 
-    if not q:
-        return jsonify({"results": [], "total": 0, "page": 1})
+    if not q or q == "*":
+        results, total = indexer.browse_enriched(db_path)
+        return jsonify({"results": results, "total": total, "page": 1, "browse": True})
 
     results, total = indexer.search(
         db_path, q, sender=sender, date_from=date_from, date_to=date_to,

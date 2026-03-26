@@ -1180,7 +1180,7 @@
         // ===================== i18n =====================
         const TRANSLATIONS = {
             he: {
-                searchPlaceholder: 'חיפוש הודעות...',
+                searchPlaceholder: 'חיפוש הודעות... (הקלד * לתצוגת דוגמאות)',
                 allChats: 'כל הצ\'אטים',
                 tabSearch: 'חיפוש',
                 tabManagement: 'ניהול',
@@ -1192,6 +1192,7 @@
                 welcome: 'ברוכים הבאים',
                 welcomeHint: 'הקלידו מילת חיפוש או סננו לפי שולח ותאריך',
                 resultsFound: 'נמצאו',
+                browseMode: 'תצוגת דוגמאות מעובדות',
                 results: 'תוצאות',
                 showContext: 'הצג הקשר',
                 hideContext: 'הסתר הקשר',
@@ -1399,7 +1400,7 @@
                 notReady: 'לא מוכן',
             },
             en: {
-                searchPlaceholder: 'Search messages...',
+                searchPlaceholder: 'Search messages... (type * to browse samples)',
                 allChats: 'All Chats',
                 tabSearch: 'Search',
                 tabManagement: 'Manage',
@@ -1411,6 +1412,7 @@
                 welcome: 'Welcome',
                 welcomeHint: 'Type a search query or filter by sender and date',
                 resultsFound: 'Found',
+                browseMode: 'Enriched content samples',
                 results: 'results',
                 showContext: 'Context',
                 hideContext: 'Hide context',
@@ -2079,6 +2081,8 @@
                 showState('initial');
                 return;
             }
+            // Browse mode: empty query or "*" sends to server which returns samples
+            const isBrowse = !q || q === '*';
 
             // Show loading state on search button
             const searchBtn = document.getElementById('searchBtn');
@@ -2110,7 +2114,11 @@
                 if (reset && data.results.length === 0) { showState('noResults'); return; }
 
                 showState('results');
-                $resultsCount.textContent = `${t('resultsFound')} ${totalResults.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')} ${t('results')}`;
+                if (data.browse) {
+                    $resultsCount.innerHTML = `<i class="fas fa-th-large"></i> ${t('browseMode')} — ${totalResults} ${t('results')}`;
+                } else {
+                    $resultsCount.textContent = `${t('resultsFound')} ${totalResults.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')} ${t('results')}`;
+                }
                 $resultsInfo.style.display = 'flex';
 
                 data.results.forEach(msg => { $resultsList.appendChild(createMessageCard(msg)); });

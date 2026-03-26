@@ -414,6 +414,51 @@ def search(db_path: str, query: str, sender: str = "", date_from: str = "", date
         conn.close()
 
 
+def browse_enriched(db_path: str, per_category: int = 10):
+    """Return a sample of enriched messages from each category (transcriptions, descriptions, etc.)."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        c = conn.cursor()
+        categories = [
+            ("transcription", "m.transcription IS NOT NULL AND m.transcription != ''", "transcription"),
+            ("visual_description", "m.visual_description IS NOT NULL AND m.visual_description != '' AND m.media_type = 'image'", "image"),
+            ("visual_description", "m.visual_description IS NOT NULL AND m.visual_description != '' AND m.media_type = 'video'", "video"),
+            ("video_transcription", "m.video_transcription IS NOT NULL AND m.video_transcription != ''", "video_transcription"),
+            ("pdf_text", "m.pdf_text IS NOT NULL AND m.pdf_text != ''", "pdf"),
+        ]
+        results = []
+        seen_ids = set()
+        for field, condition, category in categories:
+            sql = f"""
+                SELECT m.id, m.datetime, m.sender, m.text, m.attachment, m.media_type,
+                       m.transcription, m.visual_description, m.video_transcription, m.pdf_text
+                FROM messages m
+                WHERE {condition}
+                ORDER BY m.datetime DESC
+                LIMIT ?
+            """
+            c.execute(sql, [per_category])
+            for row in c.fetchall():
+                if row["id"] in seen_ids:
+                    continue
+                seen_ids.add(row["id"])
+                r = dict(row)
+                r["_category"] = category
+                # Add snippet from the enriched field
+                val = r.get(field, "")
+                if val:
+                    snippet = val[:200] + ("..." if len(val) > 200 else "")
+                    r[f"{field}_snippet"] = snippet
+                results.append(r)
+        total = len(results)
+        # Sort by datetime desc
+        results.sort(key=lambda x: x.get("datetime", ""), reverse=True)
+        return results, total
+    finally:
+        conn.close()
+
+
 def get_context(db_path: str, message_id: int, before: int = 5, after: int = 5):
     """Get surrounding messages for context."""
     conn = sqlite3.connect(db_path)
