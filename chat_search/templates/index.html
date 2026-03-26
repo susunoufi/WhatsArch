@@ -2523,27 +2523,33 @@
             }
         }
 
-        async function handleLocalLoad() {
-            const input = document.getElementById('localPathInput');
-            const path = input ? input.value.trim() : '';
-            if (!path) return;
-
+        async function handleBrowseFolder() {
             const statusEl = document.getElementById('localLoadStatus');
-            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (currentLang === 'he' ? 'טוען...' : 'Loading...');
+            const he = currentLang === 'he';
+            statusEl.innerHTML = '<i class="fas fa-folder-open" style="color:#4db6ac;"></i> ' + (he ? 'בחר תיקייה...' : 'Select folder...');
 
             try {
+                // Ask Agent to open native folder picker
+                const browseRes = await fetch(AGENT_URL + '/browse/folder', { method: 'POST' });
+                const browseData = await browseRes.json();
+                if (!browseRes.ok) {
+                    if (browseData.error === 'cancelled') { statusEl.innerHTML = ''; return; }
+                    throw new Error(browseData.error);
+                }
+
+                statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (he ? 'טוען...' : 'Loading...');
+
+                // Send selected path to upload/local
                 const res = await fetch(AGENT_URL + '/upload/local', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: path })
+                    body: JSON.stringify({ path: browseData.path })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Load failed');
 
                 statusEl.innerHTML = '<i class="fas fa-check" style="color:#4db6ac;"></i> ' +
-                    (currentLang === 'he' ? `נטען בהצלחה: ${data.chat_name}` : `Loaded: ${data.chat_name}`);
-                input.value = '';
-                // Update agent chats set
+                    (he ? `נוסף: ${data.chat_name}` : `Added: ${data.chat_name}`);
                 agentChats.add(data.chat_name);
                 setTimeout(() => {
                     loadChats();
@@ -2835,27 +2841,11 @@
                                 <h3 style="font-size: 1em; margin-bottom: 6px;">${he ? 'עיבוד מקומי' : 'Local Processing'}</h3>
                                 <p style="font-size: 0.82em; color: var(--text-secondary);">${he ? 'ללא הגבלת גודל — הכל רץ על המחשב שלך' : 'No size limit — everything runs on your computer'}</p>
                             </div>
-                            <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:flex-start; max-width:550px; margin:0 auto;">
-                                <div style="flex:1; min-width:200px; text-align:center; padding:16px; background:var(--bg-secondary); border-radius:var(--radius); border:1px solid #4db6ac;">
-                                    <div style="font-size:1.2em; margin-bottom:8px; color:#4db6ac;"><i class="fas fa-file-archive"></i></div>
-                                    <div style="font-size:0.85em; font-weight:600; margin-bottom:4px;">${he ? 'בחר קובץ ZIP' : 'Choose ZIP file'}</div>
-                                    <div style="font-size:0.75em; color:var(--text-muted); margin-bottom:10px;">${he ? 'ללא הגבלת גודל' : 'No size limit'}</div>
-                                    <label class="btn btn-sm" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; background:#4db6ac; color:#fff;">
-                                        <i class="fas fa-file-archive"></i> ${he ? 'בחר ZIP' : 'Choose ZIP'}
-                                        <input type="file" accept=".zip" onchange="handleLocalZipUpload(this)" style="display:none;">
-                                    </label>
-                                </div>
-                                <div style="flex:1; min-width:200px; text-align:center; padding:16px; background:var(--bg-secondary); border-radius:var(--radius); border:1px solid #4db6ac;">
-                                    <div style="font-size:1.2em; margin-bottom:8px; color:#4db6ac;"><i class="fas fa-folder-open"></i></div>
-                                    <div style="font-size:0.85em; font-weight:600; margin-bottom:4px;">${he ? 'הדבק נתיב' : 'Paste path'}</div>
-                                    <div style="font-size:0.75em; color:var(--text-muted); margin-bottom:10px;">${he ? 'תיקיה או ZIP מהמחשב' : 'Folder or ZIP from disk'}</div>
-                                    <div style="display:flex; gap:4px;">
-                                        <input type="text" id="localPathInput" dir="ltr" placeholder="C:\\...\\chat.zip" style="flex:1; padding:8px; font-size:0.82em; background:var(--bg-tertiary); border:1px solid #4db6ac; border-radius:var(--radius); color:var(--text-primary);">
-                                        <button class="btn btn-sm" onclick="handleLocalLoad()" style="background:#4db6ac; color:#fff;">
-                                            <i class="fas fa-arrow-left"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                            <div style="text-align:center; max-width:350px; margin:0 auto;">
+                                <button class="btn btn-sm" onclick="handleBrowseFolder()" style="background:#4db6ac; color:#fff; width:100%; padding:12px; font-size:0.95em; margin-bottom:8px;">
+                                    <i class="fas fa-folder-open"></i> ${he ? 'פתח תיקיית צ\'אט' : 'Open Chat Folder'}
+                                </button>
+                                <div style="font-size:0.75em; color:var(--text-muted);">${he ? 'בחר תיקייה מהמחשב להוספה לרשימת הצ\'אטים' : 'Select a folder from your computer to add to chat list'}</div>
                             </div>
                             <div id="localLoadStatus" style="text-align:center; margin-top:10px; font-size:0.82em; color:var(--text-muted);"></div>
                         </div>`;

@@ -203,6 +203,29 @@ def api_chats():
 # Upload / Load Local Files
 # ===========================================================================
 
+@app.route("/browse/folder", methods=["POST"])
+def browse_folder():
+    """Open a native folder picker dialog and return the selected path."""
+    import tkinter as tk
+    from tkinter import filedialog
+
+    def pick():
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        folder = filedialog.askdirectory(title="Select chat folder")
+        root.destroy()
+        return folder
+
+    # tkinter must run on main thread on macOS, but Flask runs in threads.
+    # On Windows it works fine from any thread.
+    folder = pick()
+    if not folder:
+        return jsonify({"error": "cancelled"}), 400
+
+    return jsonify({"path": folder})
+
+
 @app.route("/upload/local", methods=["POST"])
 def upload_local():
     """Load a chat from a local file path (no network transfer needed)."""
@@ -242,7 +265,8 @@ def upload_local():
         if dest.exists():
             chat_name = chat_name + "_new"
             dest = CHATS_DIR / chat_name
-        shutil.copytree(str(source_path), str(dest))
+        # Create symlink instead of copying — avoids duplicating large media files
+        os.symlink(str(source_path), str(dest), target_is_directory=True)
         return jsonify({"status": "ok", "chat_name": chat_name, "path": str(dest)})
 
     else:
