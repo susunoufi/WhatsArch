@@ -715,7 +715,7 @@ def process_videos(
 
                     try:
                         segments, info = whisper_model.transcribe(
-                            audio_path, beam_size=5, vad_filter=True,
+                            audio_path, beam_size=1, vad_filter=True,
                         )
                         text = " ".join(seg.text.strip() for seg in segments)
                         detected_lang = info.language if info and hasattr(info, "language") else ""

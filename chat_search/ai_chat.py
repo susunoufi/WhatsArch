@@ -668,7 +668,7 @@ class LLMClient:
             from google import genai
             self.provider = "gemini"
             self.client = genai.Client(api_key=gemini_key)
-            self.model = model or "gemini-2.0-flash"
+            self.model = model or "gemini-2.5-flash"
 
         elif provider == "ollama":
             from openai import OpenAI

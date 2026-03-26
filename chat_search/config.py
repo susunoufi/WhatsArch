@@ -16,11 +16,13 @@ import subprocess
 
 DEFAULT_SETTINGS = {
     "vision_provider": "gemini",
-    "vision_model": "gemini-2.0-flash",
+    "vision_model": "gemini-2.5-flash",
     "video_provider": "gemini",
-    "video_model": "gemini-2.0-flash",
+    "video_model": "gemini-2.5-flash",
     "rag_provider": "gemini",
-    "rag_model": "gemini-2.0-flash",
+    "rag_model": "gemini-2.5-flash",
+    "transcription_provider": "local",   # "local" | "gemini" | "openai"
+    "transcription_model": "base",       # Whisper model for local: "tiny" | "base" | "small" | "medium"
     "ollama_base_url": "http://localhost:11434",
     "ollama_vision_model": "llama3.2-vision",
     "ollama_rag_model": "qwen2.5:14b",
@@ -64,9 +66,9 @@ PRESETS = {
         "name_he": "חסכוני",
         "name_en": "Budget",
         "icon": "💰",
-        "vision_provider": "gemini", "vision_model": "gemini-2.0-flash",
-        "video_provider": "gemini", "video_model": "gemini-2.0-flash",
-        "rag_provider": "gemini", "rag_model": "gemini-2.0-flash",
+        "vision_provider": "gemini", "vision_model": "gemini-2.5-flash",
+        "video_provider": "gemini", "video_model": "gemini-2.5-flash",
+        "rag_provider": "gemini", "rag_model": "gemini-2.5-flash",
         "description_he": "הכי זול — Gemini Flash לכל דבר. איכות טובה, מחיר מינימלי.",
         "description_en": "Cheapest — Gemini Flash for everything. Good quality, minimal cost.",
     },
@@ -74,8 +76,8 @@ PRESETS = {
         "name_he": "מאוזן",
         "name_en": "Balanced",
         "icon": "⚡",
-        "vision_provider": "gemini", "vision_model": "gemini-2.0-flash",
-        "video_provider": "gemini", "video_model": "gemini-2.0-flash",
+        "vision_provider": "gemini", "vision_model": "gemini-2.5-flash",
+        "video_provider": "gemini", "video_model": "gemini-2.5-flash",
         "rag_provider": "openai", "rag_model": "gpt-4o-mini",
         "description_he": "איזון מצוין — Gemini Flash לתמונות, GPT-4o-mini לשאלות. מהיר ואיכותי.",
         "description_en": "Great balance — Gemini Flash for vision, GPT-4o-mini for Q&A. Fast and quality.",
@@ -158,8 +160,15 @@ def recommend_preset(image_count: int, video_count: int, hardware: dict = None) 
 
 
 PROVIDER_MODELS = {
+    "transcription": [
+        {"provider": "local", "model": "tiny", "display": "Whisper tiny (local)", "cost_per_minute": 0, "speed": "fast", "quality": 3, "badge": "fastest"},
+        {"provider": "local", "model": "base", "display": "Whisper base (local)", "cost_per_minute": 0, "speed": "fast", "quality": 4, "badge": "recommended"},
+        {"provider": "local", "model": "small", "display": "Whisper small (local)", "cost_per_minute": 0, "speed": "slow", "quality": 5, "badge": "free"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_minute": 0.0004, "speed": "fast", "quality": 5, "badge": "cheapest cloud"},
+        {"provider": "openai", "model": "whisper-1", "display": "OpenAI Whisper API", "cost_per_minute": 0.006, "speed": "fast", "quality": 5},
+    ],
     "vision": [
-        {"provider": "gemini", "model": "gemini-2.0-flash", "display": "Gemini 2.0 Flash", "cost_per_image": 0.00004, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_image": 0.00004, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4.1-nano", "display": "GPT-4.1 nano", "cost_per_image": 0.0001, "hebrew_quality": 3, "speed": "fast"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_image": 0.0003, "hebrew_quality": 4, "speed": "fast"},
         {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku 4.5", "cost_per_image": 0.002, "hebrew_quality": 4, "speed": "fast"},
@@ -167,14 +176,14 @@ PROVIDER_MODELS = {
         {"provider": "ollama", "model": "llama3.2-vision", "display": "llama3.2-vision", "cost_per_image": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
     ],
     "video": [
-        {"provider": "gemini", "model": "gemini-2.0-flash", "display": "Gemini 2.0 Flash", "cost_per_minute": 0.002, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_minute": 0.002, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4.1-nano", "display": "GPT-4.1 nano", "cost_per_minute": 0.002, "hebrew_quality": 3, "speed": "fast"},
         {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku 4.5", "cost_per_minute": 0.03, "hebrew_quality": 4, "speed": "fast"},
         {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "display": "Claude Sonnet 4", "cost_per_minute": 0.11, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
         {"provider": "ollama", "model": "llama3.2-vision", "display": "llama3.2-vision", "cost_per_minute": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
     ],
     "rag": [
-        {"provider": "gemini", "model": "gemini-2.0-flash", "display": "Gemini 2.0 Flash", "cost_per_query": 0.0005, "hebrew_quality": 4, "speed": "fast"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_query": 0.0005, "hebrew_quality": 4, "speed": "fast"},
         {"provider": "openai", "model": "gpt-4.1-nano", "display": "GPT-4.1 nano", "cost_per_query": 0.0005, "hebrew_quality": 3, "speed": "fast"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_query": 0.0008, "hebrew_quality": 4, "speed": "fast"},
         {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku 4.5", "cost_per_query": 0.004, "hebrew_quality": 4, "speed": "fast"},

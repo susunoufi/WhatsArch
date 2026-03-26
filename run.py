@@ -120,7 +120,23 @@ def process_chat(
     transcriptions = {}
     if not skip_transcribe:
         from chat_search.transcribe import transcribe_audio_files, load_cache
-        transcriptions = transcribe_audio_files(chat_dir, audio_cache_path, model_size=model_size)
+        from chat_search import config
+        settings = config.load_settings(os.path.dirname(os.path.abspath(__file__)))
+        trans_provider = settings.get("transcription_provider", "local")
+        trans_model_setting = settings.get("transcription_model", "base")
+
+        trans_kwargs = {"model_size": model_size}
+        if trans_provider in ("gemini", "openai"):
+            api_key = config.get_api_keys().get("gemini_key" if trans_provider == "gemini" else "openai_key", "")
+            cloud_model = trans_model_setting if trans_provider == "openai" else "gemini-2.5-flash"
+            if trans_model_setting in ("tiny", "base", "small", "medium"):
+                cloud_model = "gemini-2.5-flash" if trans_provider == "gemini" else "whisper-1"
+            trans_kwargs = {"provider": trans_provider, "api_key": api_key, "cloud_model": cloud_model}
+        else:
+            whisper_model = trans_model_setting if trans_model_setting in ("tiny", "base", "small", "medium") else model_size
+            trans_kwargs = {"model_size": whisper_model}
+
+        transcriptions = transcribe_audio_files(chat_dir, audio_cache_path, **trans_kwargs)
     else:
         from chat_search.transcribe import load_cache
         transcriptions = load_cache(audio_cache_path)

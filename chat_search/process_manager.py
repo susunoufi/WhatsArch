@@ -360,9 +360,27 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
     try:
         if task == "transcribe":
             from .transcribe import transcribe_audio_files
+            from . import config
+            project_root = os.path.dirname(chats_dir)
+            settings = config.load_settings(project_root)
+            trans_provider = settings.get("transcription_provider", "local")
+            trans_model = settings.get("transcription_model", "base")
             cache_path = os.path.join(data_dir, "transcriptions.json")
-            _update_task_meta(chat_name, provider="whisper", model=f"faster-whisper ({model_size})", engine="local")
-            transcribe_audio_files(chat_dir, cache_path, model_size=model_size, progress_callback=callback, cancel_event=cancel_event)
+
+            if trans_provider in ("gemini", "openai"):
+                api_key = _get_api_key_for_provider(trans_provider)
+                cloud_model = trans_model if trans_provider == "openai" else settings.get("transcription_model", "gemini-2.5-flash")
+                # For gemini, transcription_model stores the Gemini model name
+                if trans_provider == "gemini" and trans_model in ("tiny", "base", "small", "medium"):
+                    cloud_model = "gemini-2.5-flash"  # default if user has a whisper model name
+                _update_task_meta(chat_name, provider=trans_provider, model=cloud_model, engine="cloud")
+                transcribe_audio_files(chat_dir, cache_path, provider=trans_provider, api_key=api_key,
+                                       cloud_model=cloud_model, progress_callback=callback, cancel_event=cancel_event)
+            else:
+                whisper_model = trans_model if trans_model in ("tiny", "base", "small", "medium") else model_size
+                _update_task_meta(chat_name, provider="whisper", model=f"faster-whisper ({whisper_model})", engine="local")
+                transcribe_audio_files(chat_dir, cache_path, model_size=whisper_model,
+                                       progress_callback=callback, cancel_event=cancel_event)
 
         elif task == "images":
             from .vision import process_images
