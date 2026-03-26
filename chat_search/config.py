@@ -237,8 +237,11 @@ def update_settings(project_root: str, updates: dict) -> dict:
 _ENV_KEY_MAP = {
     "anthropic_key": "ANTHROPIC_API_KEY",
     "openai_key": "OPENAI_API_KEY",
-    "gemini_key": "GEMINI_API_KEY",
+    "gemini_key": "GOOGLE_API_KEY",
 }
+
+# Also accept GEMINI_API_KEY as a fallback alias
+_GEMINI_FALLBACK = "GEMINI_API_KEY"
 
 
 def get_api_keys() -> dict:
@@ -247,10 +250,14 @@ def get_api_keys() -> dict:
     Returns dict with keys: anthropic_key, openai_key, gemini_key.
     Each value is the actual key string or empty string.
     """
-    return {
+    result = {
         name: os.environ.get(env_var, "")
         for name, env_var in _ENV_KEY_MAP.items()
     }
+    # Fallback: if GOOGLE_API_KEY not set, try GEMINI_API_KEY
+    if not result.get("gemini_key"):
+        result["gemini_key"] = os.environ.get(_GEMINI_FALLBACK, "")
+    return result
 
 
 def save_api_keys(project_root: str, keys: dict) -> None:

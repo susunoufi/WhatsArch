@@ -11,6 +11,7 @@ The agent runs on http://localhost:11470
 """
 
 import base64
+import io
 import json
 import os
 import platform
@@ -20,6 +21,15 @@ import sys
 import threading
 import time
 from pathlib import Path
+
+# Fix Windows encoding: pythonw.exe has no console, so stdout/stderr
+# default to charmap which can't handle Unicode. Force UTF-8.
+if sys.stdout is None or (hasattr(sys.stdout, 'encoding') and sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8'):
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer if sys.stdout else open(os.devnull, 'wb'), encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer if sys.stderr else open(os.devnull, 'wb'), encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 # Add project root to sys.path so we can import chat_search modules
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

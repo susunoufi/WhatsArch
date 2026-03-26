@@ -27,11 +27,14 @@ def _get_api_key_for_provider(provider: str) -> str:
     key_map = {
         "anthropic": "ANTHROPIC_API_KEY",
         "openai": "OPENAI_API_KEY",
-        "gemini": "GEMINI_API_KEY",
+        "gemini": "GOOGLE_API_KEY",  # Also checks GEMINI_API_KEY below
     }
     env_var = key_map.get(provider)
     if env_var:
         key = os.environ.get(env_var, "")
+        # Fallback: GEMINI_API_KEY <-> GOOGLE_API_KEY
+        if not key and provider == "gemini":
+            key = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
         if not key and provider != "ollama":
             raise RuntimeError(f"{env_var} not set — required for {provider}")
         return key

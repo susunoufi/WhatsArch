@@ -735,9 +735,15 @@ def process_pdfs(chat_dir: str, cache_path: str, progress_callback=None, cancel_
             break
 
         filename = os.path.basename(filepath)
-        bar.set_postfix_str(filename[:35])
+        try:
+            bar.set_postfix_str(filename[:35])
+        except UnicodeEncodeError:
+            bar.set_postfix_str("...")
 
         if filename in cache:
+            if progress_callback:
+                done = sum(1 for f in pdf_files if os.path.basename(f) in cache)
+                progress_callback(filename, done, len(pdf_files))
             continue
 
         text = extract_pdf_text(filepath)

@@ -662,9 +662,9 @@ class LLMClient:
             self.model = model or "gpt-4o-mini"
 
         elif provider == "gemini":
-            gemini_key = os.environ.get("GEMINI_API_KEY")
+            gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
             if not gemini_key:
-                raise RuntimeError("GEMINI_API_KEY not configured")
+                raise RuntimeError("GEMINI_API_KEY / GOOGLE_API_KEY not configured")
             from google import genai
             self.provider = "gemini"
             self.client = genai.Client(api_key=gemini_key)
@@ -704,7 +704,7 @@ class LLMClient:
         return bool(
             os.environ.get("ANTHROPIC_API_KEY")
             or os.environ.get("OPENAI_API_KEY")
-            or os.environ.get("GEMINI_API_KEY")
+            or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         )
 
     @staticmethod
@@ -715,13 +715,13 @@ class LLMClient:
             providers.append("anthropic")
         if os.environ.get("OPENAI_API_KEY"):
             providers.append("openai")
-        if os.environ.get("GEMINI_API_KEY"):
+        if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
             providers.append("gemini")
         # Ollama is always potentially available (local)
         providers.append("ollama")
 
         return {
-            "configured": len(providers) > 1 or bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("OPENAI_API_KEY") or os.environ.get("GEMINI_API_KEY")),
+            "configured": len(providers) > 1 or bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("OPENAI_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")),
             "providers": providers,
         }
 
