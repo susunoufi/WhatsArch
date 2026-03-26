@@ -272,19 +272,32 @@ def create_app(chats_dir: str) -> Flask:
                 return render_template("landing.html")
         return render_template("index.html")
 
+    def _find_agent_dir():
+        """Find the agent directory — works both locally and on Railway."""
+        # Try relative to chats_dir (local dev: chats_dir = /project/chats)
+        candidate = os.path.join(os.path.dirname(chats_dir), "agent")
+        if os.path.isdir(candidate):
+            return candidate
+        # Try relative to this file (chat_search/server.py -> ../agent)
+        candidate = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "agent")
+        if os.path.isdir(candidate):
+            return candidate
+        # Railway: /app/agent
+        if os.path.isdir("/app/agent"):
+            return "/app/agent"
+        return candidate  # fallback
+
     @app.route("/download/install.bat")
     def download_install_bat():
         """Serve the agent installer bat directly from the server."""
-        agent_dir = os.path.join(os.path.dirname(chats_dir), "agent")
-        return send_from_directory(agent_dir, "install.bat",
+        return send_from_directory(_find_agent_dir(), "install.bat",
                                   as_attachment=True,
                                   download_name="WhatsArch-Agent-Install.bat")
 
     @app.route("/download/installer.py")
     def download_installer_py():
         """Serve the visual installer Python script."""
-        agent_dir = os.path.join(os.path.dirname(chats_dir), "agent")
-        return send_from_directory(agent_dir, "installer.py",
+        return send_from_directory(_find_agent_dir(), "installer.py",
                                   as_attachment=True,
                                   download_name="installer.py")
 

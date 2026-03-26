@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # Copy application
 COPY run.py .
 COPY chat_search/ chat_search/
+COPY agent/ agent/
 
 # Create chats directory
 RUN mkdir -p chats
