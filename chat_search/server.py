@@ -296,7 +296,7 @@ def create_app(chats_dir: str) -> Flask:
                         localStorage.setItem('auth_token', '{result.session.access_token}');
                         localStorage.setItem('refresh_token', '{result.session.refresh_token}');
                         localStorage.setItem('user_email', '{result.user.email}');
-                        window.location.href = '/';
+                        window.location.href = '/app';
                         </script></body></html>"""
                 except Exception as e:
                     return f"""<!DOCTYPE html><html><body>
@@ -313,7 +313,7 @@ def create_app(chats_dir: str) -> Flask:
         if (token) {
             localStorage.setItem('auth_token', token);
             if (refresh) localStorage.setItem('refresh_token', refresh);
-            window.location.href = '/';
+            window.location.href = '/app';
         } else {
             document.body.innerHTML = '<p>Authentication failed. <a href="/login">Try again</a></p>';
         }
