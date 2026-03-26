@@ -28,39 +28,48 @@ if errorlevel 1 (
 echo   [OK] Python found
 echo.
 
-REM Download installer.py
+REM Check if installer.py already exists next to this bat file
 set INSTALLER_PY=%~dp0installer.py
+if exist "%INSTALLER_PY%" (
+    echo   [OK] installer.py found locally
+    goto :run_installer
+)
+
+REM Download installer.py
 echo   Downloading installer...
 
 REM Try Railway server first, then GitHub
 curl -sL "https://whatsarch-production.up.railway.app/download/installer.py" -o "%INSTALLER_PY%" 2>nul
-if not exist "%INSTALLER_PY%" (
-    curl -sL "https://raw.githubusercontent.com/susunoufi/WhatsArch/main/agent/installer.py" -o "%INSTALLER_PY%" 2>nul
-)
 
-REM Check if download succeeded
-if not exist "%INSTALLER_PY%" (
-    echo   [ERROR] Failed to download installer.
-    echo   Check your internet connection and try again.
-    echo.
-    pause
-    exit /b 1
-)
-
-REM Check file is not empty (curl might create empty file on error)
-for %%A in ("%INSTALLER_PY%") do (
-    if %%~zA LSS 100 (
-        echo   [ERROR] Downloaded file is empty or corrupted.
-        echo   Check your internet connection and try again.
-        del "%INSTALLER_PY%" >nul 2>&1
-        echo.
-        pause
-        exit /b 1
+REM Check if file exists and is not empty
+if exist "%INSTALLER_PY%" (
+    for %%A in ("%INSTALLER_PY%") do (
+        if %%~zA GEQ 100 goto :download_ok
     )
+    del "%INSTALLER_PY%" >nul 2>&1
 )
 
+REM Try GitHub as fallback
+curl -sL "https://raw.githubusercontent.com/susunoufi/WhatsArch/main/agent/installer.py" -o "%INSTALLER_PY%" 2>nul
+
+if exist "%INSTALLER_PY%" (
+    for %%A in ("%INSTALLER_PY%") do (
+        if %%~zA GEQ 100 goto :download_ok
+    )
+    del "%INSTALLER_PY%" >nul 2>&1
+)
+
+echo   [ERROR] Failed to download installer.
+echo   Check your internet connection and try again.
+echo.
+pause
+exit /b 1
+
+:download_ok
 echo   [OK] Installer downloaded
 echo.
+
+:run_installer
 echo   Opening visual installer in your browser...
 echo   (Keep this window open until installation is done)
 echo.

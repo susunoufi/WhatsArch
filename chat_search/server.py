@@ -275,7 +275,7 @@ def create_app(chats_dir: str) -> Flask:
     def _find_agent_dir():
         """Find the agent directory — works both locally and on Railway."""
         # Try relative to chats_dir (local dev: chats_dir = /project/chats)
-        candidate = os.path.join(os.path.dirname(chats_dir), "agent")
+        candidate = os.path.abspath(os.path.join(os.path.dirname(chats_dir), "agent"))
         if os.path.isdir(candidate):
             return candidate
         # Try relative to this file (chat_search/server.py -> ../agent)
@@ -302,10 +302,11 @@ def create_app(chats_dir: str) -> Flask:
                                   download_name="installer.py")
 
     @app.route("/download/setup")
-    def download_setup_exe():
-        """Redirect to the latest setup EXE download (hosted on GitHub Releases)."""
-        from flask import redirect
-        return redirect("https://github.com/susunoufi/WhatsArch/releases/download/v1.0.0/WhatsArch.Setup.1.0.0.exe")
+    def download_setup():
+        """Serve the agent install.bat — one-click installer for local tools."""
+        return send_from_directory(_find_agent_dir(), "install.bat",
+                                  as_attachment=True,
+                                  download_name="WhatsArch-Install.bat")
 
     @app.route("/app")
     def app_page():

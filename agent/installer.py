@@ -340,8 +340,9 @@ SETUP_HTML = r'''<!DOCTYPE html>
 
     <div class="done-banner" id="doneBanner">
         <h2>&#10003; הכל מוכן!</h2>
-        <p>ה-Agent רץ ברקע. פתח את WhatsArch באתר:</p>
-        <a href="https://whatsarch-production.up.railway.app" target="_blank">פתח את WhatsArch</a>
+        <p>ה-Agent רץ ברקע. מעביר אותך לאתר תוך 5 שניות...</p>
+        <a href="https://whatsarch-production.up.railway.app/app">פתח את WhatsArch</a>
+        <p style="font-size:0.72em; opacity:0.5; margin-top:8px;">ה-Agent יעלה אוטומטית עם כל הפעלה של המחשב</p>
     </div>
 
     <script>
@@ -388,6 +389,13 @@ SETUP_HTML = r'''<!DOCTYPE html>
                 if (data.overall === 'done') {
                     document.getElementById('subtitle').textContent = '!הכל מוכן';
                     document.getElementById('doneBanner').style.display = 'block';
+                    // Auto-redirect to WhatsArch after 5 seconds
+                    if (!window._redirectScheduled) {
+                        window._redirectScheduled = true;
+                        setTimeout(() => {
+                            window.location.href = 'https://whatsarch-production.up.railway.app/app';
+                        }, 5000);
+                    }
                 } else if (data.overall === 'error') {
                     document.getElementById('subtitle').textContent = 'שגיאה בהתקנה';
                 }
