@@ -786,6 +786,43 @@
         .busiest-day:last-child { border-bottom: none; }
         .busiest-day .day-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 0.78em; font-weight: 700; flex-shrink: 0; }
         .busiest-day .day-rank.top { background: var(--accent-green); color: #fff; }
+
+        /* --- Language Toggle --- */
+        .lang-toggle {
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: var(--radius);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.82em;
+            cursor: pointer;
+            font-family: inherit;
+            backdrop-filter: blur(4px);
+            transition: background 0.2s;
+        }
+        .lang-toggle:hover { background: rgba(255,255,255,0.3); }
+
+        /* --- LTR adjustments --- */
+        [dir="ltr"] .chat-selector { margin-right: 0; margin-left: auto; }
+        [dir="ltr"] .sender-badge { margin-right: 0; margin-left: 8px; }
+        [dir="ltr"] .msg-meta { text-align: left; }
+        [dir="ltr"] .ai-chat-panel { left: auto; right: 24px; }
+        [dir="ltr"] .ai-chat-fab { left: auto; right: 24px; }
+        [dir="ltr"] .search-input-wrapper i { right: auto; left: 12px; }
+        [dir="ltr"] .search-input-wrapper input { padding: 10px 12px 10px 38px; }
+        [dir="ltr"] .transcription { border-right: none; border-left: 3px solid var(--accent-green); }
+        [dir="ltr"] .visual-description { border-right: none; border-left: 3px solid var(--accent-blue); }
+        [dir="ltr"] .visual-description.pdf-text { border-right: none; border-left-color: #E57373; }
+        [dir="ltr"] .context-message.focused { border-right: none; border-left: 3px solid var(--accent-green); }
+        [dir="ltr"] .filter-dropdown-content { right: auto; left: 0; }
+        [dir="ltr"] .ai-provider-badge { margin-right: 0; margin-left: auto; }
+        [dir="ltr"] .cost-calc .cost-amount { margin-right: 0; margin-left: auto; }
+        [dir="ltr"] .date-input-wrapper input[type="text"] { padding-right: 12px; padding-left: 32px; }
+        @media (max-width: 640px) {
+            [dir="ltr"] .ai-chat-panel { right: 0; left: 0; }
+            [dir="ltr"] .ai-chat-fab { right: 16px; left: auto; }
+        }
     </style>
 </head>
 <body>
@@ -807,15 +844,18 @@
             <select id="chatSelector" class="chat-selector">
                 <option value="">...</option>
             </select>
+            <button class="lang-toggle" onclick="toggleLanguage()" title="Switch language">
+                <span id="langLabel">EN</span>
+            </button>
         </div>
         <div class="search-bar" id="searchBarRow">
             <div class="search-input-wrapper">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchQuery" placeholder="חיפוש הודעות..." autocomplete="off">
+                <input type="text" id="searchQuery" data-i18n-placeholder="searchPlaceholder" placeholder="חיפוש הודעות..." autocomplete="off">
             </div>
             <div class="filter-dropdown" id="typeDropdown">
                 <button class="filter-dropdown-btn" onclick="toggleDropdown('typeDropdown', event)">
-                    <i class="fas fa-filter"></i> סוג
+                    <i class="fas fa-filter"></i> <span data-i18n="filterType">סוג</span>
                     <span class="filter-count" id="typeFilterCount" style="display:none;"></span>
                 </button>
                 <div class="filter-dropdown-content" id="typeDropdownContent">
@@ -828,13 +868,13 @@
             </div>
             <div class="filter-dropdown" id="senderDropdown">
                 <button class="filter-dropdown-btn" onclick="toggleDropdown('senderDropdown', event)">
-                    <i class="fas fa-user"></i> שולחים
+                    <i class="fas fa-user"></i> <span data-i18n="filterSender">שולחים</span>
                     <span class="filter-count" id="senderFilterCount" style="display:none;"></span>
                 </button>
                 <div class="filter-dropdown-content" id="senderDropdownContent"></div>
             </div>
             <div class="date-group">
-                <label for="dateFrom">מ-</label>
+                <label for="dateFrom" data-i18n="filterFrom">מ-</label>
                 <div class="date-input-wrapper">
                     <input type="text" id="dateFrom" placeholder="dd/mm/yyyy" maxlength="10" dir="ltr">
                     <button type="button" class="date-picker-btn" onclick="document.getElementById('dateFromPicker').showPicker()"><i class="fas fa-calendar-alt"></i></button>
@@ -842,7 +882,7 @@
                 </div>
             </div>
             <div class="date-group">
-                <label for="dateTo">עד</label>
+                <label for="dateTo" data-i18n="filterTo">עד</label>
                 <div class="date-input-wrapper">
                     <input type="text" id="dateTo" placeholder="dd/mm/yyyy" maxlength="10" dir="ltr">
                     <button type="button" class="date-picker-btn" onclick="document.getElementById('dateToPicker').showPicker()"><i class="fas fa-calendar-alt"></i></button>
@@ -850,7 +890,7 @@
                 </div>
             </div>
             <button class="btn btn-primary" id="searchBtn" onclick="performSearch(true)">
-                <i class="fas fa-search"></i> חיפוש
+                <i class="fas fa-search"></i> <span data-i18n="tabSearch">חיפוש</span>
             </button>
         </div>
     </header>
@@ -858,26 +898,26 @@
     <!-- Tab Navigation -->
     <nav class="tab-nav">
         <button class="tab-btn active" data-tab="search" onclick="switchTab('search')">
-            <i class="fas fa-search"></i> חיפוש
+            <i class="fas fa-search"></i> <span data-i18n="tabSearch">חיפוש</span>
         </button>
         <button class="tab-btn" data-tab="management" onclick="switchTab('management')">
-            <i class="fas fa-cogs"></i> ניהול
+            <i class="fas fa-cogs"></i> <span data-i18n="tabManagement">ניהול</span>
         </button>
         <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
-            <i class="fas fa-key"></i> הגדרות
+            <i class="fas fa-key"></i> <span data-i18n="tabSettings">הגדרות</span>
         </button>
         <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">
-            <i class="fas fa-images"></i> גלריה
+            <i class="fas fa-images"></i> <span data-i18n="tabGallery">גלריה</span>
         </button>
         <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
-            <i class="fas fa-chart-bar"></i> אנליטיקס
+            <i class="fas fa-chart-bar"></i> <span data-i18n="tabAnalytics">אנליטיקס</span>
         </button>
     </nav>
 
     <!-- ============ SEARCH TAB ============ -->
     <div id="searchTab" class="tab-content active">
         <div class="stats-banner" id="statsBanner">
-            <span class="stat-chip"><i class="fas fa-spinner fa-spin"></i> טוען נתונים...</span>
+            <span class="stat-chip"><i class="fas fa-spinner fa-spin"></i> <span data-i18n="loadingData">טוען נתונים...</span></span>
         </div>
 
         <main class="container">
@@ -889,18 +929,18 @@
             <div class="spinner-overlay" id="spinner"><div class="spinner"></div></div>
             <div class="empty-state" id="emptyInitial">
                 <i class="fas fa-comments"></i>
-                <h3>ברוכים הבאים</h3>
-                <p>הקלידו מילת חיפוש או סננו לפי שולח ותאריך</p>
+                <h3 data-i18n="welcome">ברוכים הבאים</h3>
+                <p data-i18n="welcomeHint">הקלידו מילת חיפוש או סננו לפי שולח ותאריך</p>
             </div>
             <div class="empty-state" id="emptyNoResults" style="display:none;">
                 <i class="fas fa-search"></i>
-                <h3>לא נמצאו תוצאות</h3>
-                <p>נסו לשנות את מילות החיפוש או להרחיב את טווח התאריכים</p>
+                <h3 data-i18n="noResults">לא נמצאו תוצאות</h3>
+                <p data-i18n="noResultsHint">נסו לשנות את מילות החיפוש או להרחיב את טווח התאריכים</p>
             </div>
             <div id="resultsList"></div>
             <div class="load-more-wrapper" id="loadMoreWrapper" style="display:none;">
                 <button class="btn btn-secondary" id="loadMoreBtn" onclick="loadMore()">
-                    <i class="fas fa-chevron-down"></i> טען עוד תוצאות
+                    <i class="fas fa-chevron-down"></i> <span data-i18n="loadMore">טען עוד תוצאות</span>
                 </button>
             </div>
         </main>
@@ -919,9 +959,9 @@
             <!-- API Keys -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><i class="fas fa-key" style="color:var(--accent-green);"></i> מפתחות API</span>
+                    <span class="mgmt-chat-name"><i class="fas fa-key" style="color:var(--accent-green);"></i> <span data-i18n="settingsApiKeys">מפתחות API</span></span>
                 </div>
-                <p style="font-size:0.85em;color:var(--text-secondary);margin-bottom:16px;">המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.</p>
+                <p style="font-size:0.85em;color:var(--text-secondary);margin-bottom:16px;" data-i18n="settingsApiNote">המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.</p>
 
                 <div class="settings-field">
                     <label class="settings-label"><span class="settings-label-text">Anthropic API Key</span></label>
@@ -952,8 +992,8 @@
             <!-- Hardware Info -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><i class="fas fa-microchip" style="color:var(--accent-blue);"></i> זיהוי חומרה</span>
-                    <span style="font-size:0.75em;color:var(--text-muted);">זוהה אוטומטית</span>
+                    <span class="mgmt-chat-name"><i class="fas fa-microchip" style="color:var(--accent-blue);"></i> <span data-i18n="settingsHardware">זיהוי חומרה</span></span>
+                    <span style="font-size:0.75em;color:var(--text-muted);" data-i18n="settingsHardwareAuto">זוהה אוטומטית</span>
                 </div>
                 <div id="hwInfo"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
             </div>
@@ -961,25 +1001,25 @@
             <!-- Model Selection -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><i class="fas fa-cogs" style="color:var(--accent-blue);"></i> בחירת מודלים</span>
+                    <span class="mgmt-chat-name"><i class="fas fa-cogs" style="color:var(--accent-blue);"></i> <span data-i18n="settingsModels">בחירת מודלים</span></span>
                 </div>
 
-                <div class="section-title">📷 תיאור תמונות</div>
-                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;">AI "מסתכל" על כל תמונה וכותב תיאור שלה — כך אפשר למצוא תמונות בחיפוש.</p>
+                <div class="section-title">📷 <span data-i18n="settingsVision">תיאור תמונות</span></div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsVisionDesc">AI "מסתכל" על כל תמונה וכותב תיאור שלה — כך אפשר למצוא תמונות בחיפוש.</p>
                 <div class="model-grid" id="models-vision"></div>
                 <div class="cost-calc" id="cost-vision"></div>
 
                 <div class="section-divider"></div>
 
-                <div class="section-title">🎬 תיאור סרטונים</div>
-                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;">AI צופה בפריימים מהסרטון ומתאר מה קורה. האודיו מתומלל לוקאלית (חינם).</p>
+                <div class="section-title">🎬 <span data-i18n="settingsVideo">תיאור סרטונים</span></div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsVideoDesc">AI צופה בפריימים מהסרטון ומתאר מה קורה. האודיו מתומלל לוקאלית (חינם).</p>
                 <div class="model-grid" id="models-video"></div>
                 <div class="cost-calc" id="cost-video"></div>
 
                 <div class="section-divider"></div>
 
-                <div class="section-title">💬 צ'אט AI — תשאול חכם</div>
-                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;">שאלות על השיחה בשפה טבעית עם תשובות מבוססות תוכן הצ'אט.</p>
+                <div class="section-title">💬 <span data-i18n="settingsRag">צ'אט AI — תשאול חכם</span></div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsRagDesc">שאלות על השיחה בשפה טבעית עם תשובות מבוססות תוכן הצ'אט.</p>
                 <div class="model-grid" id="models-rag"></div>
                 <div class="cost-calc" id="cost-rag"></div>
             </div>
@@ -987,18 +1027,18 @@
             <!-- Cost Summary -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><i class="fas fa-receipt" style="color:var(--accent-green);"></i> סיכום עלויות</span>
+                    <span class="mgmt-chat-name"><i class="fas fa-receipt" style="color:var(--accent-green);"></i> <span data-i18n="settingsCostSummary">סיכום עלויות</span></span>
                 </div>
                 <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-                    <label style="font-size:0.88em;font-weight:600;">חישוב עבור:</label>
+                    <label style="font-size:0.88em;font-weight:600;" data-i18n="settingsCostFor">חישוב עבור:</label>
                     <select id="costChatSelector" style="flex:1;max-width:300px;font-size:0.88em;padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);font-family:inherit;cursor:pointer;" onchange="onCostChatChange()">
-                        <option value="__all__">כל הצ'אטים</option>
+                        <option value="__all__" data-i18n="allChats">כל הצ'אטים</option>
                     </select>
                 </div>
                 <div id="costSummary"></div>
                 <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
                     <button class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()">
-                        <i class="fas fa-save"></i> שמור הגדרות
+                        <i class="fas fa-save"></i> <span data-i18n="settingsSave">שמור הגדרות</span>
                     </button>
                     <span id="settingsSaveStatus" style="font-size:0.85em;display:none;"></span>
                 </div>
@@ -1011,16 +1051,16 @@
         <div class="management-container">
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><i class="fas fa-images" style="color:var(--accent-blue);"></i> גלריית מדיה</span>
+                    <span class="mgmt-chat-name"><i class="fas fa-images" style="color:var(--accent-blue);"></i> <span data-i18n="galleryTitle">גלריית מדיה</span></span>
                     <div style="display:flex;gap:8px;">
-                        <button class="btn btn-secondary btn-sm gallery-filter active" data-type="all" onclick="filterGallery('all', this)">הכל</button>
-                        <button class="btn btn-secondary btn-sm gallery-filter" data-type="image" onclick="filterGallery('image', this)">תמונות</button>
-                        <button class="btn btn-secondary btn-sm gallery-filter" data-type="video" onclick="filterGallery('video', this)">סרטונים</button>
+                        <button class="btn btn-secondary btn-sm gallery-filter active" data-type="all" onclick="filterGallery('all', this)" data-i18n="galleryAll">הכל</button>
+                        <button class="btn btn-secondary btn-sm gallery-filter" data-type="image" onclick="filterGallery('image', this)" data-i18n="galleryImages">תמונות</button>
+                        <button class="btn btn-secondary btn-sm gallery-filter" data-type="video" onclick="filterGallery('video', this)" data-i18n="galleryVideos">סרטונים</button>
                     </div>
                 </div>
                 <div id="galleryGrid" class="gallery-grid"></div>
                 <div id="galleryLoadMore" style="text-align:center;padding:20px;display:none;">
-                    <button class="btn btn-secondary" onclick="loadMoreGallery()">טען עוד</button>
+                    <button class="btn btn-secondary" onclick="loadMoreGallery()" data-i18n="galleryLoadMore">טען עוד</button>
                 </div>
             </div>
         </div>
@@ -1031,7 +1071,7 @@
         <div class="management-container">
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><i class="fas fa-chart-bar" style="color:var(--accent-green);"></i> אנליטיקס</span>
+                    <span class="mgmt-chat-name"><i class="fas fa-chart-bar" style="color:var(--accent-green);"></i> <span data-i18n="analyticsTitle">אנליטיקס</span></span>
                 </div>
                 <div id="analyticsContent"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
             </div>
@@ -1051,19 +1091,454 @@
     <div class="ai-chat-panel" id="aiChatPanel">
         <div class="ai-chat-header">
             <svg style="width:22px;height:22px;flex-shrink:0;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="#0D9488" opacity="0.9"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg>
-            <span>WhatsArch AI</span>
+            <span data-i18n="aiChatTitle">WhatsArch AI</span>
             <span class="ai-provider-badge" id="aiProviderBadge"></span>
         </div>
         <div class="ai-chat-messages" id="aiChatMessages">
-            <div class="ai-msg assistant">שלום! אני יכול לעזור לך למצוא דברים ולנתח את השיחה.<br>שאל אותי כל שאלה על השיחה ואני אחפש בשבילך.</div>
+            <div class="ai-msg assistant"><span class="ai-msg-text">שלום! אני יכול לעזור לך למצוא דברים ולנתח את השיחה.<br>שאל אותי כל שאלה על השיחה ואני אחפש בשבילך.</span></div>
         </div>
         <div class="ai-chat-input-bar">
-            <input type="text" id="aiChatInput" placeholder="שאל שאלה על השיחה..." autocomplete="off">
+            <input type="text" id="aiChatInput" data-i18n-placeholder="aiPlaceholder" placeholder="שאל שאלה על השיחה..." autocomplete="off">
             <button class="ai-send-btn" id="aiSendBtn" onclick="sendAiMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
     <script>
+        // ===================== i18n =====================
+        const TRANSLATIONS = {
+            he: {
+                searchPlaceholder: 'חיפוש הודעות...',
+                allChats: 'כל הצ\'אטים',
+                tabSearch: 'חיפוש',
+                tabManagement: 'ניהול',
+                tabSettings: 'הגדרות',
+                tabGallery: 'גלריה',
+                tabAnalytics: 'אנליטיקס',
+                noResults: 'לא נמצאו תוצאות',
+                noResultsHint: 'נסו לשנות את מילות החיפוש או להרחיב את טווח התאריכים',
+                welcome: 'ברוכים הבאים',
+                welcomeHint: 'הקלידו מילת חיפוש או סננו לפי שולח ותאריך',
+                resultsFound: 'נמצאו',
+                results: 'תוצאות',
+                showContext: 'הצג הקשר',
+                hideContext: 'הסתר הקשר',
+                loadMore: 'טען עוד תוצאות',
+                filterType: 'סוג',
+                filterSender: 'שולחים',
+                filterFrom: 'מ-',
+                filterTo: 'עד',
+                filterTextMsg: 'הודעות טקסט',
+                filterAudioMsg: 'הקלטות מתומללות',
+                filterImageMsg: 'תמונות',
+                filterVideoMsg: 'סרטונים',
+                filterPdfMsg: 'תוכן PDF',
+                totalMessages: 'הודעות',
+                total: 'סה"כ',
+                voiceMessages: 'קוליות',
+                transcribed: 'מתומללות',
+                images: 'תמונות',
+                videos: 'סרטונים',
+                contextAround: 'הודעות סביב',
+                transcription: 'תמלול',
+                imageDesc: 'תיאור תמונה',
+                videoDesc: 'תיאור וידאו',
+                videoTranscription: 'תמלול וידאו',
+                pdfContent: 'תוכן PDF',
+                playVideo: 'הפעל סרטון',
+                collapseVideo: 'מזער סרטון',
+                media: '(מדיה)',
+                aiChatTitle: 'WhatsArch AI',
+                aiPlaceholder: 'שאל שאלה על השיחה...',
+                aiGreeting: 'שלום! אני יכול לעזור לך למצוא דברים ולנתח את השיחה.\nשאל אותי כל שאלה על השיחה ואני אחפש בשבילך.',
+                aiSelectChat: 'אנא בחר שיחה קודם.',
+                aiError: 'שגיאה בתקשורת עם השרת. נסו שוב.',
+                aiSources: 'מקורות',
+                aiWhyAnswer: '\uD83D\uDD0D למה התשובה הזו?',
+                aiContextLabel: 'הקשר ההודעה:',
+                settingsApiKeys: 'מפתחות API',
+                settingsApiNote: 'המפתחות נשמרים מקומית בקובץ .env ולא נשלחים לשום מקום.',
+                settingsHardware: 'זיהוי חומרה',
+                settingsHardwareAuto: 'זוהה אוטומטית',
+                settingsModels: 'בחירת מודלים',
+                settingsVision: 'תיאור תמונות',
+                settingsVisionDesc: 'AI "מסתכל" על כל תמונה וכותב תיאור שלה — כך אפשר למצוא תמונות בחיפוש.',
+                settingsVideo: 'תיאור סרטונים',
+                settingsVideoDesc: 'AI צופה בפריימים מהסרטון ומתאר מה קורה. האודיו מתומלל לוקאלית (חינם).',
+                settingsRag: 'צ\'אט AI — תשאול חכם',
+                settingsRagDesc: 'שאלות על השיחה בשפה טבעית עם תשובות מבוססות תוכן הצ\'אט.',
+                settingsCostSummary: 'סיכום עלויות',
+                settingsCostFor: 'חישוב עבור:',
+                settingsSave: 'שמור הגדרות',
+                settingsSaved: '✓ נשמר בהצלחה!',
+                settingsSaveError: 'שגיאה בשמירה',
+                settingsSaving: 'שומר...',
+                settingsCostTotal: 'סה"כ משוער',
+                settingsFree: 'חינם',
+                settingsFreeExclaim: 'חינם!',
+                settingsPerImage: '/תמונה',
+                settingsPerMinute: '/דקה',
+                settingsPerQuestion: '/שאלה',
+                settingsRecommended: 'מומלץ',
+                settingsBest: 'הכי טוב',
+                settingsFreeLabel: 'חינם',
+                settingsFast: '⚡ מהיר',
+                settingsSlow: '🐌 איטי',
+                settingsCost: 'עלות:',
+                settingsSpeed: 'מהירות:',
+                settingsHebrew: 'עברית:',
+                settingsConfigured: 'מוגדר',
+                settingsNotConfigured: 'לא מוגדר',
+                settingsOptional: '(אופציונלי)',
+                settingsYouHave: 'יש לך',
+                settingsCostLabel: 'עלות:',
+                settingsCostFor100: 'עלות ל-100 שאלות:',
+                settingsImageDescCost: 'תיאור תמונות',
+                settingsVideoDescCost: 'תיאור סרטונים',
+                settingsAiChat100: 'צ\'אט AI (100 שאלות)',
+                hwCpu: 'מעבד (CPU)',
+                hwRam: 'זיכרון (RAM)',
+                hwGpu: 'כרטיס מסך (GPU)',
+                hwDevice: 'מכשיר',
+                hwCores: 'ליבות',
+                hwAvailable: 'זמין',
+                hwDedicated: 'ייעודי',
+                hwIntegrated: 'משולב',
+                hwUnknown: 'לא ידוע',
+                hwOllamaPerf: 'ביצועי Ollama (מודלים לוקאליים):',
+                hwSlowOnPC: 'איטי על המחשב',
+                hwOkOnPC: 'סביר על המחשב',
+                hwFitsPC: 'מתאים למחשב',
+                mgmtProcessing: 'סטטוס עיבוד',
+                mgmtActions: 'פעולות',
+                mgmtTranscribe: 'תמלול הקלטות',
+                mgmtImageDesc: 'תיאור תמונות',
+                mgmtVideoDesc: 'תיאור סרטונים',
+                mgmtVideoTrans: 'תמלול סרטונים',
+                mgmtPdfExtract: 'חילוץ PDF',
+                mgmtIndex: 'עדכון חיפוש',
+                mgmtEmbeddings: 'הפעלת חיפוש חכם',
+                mgmtSearchEngine: 'מנוע חיפוש',
+                mgmtSmartSearch: 'חיפוש חכם (AI)',
+                mgmtIndexed: 'מאונדקס',
+                mgmtNotIndexed: 'לא מאונדקס',
+                mgmtNoFiles: 'אין קבצים',
+                mgmtNotBuilt: 'לא נבנה',
+                mgmtExists: 'קיים',
+                mgmtPartial: 'חלקי',
+                mgmtChunks: 'צ\'אנקים',
+                mgmtProcessImages: 'עיבוד תמונות',
+                mgmtProcessVideos: 'עיבוד סרטונים',
+                mgmtProcessPdfs: 'חילוץ PDF',
+                mgmtProcessing2: 'מעבד...',
+                mgmtStopping: 'עוצר...',
+                mgmtHours: 'שעות',
+                mgmtMinutes: 'דקות',
+                mgmtSeconds: 'שניות',
+                mgmtRemaining: 'נותרו ~',
+                mgmtErrorLoading: 'שגיאה בטעינת סטטוס',
+                mgmtNoChats: 'לא נמצאו שיחות',
+                mgmtErrorData: 'שגיאה בטעינת נתונים',
+                mgmtErrorTask: 'שגיאה בהפעלת המשימה',
+                mgmtErrorStop: 'שגיאה בעצירת המשימה',
+                mgmtConfirmTranscribe: 'תמלול אודיו עלול לקחת זמן רב. להמשיך?',
+                mgmtConfirmImages: 'עיבוד תמונות דורש API ועלול לקחת זמן. להמשיך?',
+                mgmtConfirmVideos: 'עיבוד וידאו דורש API ועלול לקחת זמן רב. להמשיך?',
+                mgmtConfirmEmbeddings: 'יצירת embeddings עלולה לקחת מספר דקות. להמשיך?',
+                galleryTitle: 'גלריית מדיה',
+                galleryAll: 'הכל',
+                galleryImages: 'תמונות',
+                galleryVideos: 'סרטונים',
+                galleryLoadMore: 'טען עוד',
+                gallerySelectChat: 'בחר צ\'אט ספציפי לצפייה בגלריה',
+                analyticsTitle: 'אנליטיקס',
+                analyticsTopSenders: 'שולחים מובילים',
+                analyticsHourly: 'פעילות לפי שעה',
+                analyticsBusiest: 'הימים הפעילים ביותר',
+                analyticsMedia: 'פירוט מדיה',
+                analyticsMessages: 'הודעות',
+                analyticsSelectChat: 'בחר צ\'אט ספציפי לצפייה באנליטיקס',
+                analyticsNoData: 'אין נתונים זמינים',
+                analyticsError: 'שגיאה בטעינת אנליטיקס',
+                searchInAll: 'חיפוש בכל הצ\'אטים',
+                errorLoading: 'שגיאה בטעינת נתונים',
+                errorLoadingChats: 'שגיאה בטעינת שיחות',
+                errorSearch: 'שגיאה בחיפוש',
+                searching: 'מחפש...',
+                loading: 'טוען...',
+                loadingData: 'טוען נתונים...',
+                contextTitle: 'הקשר הודעה',
+                ragDebugTitle: '\uD83D\uDD0D פירוט שליפת מידע (RAG)',
+                ragDebugChunks: 'קטעי שיחה רלוונטיים',
+                ragDebugChunk: 'קטע',
+                ragDebugScore: 'ניקוד',
+                ragDebugMessages: 'הודעות',
+                ragDebugThread: 'שרשור',
+                errorContext: 'שגיאה בטעינת הקשר',
+                error: 'שגיאה',
+                notReady: 'לא מוכן',
+            },
+            en: {
+                searchPlaceholder: 'Search messages...',
+                allChats: 'All Chats',
+                tabSearch: 'Search',
+                tabManagement: 'Manage',
+                tabSettings: 'Settings',
+                tabGallery: 'Gallery',
+                tabAnalytics: 'Analytics',
+                noResults: 'No results found',
+                noResultsHint: 'Try changing your search terms or expanding the date range',
+                welcome: 'Welcome',
+                welcomeHint: 'Type a search query or filter by sender and date',
+                resultsFound: 'Found',
+                results: 'results',
+                showContext: 'Context',
+                hideContext: 'Hide context',
+                loadMore: 'Load more results',
+                filterType: 'Type',
+                filterSender: 'Senders',
+                filterFrom: 'From',
+                filterTo: 'To',
+                filterTextMsg: 'Text messages',
+                filterAudioMsg: 'Transcribed audio',
+                filterImageMsg: 'Images',
+                filterVideoMsg: 'Videos',
+                filterPdfMsg: 'PDF content',
+                totalMessages: 'messages',
+                total: 'Total',
+                voiceMessages: 'voice',
+                transcribed: 'transcribed',
+                images: 'images',
+                videos: 'videos',
+                contextAround: 'Surrounding messages',
+                transcription: 'Transcription',
+                imageDesc: 'Image description',
+                videoDesc: 'Video description',
+                videoTranscription: 'Video transcription',
+                pdfContent: 'PDF content',
+                playVideo: 'Play video',
+                collapseVideo: 'Collapse video',
+                media: '(media)',
+                aiChatTitle: 'WhatsArch AI',
+                aiPlaceholder: 'Ask a question about the chat...',
+                aiGreeting: 'Hi! I can help you find things and analyze the conversation.\nAsk me any question about the chat and I\'ll search for you.',
+                aiSelectChat: 'Please select a chat first.',
+                aiError: 'Error communicating with the server. Please try again.',
+                aiSources: 'Sources',
+                aiWhyAnswer: '\uD83D\uDD0D Why this answer?',
+                aiContextLabel: 'Message context:',
+                settingsApiKeys: 'API Keys',
+                settingsApiNote: 'Keys are stored locally in the .env file and never sent anywhere.',
+                settingsHardware: 'Hardware Detection',
+                settingsHardwareAuto: 'Auto-detected',
+                settingsModels: 'Model Selection',
+                settingsVision: 'Image Description',
+                settingsVisionDesc: 'AI "looks" at each image and writes a description, making images searchable by text.',
+                settingsVideo: 'Video Description',
+                settingsVideoDesc: 'AI watches video frames and describes what happens. Audio is transcribed locally (free).',
+                settingsRag: 'AI Chat — Smart Q&A',
+                settingsRagDesc: 'Ask questions about the chat in natural language and get answers based on chat content.',
+                settingsCostSummary: 'Cost Summary',
+                settingsCostFor: 'Calculate for:',
+                settingsSave: 'Save Settings',
+                settingsSaved: '✓ Saved successfully!',
+                settingsSaveError: 'Error saving',
+                settingsSaving: 'Saving...',
+                settingsCostTotal: 'Estimated Total',
+                settingsFree: 'Free',
+                settingsFreeExclaim: 'Free!',
+                settingsPerImage: '/image',
+                settingsPerMinute: '/minute',
+                settingsPerQuestion: '/question',
+                settingsRecommended: 'Recommended',
+                settingsBest: 'Best',
+                settingsFreeLabel: 'Free',
+                settingsFast: '⚡ Fast',
+                settingsSlow: '🐌 Slow',
+                settingsCost: 'Cost:',
+                settingsSpeed: 'Speed:',
+                settingsHebrew: 'Hebrew:',
+                settingsConfigured: 'Configured',
+                settingsNotConfigured: 'Not configured',
+                settingsOptional: '(optional)',
+                settingsYouHave: 'You have',
+                settingsCostLabel: 'Cost:',
+                settingsCostFor100: 'Cost for 100 questions:',
+                settingsImageDescCost: 'Image descriptions',
+                settingsVideoDescCost: 'Video descriptions',
+                settingsAiChat100: 'AI Chat (100 questions)',
+                hwCpu: 'CPU',
+                hwRam: 'RAM',
+                hwGpu: 'GPU',
+                hwDevice: 'Device',
+                hwCores: 'cores',
+                hwAvailable: 'available',
+                hwDedicated: 'Dedicated',
+                hwIntegrated: 'Integrated',
+                hwUnknown: 'Unknown',
+                hwOllamaPerf: 'Ollama Performance (local models):',
+                hwSlowOnPC: 'Slow on this PC',
+                hwOkOnPC: 'Fair on this PC',
+                hwFitsPC: 'Good fit for this PC',
+                mgmtProcessing: 'Processing Status',
+                mgmtActions: 'Actions',
+                mgmtTranscribe: 'Transcribe Audio',
+                mgmtImageDesc: 'Image Descriptions',
+                mgmtVideoDesc: 'Video Descriptions',
+                mgmtVideoTrans: 'Video Transcriptions',
+                mgmtPdfExtract: 'PDF Extraction',
+                mgmtIndex: 'Update Search',
+                mgmtEmbeddings: 'Enable Smart Search',
+                mgmtSearchEngine: 'Search Engine',
+                mgmtSmartSearch: 'Smart Search (AI)',
+                mgmtIndexed: 'Indexed',
+                mgmtNotIndexed: 'Not indexed',
+                mgmtNoFiles: 'No files',
+                mgmtNotBuilt: 'Not built',
+                mgmtExists: 'Exists',
+                mgmtPartial: 'Partial',
+                mgmtChunks: 'chunks',
+                mgmtProcessImages: 'Process Images',
+                mgmtProcessVideos: 'Process Videos',
+                mgmtProcessPdfs: 'Extract PDF',
+                mgmtProcessing2: 'Processing...',
+                mgmtStopping: 'Stopping...',
+                mgmtHours: 'hours',
+                mgmtMinutes: 'minutes',
+                mgmtSeconds: 'seconds',
+                mgmtRemaining: '~',
+                mgmtErrorLoading: 'Error loading status',
+                mgmtNoChats: 'No chats found',
+                mgmtErrorData: 'Error loading data',
+                mgmtErrorTask: 'Error starting task',
+                mgmtErrorStop: 'Error stopping task',
+                mgmtConfirmTranscribe: 'Audio transcription may take a long time. Continue?',
+                mgmtConfirmImages: 'Image processing requires an API and may take time. Continue?',
+                mgmtConfirmVideos: 'Video processing requires an API and may take a long time. Continue?',
+                mgmtConfirmEmbeddings: 'Creating embeddings may take several minutes. Continue?',
+                galleryTitle: 'Media Gallery',
+                galleryAll: 'All',
+                galleryImages: 'Images',
+                galleryVideos: 'Videos',
+                galleryLoadMore: 'Load More',
+                gallerySelectChat: 'Select a specific chat to view gallery',
+                analyticsTitle: 'Analytics',
+                analyticsTopSenders: 'Top Senders',
+                analyticsHourly: 'Activity by Hour',
+                analyticsBusiest: 'Busiest Days',
+                analyticsMedia: 'Media Breakdown',
+                analyticsMessages: 'messages',
+                analyticsSelectChat: 'Select a specific chat to view analytics',
+                analyticsNoData: 'No data available',
+                analyticsError: 'Error loading analytics',
+                searchInAll: 'Search in all chats',
+                errorLoading: 'Error loading data',
+                errorLoadingChats: 'Error loading chats',
+                errorSearch: 'Error in search',
+                searching: 'Searching...',
+                loading: 'Loading...',
+                loadingData: 'Loading data...',
+                contextTitle: 'Message Context',
+                ragDebugTitle: '\uD83D\uDD0D Retrieval Details (RAG)',
+                ragDebugChunks: 'relevant conversation chunks',
+                ragDebugChunk: 'Chunk',
+                ragDebugScore: 'Score',
+                ragDebugMessages: 'Messages',
+                ragDebugThread: 'Thread',
+                errorContext: 'Error loading context',
+                error: 'Error',
+                notReady: 'not ready',
+            }
+        };
+
+        let currentLang = localStorage.getItem('whatsarch_lang') || 'he';
+
+        function t(key) {
+            return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || key;
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'he' ? 'en' : 'he';
+            localStorage.setItem('whatsarch_lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const isHe = currentLang === 'he';
+
+            // Update direction
+            document.documentElement.dir = isHe ? 'rtl' : 'ltr';
+            document.documentElement.lang = currentLang;
+            document.querySelector('html').style.direction = isHe ? 'rtl' : 'ltr';
+
+            // Update lang toggle button
+            const langLabel = document.getElementById('langLabel');
+            if (langLabel) langLabel.textContent = isHe ? 'EN' : 'עב';
+
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+
+            // Update all elements with data-i18n-placeholder attribute
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = t(key);
+            });
+
+            // Update all elements with data-i18n-title attribute
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                el.title = t(key);
+            });
+
+            // CSS direction fix
+            document.body.style.direction = isHe ? 'rtl' : 'ltr';
+
+            // Re-render dynamic content
+            if (typeof renderStats === 'function' && statsData) {
+                try { renderStats(statsData); } catch(e) {}
+            }
+            if (typeof loadSettings === 'function' && settingsLoaded) {
+                settingsLoaded = false;
+            }
+            if (typeof analyticsLoaded !== 'undefined' && analyticsLoaded) {
+                analyticsLoaded = false;
+            }
+            if (typeof galleryLoaded !== 'undefined' && galleryLoaded) {
+                galleryLoaded = false;
+            }
+            // Re-render management if loaded
+            if (typeof managementLoaded !== 'undefined' && managementLoaded) {
+                managementLoaded = false;
+                if (activeTab === 'management') loadManagementData();
+            }
+            // Re-apply tab
+            if (activeTab === 'settings' && !settingsLoaded) {
+                loadSettings();
+                settingsLoaded = true;
+            }
+            if (activeTab === 'analytics' && !analyticsLoaded) {
+                loadAnalytics();
+                analyticsLoaded = true;
+            }
+            if (activeTab === 'gallery' && !galleryLoaded) {
+                loadGallery();
+                galleryLoaded = true;
+            }
+
+            // Update AI chat greeting
+            const aiMessages = document.getElementById('aiChatMessages');
+            if (aiMessages && aiMessages.children.length === 1) {
+                const firstMsg = aiMessages.querySelector('.ai-msg.assistant');
+                if (firstMsg) {
+                    const textSpan = firstMsg.querySelector('.ai-msg-text');
+                    if (textSpan) textSpan.innerHTML = t('aiGreeting').replace(/\n/g, '<br>');
+                    else firstMsg.innerHTML = t('aiGreeting').replace(/\n/g, '<br>');
+                }
+            }
+        }
+
         // ===================== State =====================
         let currentPage = 1;
         let totalResults = 0;
@@ -1099,6 +1574,7 @@
 
         // ===================== Init =====================
         document.addEventListener('DOMContentLoaded', () => {
+            applyLanguage();
             loadChats();
             setupListeners();
             initAiChat();
@@ -1263,13 +1739,13 @@
                 if (readyCount > 1) {
                     const allOpt = document.createElement('option');
                     allOpt.value = '__all__';
-                    allOpt.textContent = '\uD83D\uDD0D \u05DB\u05DC \u05D4\u05E6\'\u05D0\u05D8\u05D9\u05DD';
+                    allOpt.textContent = '\uD83D\uDD0D ' + t('allChats');
                     $chatSelector.appendChild(allOpt);
                 }
                 chatsData.forEach(chat => {
                     const opt = document.createElement('option');
                     opt.value = chat.name;
-                    opt.textContent = chat.name + (chat.total_messages ? ` (${chat.total_messages.toLocaleString('he-IL')})` : ' (לא מוכן)');
+                    opt.textContent = chat.name + (chat.total_messages ? ` (${chat.total_messages.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')})` : ' (' + t('notReady') + ')');
                     opt.disabled = !chat.ready;
                     $chatSelector.appendChild(opt);
                 });
@@ -1285,7 +1761,7 @@
 
                 if (currentChat) loadStats();
             } catch (err) {
-                $chatSelector.innerHTML = '<option value="">שגיאה בטעינת שיחות</option>';
+                $chatSelector.innerHTML = '<option value="">' + t('errorLoadingChats') + '</option>';
             }
         }
 
@@ -1293,7 +1769,7 @@
         async function loadStats() {
             if (!currentChat) return;
             if (currentChat === '__all__') {
-                $statsBanner.innerHTML = '<span class="stat-chip"><i class="fas fa-search"></i> \u05D7\u05D9\u05E4\u05D5\u05E9 \u05D1\u05DB\u05DC \u05D4\u05E6\'\u05D0\u05D8\u05D9\u05DD</span>';
+                $statsBanner.innerHTML = '<span class="stat-chip"><i class="fas fa-search"></i> ' + t('searchInAll') + '</span>';
                 document.getElementById('aiChatFab').style.display = 'none';
                 if (aiChatOpen) toggleAiChat();
                 return;
@@ -1307,7 +1783,7 @@
                 renderStats(statsData);
                 populateSenderFilter(statsData.senders);
             } catch (err) {
-                $statsBanner.innerHTML = '<span class="stat-chip" style="color:#e57373;"><i class="fas fa-exclamation-circle"></i> שגיאה בטעינת נתונים</span>';
+                $statsBanner.innerHTML = '<span class="stat-chip" style="color:#e57373;"><i class="fas fa-exclamation-circle"></i> ' + t('errorLoading') + '</span>';
             }
         }
 
@@ -1319,13 +1795,14 @@
                 return `<span class="sender-stat"><span class="sender-dot ${cls}"></span>${name}: <span class="stat-value">${count.toLocaleString('he-IL')}</span></span>`;
             }).join('&emsp;');
 
+            const loc = currentLang === 'he' ? 'he-IL' : 'en-US';
             $statsBanner.innerHTML = `
-                <span class="stat-chip"><i class="fas fa-envelope"></i> סה"כ: <span class="stat-value">${stats.total_messages.toLocaleString('he-IL')}</span></span>
+                <span class="stat-chip"><i class="fas fa-envelope"></i> ${t('total')}: <span class="stat-value">${stats.total_messages.toLocaleString(loc)}</span></span>
                 <span class="stat-chip"><i class="fas fa-calendar-alt"></i> ${fromDate} — ${toDate}</span>
                 <span class="stat-chip">${senderHtml}</span>
-                ${stats.audio_messages ? `<span class="stat-chip"><i class="fas fa-microphone"></i> <span class="stat-value">${stats.audio_messages.toLocaleString('he-IL')}</span> קוליות (${stats.transcribed_messages.toLocaleString('he-IL')} מתומללות)</span>` : ''}
-                ${stats.image_messages || stats.video_messages ? `<span class="stat-chip"><i class="fas fa-image"></i> ${(stats.image_messages||0).toLocaleString('he-IL')} תמונות, ${(stats.video_messages||0).toLocaleString('he-IL')} סרטונים</span>` : ''}
-                ${stats.pdf_messages ? `<span class="stat-chip"><i class="fas fa-file-pdf"></i> ${stats.pdf_messages.toLocaleString('he-IL')} PDF</span>` : ''}
+                ${stats.audio_messages ? `<span class="stat-chip"><i class="fas fa-microphone"></i> <span class="stat-value">${stats.audio_messages.toLocaleString(loc)}</span> ${t('voiceMessages')} (${stats.transcribed_messages.toLocaleString(loc)} ${t('transcribed')})</span>` : ''}
+                ${stats.image_messages || stats.video_messages ? `<span class="stat-chip"><i class="fas fa-image"></i> ${(stats.image_messages||0).toLocaleString(loc)} ${t('images')}, ${(stats.video_messages||0).toLocaleString(loc)} ${t('videos')}</span>` : ''}
+                ${stats.pdf_messages ? `<span class="stat-chip"><i class="fas fa-file-pdf"></i> ${stats.pdf_messages.toLocaleString(loc)} PDF</span>` : ''}
             `;
         }
 
@@ -1367,7 +1844,7 @@
             const searchBtn = document.getElementById('searchBtn');
             const searchBtnOriginal = searchBtn.innerHTML;
             searchBtn.disabled = true;
-            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מחפש...';
+            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('searching');
 
             showState('loading');
 
@@ -1392,7 +1869,7 @@
                 if (reset && data.results.length === 0) { showState('noResults'); return; }
 
                 showState('results');
-                $resultsCount.textContent = `נמצאו ${totalResults.toLocaleString('he-IL')} תוצאות`;
+                $resultsCount.textContent = `${t('resultsFound')} ${totalResults.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')} ${t('results')}`;
                 $resultsInfo.style.display = 'flex';
 
                 data.results.forEach(msg => { $resultsList.appendChild(createMessageCard(msg)); });
@@ -1402,7 +1879,7 @@
             } catch (err) {
                 showState('results');
                 $resultsInfo.style.display = 'flex';
-                $resultsCount.innerHTML = '<span style="color:#e57373;"><i class="fas fa-exclamation-circle"></i> שגיאה בחיפוש</span>';
+                $resultsCount.innerHTML = '<span style="color:#e57373;"><i class="fas fa-exclamation-circle"></i> ' + t('errorSearch') + '</span>';
             } finally {
                 searchBtn.disabled = false;
                 searchBtn.innerHTML = searchBtnOriginal;
@@ -1536,7 +2013,7 @@
                 ${mediaHtml}
                 <div class="message-actions">
                     <button class="btn btn-secondary btn-sm" onclick="toggleContext(this, ${msg.id}, ${msg.chat_name ? "'" + escapeHtml(msg.chat_name).replace(/'/g, "\\'") + "'" : 'null'})">
-                        <i class="fas fa-comments"></i> הצג הקשר
+                        <i class="fas fa-comments"></i> ${t('showContext')}
                     </button>
                 </div>
                 <div class="context-wrapper" id="context-${msg.id}" style="display:none;"></div>
@@ -1551,11 +2028,11 @@
 
             if ($ctx.style.display !== 'none') {
                 $ctx.style.display = 'none';
-                btn.innerHTML = '<i class="fas fa-comments"></i> הצג הקשר';
+                btn.innerHTML = '<i class="fas fa-comments"></i> ' + t('showContext');
                 return;
             }
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> טוען...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('loading');
             btn.disabled = true;
 
             const contextChat = chatName || currentChat;
@@ -1564,7 +2041,7 @@
                 if (!res.ok) throw new Error('Context request failed');
                 const data = await res.json();
 
-                let html = '<div class="context-title"><i class="fas fa-stream"></i> הודעות סביב</div>';
+                let html = '<div class="context-title"><i class="fas fa-stream"></i> ' + t('contextAround') + '</div>';
 
                 data.messages.forEach(m => {
                     const cls = senderClass(m.sender);
@@ -1580,18 +2057,18 @@
                     if (transcription) ctxContent += '<div style="margin-top:4px;color:var(--text-secondary);font-size:0.92em;"><i class="fas fa-closed-captioning" style="font-size:0.8em;margin-left:4px;color:var(--text-muted);"></i> ' + transcription + '</div>';
                     if (visualDesc) ctxContent += '<div style="margin-top:4px;color:var(--accent-blue);font-size:0.92em;"><i class="fas fa-eye" style="font-size:0.8em;margin-left:4px;"></i> ' + visualDesc + '</div>';
                     if (pdfText) ctxContent += '<div style="margin-top:4px;color:#e57373;font-size:0.92em;"><i class="fas fa-file-pdf" style="font-size:0.8em;margin-left:4px;"></i> ' + pdfText + '</div>';
-                    if (!ctxContent) ctxContent = '<em style="color:var(--text-muted);">(מדיה)</em>';
+                    if (!ctxContent) ctxContent = '<em style="color:var(--text-muted);">' + t('media') + '</em>';
 
                     html += `<div class="context-message ${isFocus ? 'focused' : ''}"><div class="ctx-header"><span class="ctx-sender ${cls}">${escapeHtml(m.sender)}</span><span class="ctx-time">${time}</span></div><div class="ctx-text">${ctxContent}</div></div>`;
                 });
 
                 $ctx.innerHTML = html;
                 $ctx.style.display = 'block';
-                btn.innerHTML = '<i class="fas fa-eye-slash"></i> הסתר הקשר';
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i> ' + t('hideContext');
             } catch (err) {
-                $ctx.innerHTML = '<div style="color:#e57373;padding:8px;font-size:0.88em;"><i class="fas fa-exclamation-circle"></i> שגיאה בטעינת הקשר</div>';
+                $ctx.innerHTML = '<div style="color:#e57373;padding:8px;font-size:0.88em;"><i class="fas fa-exclamation-circle"></i> ' + t('errorContext') + '</div>';
                 $ctx.style.display = 'block';
-                btn.innerHTML = '<i class="fas fa-comments"></i> הצג הקשר';
+                btn.innerHTML = '<i class="fas fa-comments"></i> ' + t('showContext');
             }
             btn.disabled = false;
         }
@@ -1653,7 +2130,7 @@
         // ===================== Gallery =====================
         async function loadGallery(reset = true) {
             if (!currentChat || currentChat === '__all__') {
-                document.getElementById('galleryGrid').innerHTML = '<p style="color:var(--text-muted);padding:20px;">בחר צ\'אט ספציפי לצפייה בגלריה</p>';
+                document.getElementById('galleryGrid').innerHTML = '<p style="color:var(--text-muted);padding:20px;">' + t('gallerySelectChat') + '</p>';
                 return;
             }
             if (reset) galleryPage = 1;
@@ -1723,7 +2200,7 @@
         // ===================== Analytics =====================
         async function loadAnalytics() {
             if (!currentChat || currentChat === '__all__') {
-                document.getElementById('analyticsContent').innerHTML = '<p style="color:var(--text-muted);padding:20px;">בחר צ\'אט ספציפי לצפייה באנליטיקס</p>';
+                document.getElementById('analyticsContent').innerHTML = '<p style="color:var(--text-muted);padding:20px;">' + t('analyticsSelectChat') + '</p>';
                 return;
             }
 
@@ -1740,7 +2217,7 @@
                 // Top senders bar chart
                 if (data.senders && data.senders.length > 0) {
                     const maxCount = data.senders[0].count;
-                    html += '<div class="analytics-section"><h3><i class="fas fa-users" style="color:var(--accent-blue);"></i> שולחים מובילים</h3><div class="bar-chart">';
+                    html += '<div class="analytics-section"><h3><i class="fas fa-users" style="color:var(--accent-blue);"></i> ' + t('analyticsTopSenders') + '</h3><div class="bar-chart">';
                     data.senders.slice(0, 10).forEach(s => {
                         const pct = Math.max(5, (s.count / maxCount) * 100);
                         html += `<div class="bar-row"><span class="bar-label">${escapeHtml(s.sender)}</span><div class="bar-fill" style="width:${pct}%"><span class="bar-value">${s.count.toLocaleString()}</span></div></div>`;
@@ -1751,12 +2228,12 @@
                 // Hourly activity chart
                 if (data.hourly && data.hourly.length > 0) {
                     const maxHour = Math.max(...data.hourly.map(h => h.count));
-                    html += '<div class="analytics-section"><h3><i class="fas fa-clock" style="color:var(--accent-green);"></i> פעילות לפי שעה</h3><div class="hour-chart">';
+                    html += '<div class="analytics-section"><h3><i class="fas fa-clock" style="color:var(--accent-green);"></i> ' + t('analyticsHourly') + '</h3><div class="hour-chart">';
                     for (let h = 0; h < 24; h++) {
                         const entry = data.hourly.find(x => x.hour === h);
                         const count = entry ? entry.count : 0;
                         const pct = maxHour > 0 ? (count / maxHour) * 100 : 0;
-                        html += `<div class="hour-bar" style="height:${Math.max(2, pct)}%"><span class="hour-tooltip">${h}:00 — ${count.toLocaleString()} הודעות</span></div>`;
+                        html += `<div class="hour-bar" style="height:${Math.max(2, pct)}%"><span class="hour-tooltip">${h}:00 — ${count.toLocaleString()} ${t('analyticsMessages')}</span></div>`;
                     }
                     html += '</div><div class="hour-labels">';
                     for (let h = 0; h < 24; h += 3) html += `<span>${h}</span>`;
@@ -1765,16 +2242,16 @@
 
                 // Busiest days
                 if (data.busiest_days && data.busiest_days.length > 0) {
-                    html += '<div class="analytics-section"><h3><i class="fas fa-calendar-alt" style="color:var(--accent-blue);"></i> הימים הפעילים ביותר</h3>';
+                    html += '<div class="analytics-section"><h3><i class="fas fa-calendar-alt" style="color:var(--accent-blue);"></i> ' + t('analyticsBusiest') + '</h3>';
                     data.busiest_days.forEach((d, i) => {
-                        html += `<div class="busiest-day"><span class="day-rank ${i < 3 ? 'top' : ''}">${i + 1}</span><span>${escapeHtml(d.date)}</span><span style="margin-right:auto;font-weight:600;">${d.count.toLocaleString()} הודעות</span></div>`;
+                        html += `<div class="busiest-day"><span class="day-rank ${i < 3 ? 'top' : ''}">${i + 1}</span><span>${escapeHtml(d.date)}</span><span style="margin-right:auto;font-weight:600;">${d.count.toLocaleString()} ${t('analyticsMessages')}</span></div>`;
                     });
                     html += '</div>';
                 }
 
                 // Media breakdown
                 if (data.media && data.media.length > 0) {
-                    html += '<div class="analytics-section"><h3><i class="fas fa-paperclip" style="color:var(--accent-green);"></i> פירוט מדיה</h3>';
+                    html += '<div class="analytics-section"><h3><i class="fas fa-paperclip" style="color:var(--accent-green);"></i> ' + t('analyticsMedia') + '</h3>';
                     data.media.forEach(m => {
                         const icons = {audio: 'fa-microphone', image: 'fa-camera', video: 'fa-video', document: 'fa-file'};
                         const icon = icons[m.type] || 'fa-file';
@@ -1783,9 +2260,9 @@
                     html += '</div>';
                 }
 
-                container.innerHTML = html || '<p style="color:var(--text-muted);">אין נתונים זמינים</p>';
+                container.innerHTML = html || '<p style="color:var(--text-muted);">' + t('analyticsNoData') + '</p>';
             } catch(e) {
-                container.innerHTML = '<p style="color:var(--accent-red, #ff6b6b);">שגיאה בטעינת אנליטיקס</p>';
+                container.innerHTML = '<p style="color:var(--accent-red, #ff6b6b);">' + t('analyticsError') + '</p>';
             }
         }
 
@@ -1825,11 +2302,11 @@
                         const status = await statusRes.json();
                         html += renderManagementCard(chat.name, status);
                     } catch (err) {
-                        html += `<div class="mgmt-chat-card"><div class="mgmt-chat-header"><span class="mgmt-chat-name"><i class="fab fa-whatsapp"></i> ${escapeHtml(chat.name)}</span></div><div style="color:#e57373;">שגיאה בטעינת סטטוס</div></div>`;
+                        html += `<div class="mgmt-chat-card"><div class="mgmt-chat-header"><span class="mgmt-chat-name"><i class="fab fa-whatsapp"></i> ${escapeHtml(chat.name)}</span></div><div style="color:#e57373;">${t('mgmtErrorLoading')}</div></div>`;
                     }
                 }
 
-                container.innerHTML = html || '<div class="empty-state"><p>לא נמצאו שיחות</p></div>';
+                container.innerHTML = html || '<div class="empty-state"><p>' + t('mgmtNoChats') + '</p></div>';
                 managementLoaded = true;
 
                 // Start polling for any active tasks
@@ -1837,7 +2314,7 @@
                     checkAndPollProgress(chat.name);
                 }
             } catch (err) {
-                container.innerHTML = '<div class="empty-state"><p style="color:#e57373;">שגיאה בטעינת נתונים</p></div>';
+                container.innerHTML = '<div class="empty-state"><p style="color:#e57373;">' + t('mgmtErrorData') + '</p></div>';
             }
         }
 
@@ -1852,31 +2329,31 @@
                 <div class="mgmt-chat-header">
                     <span class="mgmt-chat-name"><svg style="width:18px;height:18px;vertical-align:middle;margin-left:4px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cardGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#0D9488"/><stop offset="100%" stop-color="#6366F1"/></linearGradient></defs><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#cardGrad)" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg> ${safeName}</span>
                     ${status.index.exists
-                        ? `<span class="mgmt-status-badge ready"><i class="fas fa-check-circle"></i> מאונדקס (${status.index.message_count.toLocaleString('he-IL')} הודעות)</span>`
-                        : `<span class="mgmt-status-badge not-ready"><i class="fas fa-exclamation-triangle"></i> לא מאונדקס</span>`
+                        ? `<span class="mgmt-status-badge ready"><i class="fas fa-check-circle"></i> ${t('mgmtIndexed')} (${status.index.message_count.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')} ${t('totalMessages')})</span>`
+                        : `<span class="mgmt-status-badge not-ready"><i class="fas fa-exclamation-triangle"></i> ${t('mgmtNotIndexed')}</span>`
                     }
                 </div>
 
                 <div class="mgmt-section">
-                    <div class="mgmt-section-title"><i class="fas fa-chart-bar" style="margin-left:4px;"></i> סטטוס עיבוד</div>
-                    ${renderProgressSection(cardId, 'audio', 'תמלול הקלטות', 'fa-microphone', status.audio.processed, status.audio.total, status.audio.files)}
-                    ${renderProgressSection(cardId, 'images', 'תיאור תמונות', 'fa-image', status.images.processed, status.images.total, status.images.files)}
-                    ${renderProgressSection(cardId, 'videos-desc', 'תיאור סרטונים', 'fa-video', status.videos.described, status.videos.total, status.videos.files)}
-                    ${renderProgressSection(cardId, 'videos-trans', 'תמלול סרטונים', 'fa-volume-up', status.videos.transcribed, status.videos.total, status.videos.files)}
-                    ${renderProgressSection(cardId, 'pdfs', 'חילוץ PDF', 'fa-file-pdf', status.pdfs.processed, status.pdfs.total, status.pdfs.files)}
+                    <div class="mgmt-section-title"><i class="fas fa-chart-bar" style="margin-left:4px;"></i> ${t('mgmtProcessing')}</div>
+                    ${renderProgressSection(cardId, 'audio', t('mgmtTranscribe'), 'fa-microphone', status.audio.processed, status.audio.total, status.audio.files)}
+                    ${renderProgressSection(cardId, 'images', t('mgmtImageDesc'), 'fa-image', status.images.processed, status.images.total, status.images.files)}
+                    ${renderProgressSection(cardId, 'videos-desc', t('mgmtVideoDesc'), 'fa-video', status.videos.described, status.videos.total, status.videos.files)}
+                    ${renderProgressSection(cardId, 'videos-trans', t('mgmtVideoTrans'), 'fa-volume-up', status.videos.transcribed, status.videos.total, status.videos.files)}
+                    ${renderProgressSection(cardId, 'pdfs', t('mgmtPdfExtract'), 'fa-file-pdf', status.pdfs.processed, status.pdfs.total, status.pdfs.files)}
                     ${renderIndexRow(status.index)}
                     ${renderEmbeddingsRow(status.embeddings)}
                 </div>
 
                 <div class="mgmt-section">
-                    <div class="mgmt-section-title"><i class="fas fa-play" style="margin-left:4px;"></i> פעולות</div>
+                    <div class="mgmt-section-title"><i class="fas fa-play" style="margin-left:4px;"></i> ${t('mgmtActions')}</div>
                     <div class="mgmt-actions" id="${cardId}-actions">
-                        ${renderActionBtn(chatName, 'transcribe', 'תמלול הקלטות', 'fa-microphone', runningTask)}
-                        ${renderActionBtn(chatName, 'images', 'עיבוד תמונות', 'fa-image', runningTask)}
-                        ${renderActionBtn(chatName, 'videos', 'עיבוד סרטונים', 'fa-video', runningTask)}
-                        ${renderActionBtn(chatName, 'pdfs', 'חילוץ PDF', 'fa-file-pdf', runningTask)}
-                        ${renderActionBtn(chatName, 'index', 'עדכון חיפוש', 'fa-database', runningTask)}
-                        ${renderActionBtn(chatName, 'embeddings', 'הפעלת חיפוש חכם', 'fa-brain', runningTask)}
+                        ${renderActionBtn(chatName, 'transcribe', t('mgmtTranscribe'), 'fa-microphone', runningTask)}
+                        ${renderActionBtn(chatName, 'images', t('mgmtProcessImages'), 'fa-image', runningTask)}
+                        ${renderActionBtn(chatName, 'videos', t('mgmtProcessVideos'), 'fa-video', runningTask)}
+                        ${renderActionBtn(chatName, 'pdfs', t('mgmtProcessPdfs'), 'fa-file-pdf', runningTask)}
+                        ${renderActionBtn(chatName, 'index', t('mgmtIndex'), 'fa-database', runningTask)}
+                        ${renderActionBtn(chatName, 'embeddings', t('mgmtEmbeddings'), 'fa-brain', runningTask)}
                     </div>
                 </div>
             </div>`;
@@ -1887,7 +2364,7 @@
                 return `<div class="progress-row" style="cursor:default;">
                     <span class="progress-row-icon" style="color:var(--text-muted);"><i class="fas ${icon}"></i></span>
                     <span class="progress-row-label">${label}</span>
-                    <span style="font-size:0.83em;color:var(--text-muted);">אין קבצים</span>
+                    <span style="font-size:0.83em;color:var(--text-muted);">${t('mgmtNoFiles')}</span>
                 </div>`;
             }
 
@@ -1923,8 +2400,8 @@
             const color = index.exists ? 'var(--accent-green)' : 'var(--text-muted)';
             return `<div class="progress-row" style="cursor:default;">
                 <span class="progress-row-icon" style="color:${color};"><i class="fas fa-database"></i></span>
-                <span class="progress-row-label">מנוע חיפוש</span>
-                <span style="font-size:0.85em;color:${color};">${index.exists ? `<i class="fas fa-check-circle"></i> ${index.message_count.toLocaleString('he-IL')} הודעות` : '<i class="fas fa-times-circle"></i> לא נבנה'}</span>
+                <span class="progress-row-label">${t('mgmtSearchEngine')}</span>
+                <span style="font-size:0.85em;color:${color};">${index.exists ? `<i class="fas fa-check-circle"></i> ${index.message_count.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')} ${t('totalMessages')}` : '<i class="fas fa-times-circle"></i> ' + t('mgmtNotBuilt')}</span>
             </div>`;
         }
 
@@ -1934,15 +2411,15 @@
             const color = isComplete ? 'var(--accent-green)' : isPartial ? 'var(--accent-amber)' : 'var(--text-muted)';
             let statusText;
             if (isComplete) {
-                statusText = `<i class="fas fa-check-circle"></i> קיים (${embeddings.done.toLocaleString()} צ'אנקים)`;
+                statusText = `<i class="fas fa-check-circle"></i> ${t('mgmtExists')} (${embeddings.done.toLocaleString()} ${t('mgmtChunks')})`;
             } else if (isPartial) {
-                statusText = `<i class="fas fa-pause-circle"></i> חלקי (${embeddings.done.toLocaleString()}/${embeddings.total.toLocaleString()})`;
+                statusText = `<i class="fas fa-pause-circle"></i> ${t('mgmtPartial')} (${embeddings.done.toLocaleString()}/${embeddings.total.toLocaleString()})`;
             } else {
-                statusText = '<i class="fas fa-times-circle"></i> לא נבנה';
+                statusText = '<i class="fas fa-times-circle"></i> ' + t('mgmtNotBuilt');
             }
             return `<div class="progress-row" style="cursor:default;">
                 <span class="progress-row-icon" style="color:${color};"><i class="fas fa-brain"></i></span>
-                <span class="progress-row-label">חיפוש חכם (AI)</span>
+                <span class="progress-row-label">${t('mgmtSmartSearch')}</span>
                 <span style="font-size:0.85em;color:${color};">${statusText}</span>
             </div>`;
         }
@@ -1972,15 +2449,15 @@
         }
 
         const SLOW_TASKS = {
-            transcribe: 'תמלול אודיו עלול לקחת זמן רב. להמשיך?',
-            images: 'עיבוד תמונות דורש API ועלול לקחת זמן. להמשיך?',
-            videos: 'עיבוד וידאו דורש API ועלול לקחת זמן רב. להמשיך?',
-            embeddings: 'יצירת embeddings עלולה לקחת מספר דקות. להמשיך?',
+            transcribe: 'mgmtConfirmTranscribe',
+            images: 'mgmtConfirmImages',
+            videos: 'mgmtConfirmVideos',
+            embeddings: 'mgmtConfirmEmbeddings',
         };
 
         async function startProcessing(chatName, task) {
             // Confirm before slow tasks
-            if (SLOW_TASKS[task] && !confirm(SLOW_TASKS[task])) return;
+            if (SLOW_TASKS[task] && !confirm(t(SLOW_TASKS[task]))) return;
 
             try {
                 const res = await fetch('/api/process/start', {
@@ -2000,7 +2477,7 @@
                         const stopBtn = group.querySelector('.btn-stop');
                         if (btn.dataset.task === task) {
                             btn.classList.add('running');
-                            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מעבד...';
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('mgmtProcessing2');
                             if (stopBtn) {
                                 stopBtn.disabled = false;
                                 stopBtn.classList.remove('inactive');
@@ -2013,7 +2490,7 @@
 
                 startProgressPolling(chatName);
             } catch (err) {
-                alert('שגיאה בהפעלת המשימה');
+                alert(t('mgmtErrorTask'));
             }
         }
 
@@ -2034,16 +2511,16 @@
                     const stopBtn = actions.querySelector('.btn-stop');
                     if (stopBtn) {
                         stopBtn.disabled = true;
-                        stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> עוצר...';
+                        stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('mgmtStopping');
                     }
                     // Update the running button text too
                     const runningBtn = actions.querySelector('.btn-action.running');
                     if (runningBtn) {
-                        runningBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> עוצר...';
+                        runningBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('mgmtStopping');
                     }
                 }
             } catch (err) {
-                alert('שגיאה בעצירת המשימה');
+                alert(t('mgmtErrorStop'));
             }
         }
 
@@ -2092,13 +2569,13 @@
                 if (taskInfo.eta_seconds != null && taskInfo.eta_seconds > 0) {
                     let etaText = '';
                     if (taskInfo.eta_seconds > 3600) {
-                        etaText = Math.round(taskInfo.eta_seconds / 3600) + ' שעות';
+                        etaText = Math.round(taskInfo.eta_seconds / 3600) + ' ' + t('mgmtHours');
                     } else if (taskInfo.eta_seconds > 60) {
-                        etaText = Math.round(taskInfo.eta_seconds / 60) + ' דקות';
+                        etaText = Math.round(taskInfo.eta_seconds / 60) + ' ' + t('mgmtMinutes');
                     } else {
-                        etaText = taskInfo.eta_seconds + ' שניות';
+                        etaText = taskInfo.eta_seconds + ' ' + t('mgmtSeconds');
                     }
-                    progressText += ' — נותרו ~' + etaText;
+                    progressText += ' — ' + t('mgmtRemaining') + etaText;
                 }
                 runningBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progressText}`;
             }
@@ -2165,7 +2642,7 @@
             const $input = document.getElementById('aiChatInput');
             const question = $input.value.trim();
             if (!question) return;
-            if (!currentChat) { addAiMessage('assistant', 'אנא בחר שיחה קודם.'); return; }
+            if (!currentChat) { addAiMessage('assistant', t('aiSelectChat')); return; }
 
             addAiMessage('user', question);
             $input.value = '';
@@ -2182,7 +2659,7 @@
                     await sendAiMessageFallback(question, typingEl);
                 } catch (fallbackErr) {
                     typingEl.remove();
-                    addAiMessage('assistant', 'שגיאה בתקשורת עם השרת. נסו שוב.');
+                    addAiMessage('assistant', t('aiError'));
                 }
             }
 
@@ -2275,7 +2752,7 @@
                 if (metadata.sources && metadata.sources.length > 0) {
                     const sourcesDiv = document.createElement('div');
                     sourcesDiv.className = 'ai-sources';
-                    sourcesDiv.innerHTML = '<div style="margin-bottom:4px;">מקורות:</div>' +
+                    sourcesDiv.innerHTML = '<div style="margin-bottom:4px;">' + t('aiSources') + ':</div>' +
                         metadata.sources.slice(0, 8).map(s => {
                             const time = formatDateTime(s.datetime);
                             return '<span class="ai-source-link" onclick="showSourceMessage(' + s.message_id + ')" title="' + escapeHtml(s.preview) + '">' + escapeHtml(s.sender) + ' - ' + time + '</span>';
@@ -2287,7 +2764,7 @@
                     const whyBtn = document.createElement('button');
                     whyBtn.className = 'why-btn';
                     whyBtn.onclick = showRagDebug;
-                    whyBtn.textContent = '\uD83D\uDD0D למה התשובה הזו?';
+                    whyBtn.textContent = t('aiWhyAnswer');
                     messageDiv.appendChild(whyBtn);
                 }
             }
@@ -2331,7 +2808,7 @@
             if (sources && sources.length > 0) {
                 const sourcesDiv = document.createElement('div');
                 sourcesDiv.className = 'ai-sources';
-                sourcesDiv.innerHTML = '<div style="margin-bottom:4px;">מקורות:</div>' +
+                sourcesDiv.innerHTML = '<div style="margin-bottom:4px;">' + t('aiSources') + ':</div>' +
                     sources.slice(0, 8).map(s => {
                         const time = formatDateTime(s.datetime);
                         return '<span class="ai-source-link" onclick="showSourceMessage(' + s.message_id + ')" title="' + escapeHtml(s.preview) + '">' + escapeHtml(s.sender) + ' - ' + time + '</span>';
@@ -2343,7 +2820,7 @@
                 const whyBtn = document.createElement('button');
                 whyBtn.className = 'why-btn';
                 whyBtn.onclick = showRagDebug;
-                whyBtn.textContent = '\uD83D\uDD0D למה התשובה הזו?';
+                whyBtn.textContent = t('aiWhyAnswer');
                 div.appendChild(whyBtn);
             }
 
@@ -2376,7 +2853,7 @@
                 const res = await fetch('/api/context/' + messageId + '?chat=' + encodeURIComponent(currentChat) + '&before=5&after=5');
                 const data = await res.json();
 
-                let html = '<div class="ai-context-inline"><div class="ctx-label"><i class="fas fa-stream"></i> הקשר ההודעה:</div>';
+                let html = '<div class="ai-context-inline"><div class="ctx-label"><i class="fas fa-stream"></i> ' + t('aiContextLabel') + '</div>';
                 data.messages.forEach(m => {
                     const cls = senderClass(m.sender);
                     const isFocus = m.id === data.focus_id;
@@ -2417,7 +2894,7 @@
                 const data = await res.json();
 
                 let html = '<div class="source-modal-content">';
-                html += '<h3 style="margin-bottom:12px;">\u05d4\u05e7\u05e9\u05e8 \u05d4\u05d5\u05d3\u05e2\u05d4 #' + messageId + '</h3>';
+                html += '<h3 style="margin-bottom:12px;">' + t('contextTitle') + ' #' + messageId + '</h3>';
                 data.messages.forEach(m => {
                     const isFocus = m.id === data.focus_id;
                     const cls = senderClass(m.sender);
@@ -2439,17 +2916,17 @@
         function showRagDebug() {
             if (!lastRagDebug) return;
             let html = '<div class="source-modal-content">';
-            html += '<h3 style="margin-bottom:12px;">\uD83D\uDD0D \u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05dc\u05d9\u05e4\u05ea \u05de\u05d9\u05d3\u05e2 (RAG)</h3>';
-            html += '<p style="font-size:0.85em;color:var(--text-secondary);margin-bottom:16px;">\u05e0\u05e9\u05dc\u05e4\u05d5 ' + lastRagDebug.chunks_retrieved + ' \u05e7\u05d8\u05e2\u05d9 \u05e9\u05d9\u05d7\u05d4 \u05e8\u05dc\u05d5\u05d5\u05e0\u05d8\u05d9\u05d9\u05dd:</p>';
+            html += '<h3 style="margin-bottom:12px;">' + t('ragDebugTitle') + '</h3>';
+            html += '<p style="font-size:0.85em;color:var(--text-secondary);margin-bottom:16px;">' + lastRagDebug.chunks_retrieved + ' ' + t('ragDebugChunks') + ':</p>';
 
             (lastRagDebug.chunks_detail || []).forEach((chunk, i) => {
                 html += '<div style="padding:10px;margin-bottom:8px;background:var(--bg-tertiary);border-radius:var(--radius);border-right:3px solid var(--accent-green);">';
                 html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
-                html += '<strong>\u05e7\u05d8\u05e2 #' + (i+1) + '</strong>';
-                html += '<span style="font-size:0.82em;color:var(--accent-green);font-weight:700;">\u05e0\u05d9\u05e7\u05d5\u05d3: ' + (chunk.score || 0).toFixed(1) + '</span>';
+                html += '<strong>' + t('ragDebugChunk') + ' #' + (i+1) + '</strong>';
+                html += '<span style="font-size:0.82em;color:var(--accent-green);font-weight:700;">' + t('ragDebugScore') + ': ' + (chunk.score || 0).toFixed(1) + '</span>';
                 html += '</div>';
-                html += '<div style="font-size:0.82em;color:var(--text-muted);">\u05d4\u05d5\u05d3\u05e2\u05d5\u05ea ' + chunk.start_message_id + '-' + chunk.end_message_id + ' | ' + (chunk.message_count || '?') + ' \u05d4\u05d5\u05d3\u05e2\u05d5\u05ea | ' + escapeHtml(chunk.senders || '') + '</div>';
-                if (chunk.thread_id) html += '<div style="font-size:0.78em;color:var(--accent-blue);">\u05e9\u05e8\u05e9\u05d5\u05e8 #' + chunk.thread_id + '</div>';
+                html += '<div style="font-size:0.82em;color:var(--text-muted);">' + t('ragDebugMessages') + ' ' + chunk.start_message_id + '-' + chunk.end_message_id + ' | ' + (chunk.message_count || '?') + ' ' + t('ragDebugMessages').toLowerCase() + ' | ' + escapeHtml(chunk.senders || '') + '</div>';
+                if (chunk.thread_id) html += '<div style="font-size:0.78em;color:var(--accent-blue);">' + t('ragDebugThread') + ' #' + chunk.thread_id + '</div>';
                 html += '<div style="font-size:0.82em;margin-top:6px;color:var(--text-secondary);white-space:pre-wrap;max-height:100px;overflow:hidden;">' + escapeHtml(chunk.preview || '') + '</div>';
                 html += '</div>';
             });
@@ -2506,7 +2983,7 @@
 
                 const selector = document.getElementById('costChatSelector');
                 if (selector) {
-                    selector.innerHTML = '<option value="__all__">\u05db\u05dc \u05d4\u05e6\u05f3\u05d0\u05d8\u05d9\u05dd</option>';
+                    selector.innerHTML = '<option value="__all__">' + t('allChats') + '</option>';
                     chatNames.forEach(name => {
                         const opt = document.createElement('option');
                         opt.value = name;
@@ -2559,10 +3036,10 @@
                 if (!el) return;
                 if (f.configured) {
                     el.className = 'settings-status configured';
-                    el.innerHTML = '<i class="fas fa-check-circle"></i> מוגדר (' + escapeHtml(f.preview || '') + ')';
+                    el.innerHTML = '<i class="fas fa-check-circle"></i> ' + t('settingsConfigured') + ' (' + escapeHtml(f.preview || '') + ')';
                 } else {
                     el.className = 'settings-status not-configured';
-                    el.innerHTML = '<i class="fas fa-minus-circle"></i> לא מוגדר' + (f.required ? '' : ' (אופציונלי)');
+                    el.innerHTML = '<i class="fas fa-minus-circle"></i> ' + t('settingsNotConfigured') + (f.required ? '' : ' ' + t('settingsOptional'));
                 }
             });
         }
@@ -2574,29 +3051,29 @@
             container.innerHTML = `
                 <div class="hw-grid">
                     <div class="hw-stat">
-                        <div class="hw-label">מעבד (CPU)</div>
-                        <div class="hw-value">${escapeHtml(hw.cpu || 'לא ידוע')}</div>
-                        <div class="hw-sub">${hw.cpu_cores || '?'} ליבות</div>
+                        <div class="hw-label">${t('hwCpu')}</div>
+                        <div class="hw-value">${escapeHtml(hw.cpu || t('hwUnknown'))}</div>
+                        <div class="hw-sub">${hw.cpu_cores || '?'} ${t('hwCores')}</div>
                     </div>
                     <div class="hw-stat">
-                        <div class="hw-label">זיכרון (RAM)</div>
+                        <div class="hw-label">${t('hwRam')}</div>
                         <div class="hw-value">${hw.ram_gb || '?'} GB</div>
-                        <div class="hw-sub">${hw.ram_available_gb || '?'} GB זמין</div>
+                        <div class="hw-sub">${hw.ram_available_gb || '?'} GB ${t('hwAvailable')}</div>
                     </div>
                     <div class="hw-stat">
-                        <div class="hw-label">כרטיס מסך (GPU)</div>
-                        <div class="hw-value" style="color:${hw.gpu_dedicated ? 'var(--accent-green)' : 'var(--accent-amber)'}">${escapeHtml(hw.gpu || 'לא ידוע')}</div>
-                        <div class="hw-sub">${hw.gpu_dedicated ? 'ייעודי' : 'משולב'}</div>
+                        <div class="hw-label">${t('hwGpu')}</div>
+                        <div class="hw-value" style="color:${hw.gpu_dedicated ? 'var(--accent-green)' : 'var(--accent-amber)'}">${escapeHtml(hw.gpu || t('hwUnknown'))}</div>
+                        <div class="hw-sub">${hw.gpu_dedicated ? t('hwDedicated') : t('hwIntegrated')}</div>
                     </div>
                     <div class="hw-stat">
-                        <div class="hw-label">מכשיר</div>
-                        <div class="hw-value">${escapeHtml(hw.device_name || 'לא ידוע')}</div>
+                        <div class="hw-label">${t('hwDevice')}</div>
+                        <div class="hw-value">${escapeHtml(hw.device_name || t('hwUnknown'))}</div>
                         <div class="hw-sub">${escapeHtml(hw.os || '')}</div>
                     </div>
                 </div>
                 ${perf ? `
                 <div style="margin-bottom:12px;">
-                    <div style="font-size:0.85em;font-weight:600;margin-bottom:6px;">ביצועי Ollama (מודלים לוקאליים):</div>
+                    <div style="font-size:0.85em;font-weight:600;margin-bottom:6px;">${t('hwOllamaPerf')}</div>
                     <div class="hw-meter"><div class="hw-meter-fill ${perf.overall_rating}"></div></div>
                 </div>
                 <div class="hw-recommendation">
@@ -2620,16 +3097,16 @@
                 const isSelected = m.provider === selectedProvider && (m.model === selectedModel || !selectedModel);
                 const costKey = task === 'rag' ? 'cost_per_query' : (task === 'video' ? 'cost_per_minute' : 'cost_per_image');
                 const cost = m[costKey];
-                const costLabel = task === 'rag' ? '/שאלה' : (task === 'video' ? '/דקה' : '/תמונה');
+                const costLabel = task === 'rag' ? t('settingsPerQuestion') : (task === 'video' ? t('settingsPerMinute') : t('settingsPerImage'));
 
                 const stars = '★'.repeat(m.hebrew_quality || 3) + '☆'.repeat(5 - (m.hebrew_quality || 3));
                 const speedClass = m.speed === 'fast' ? 'color:var(--accent-green)' : 'color:var(--accent-amber)';
-                const speedText = m.speed === 'fast' ? '⚡ מהיר' : '🐌 איטי';
+                const speedText = m.speed === 'fast' ? t('settingsFast') : t('settingsSlow');
 
                 let badgeHtml = '';
-                if (m.badge === 'recommended') badgeHtml = '<span class="model-badge recommended">מומלץ</span>';
-                else if (m.badge === 'free') badgeHtml = '<span class="model-badge free">חינם</span>';
-                else if (m.badge === 'best') badgeHtml = '<span class="model-badge best">הכי טוב</span>';
+                if (m.badge === 'recommended') badgeHtml = '<span class="model-badge recommended">' + t('settingsRecommended') + '</span>';
+                else if (m.badge === 'free') badgeHtml = '<span class="model-badge free">' + t('settingsFreeLabel') + '</span>';
+                else if (m.badge === 'best') badgeHtml = '<span class="model-badge best">' + t('settingsBest') + '</span>';
 
                 // Add perf tag for ollama if we have hardware data
                 let perfTagHtml = '';
@@ -2655,9 +3132,9 @@
                         <div class="card-badges">${badgeHtml} ${perfTagHtml}</div>
                     </div>
                     <div class="card-details">
-                        <div><span class="detail-label">עלות:</span> <span class="detail-value" style="${cost === 0 ? 'color:var(--accent-green);font-weight:700' : ''}">${cost === 0 ? 'חינם' : '$' + cost + costLabel}</span></div>
-                        <div><span class="detail-label">מהירות:</span> <span class="detail-value" style="${speedClass}">${speedText}</span></div>
-                        <div><span class="detail-label">עברית:</span> <span style="color:var(--accent-amber);font-size:0.8em;">${stars}</span></div>
+                        <div><span class="detail-label">${t('settingsCost')}</span> <span class="detail-value" style="${cost === 0 ? 'color:var(--accent-green);font-weight:700' : ''}">${cost === 0 ? t('settingsFree') : '$' + cost + costLabel}</span></div>
+                        <div><span class="detail-label">${t('settingsSpeed')}</span> <span class="detail-value" style="${speedClass}">${speedText}</span></div>
+                        <div><span class="detail-label">${t('settingsHebrew')}</span> <span style="color:var(--accent-amber);font-size:0.8em;">${stars}</span></div>
                     </div>
                 </div>`;
             });
@@ -2688,7 +3165,7 @@
             const visionEl = document.getElementById('cost-vision');
             if (visionEl) {
                 const count = mediaCountsForSettings.images;
-                visionEl.innerHTML = `📷 יש לך <strong>${count}</strong> תמונות — עלות: <span class="cost-amount">${visionCost === 0 ? 'חינם' : '$' + visionCost.toFixed(2)}</span>`;
+                visionEl.innerHTML = `📷 ${t('settingsYouHave')} <strong>${count}</strong> ${t('images')} — ${t('settingsCostLabel')} <span class="cost-amount">${visionCost === 0 ? t('settingsFree') : '$' + visionCost.toFixed(2)}</span>`;
             }
 
             // Video
@@ -2697,7 +3174,7 @@
             const videoEl = document.getElementById('cost-video');
             if (videoEl) {
                 const count = mediaCountsForSettings.videos;
-                videoEl.innerHTML = `🎬 יש לך <strong>${count}</strong> סרטונים — עלות: <span class="cost-amount">${videoCost === 0 ? 'חינם' : '$' + videoCost.toFixed(2)}</span>`;
+                videoEl.innerHTML = `🎬 ${t('settingsYouHave')} <strong>${count}</strong> ${t('videos')} — ${t('settingsCostLabel')} <span class="cost-amount">${videoCost === 0 ? t('settingsFree') : '$' + videoCost.toFixed(2)}</span>`;
             }
 
             // RAG
@@ -2705,7 +3182,7 @@
             const ragCost = ragModel ? ragModel.cost_per_query * 100 : 0;
             const ragEl = document.getElementById('cost-rag');
             if (ragEl) {
-                ragEl.innerHTML = `💬 עלות ל-100 שאלות: <span class="cost-amount">${ragCost === 0 ? 'חינם' : '$' + ragCost.toFixed(2)}</span>`;
+                ragEl.innerHTML = `💬 ${t('settingsCostFor100')} <span class="cost-amount">${ragCost === 0 ? t('settingsFree') : '$' + ragCost.toFixed(2)}</span>`;
             }
         }
 
@@ -2741,22 +3218,22 @@
             const vidCount = mediaCountsForSettings.videos;
 
             el.innerHTML = `
-                <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">${imgCount} תמונות, ${vidCount} סרטונים</div>
+                <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">${imgCount} ${t('images')}, ${vidCount} ${t('videos')}</div>
                 <div class="receipt-row">
-                    <span>📷 תיאור תמונות</span>
-                    <span><strong>${visionModel ? escapeHtml(visionModel.display) : '—'}</strong> — ${vCost === 0 ? 'חינם' : '$' + vCost.toFixed(2)}</span>
+                    <span>📷 ${t('settingsImageDescCost')}</span>
+                    <span><strong>${visionModel ? escapeHtml(visionModel.display) : '—'}</strong> — ${vCost === 0 ? t('settingsFree') : '$' + vCost.toFixed(2)}</span>
                 </div>
                 <div class="receipt-row">
-                    <span>🎬 תיאור סרטונים</span>
-                    <span><strong>${videoModel ? escapeHtml(videoModel.display) : '—'}</strong> — ${vidCost === 0 ? 'חינם' : '$' + vidCost.toFixed(2)}</span>
+                    <span>🎬 ${t('settingsVideoDescCost')}</span>
+                    <span><strong>${videoModel ? escapeHtml(videoModel.display) : '—'}</strong> — ${vidCost === 0 ? t('settingsFree') : '$' + vidCost.toFixed(2)}</span>
                 </div>
                 <div class="receipt-row">
-                    <span>💬 צ'אט AI (100 שאלות)</span>
-                    <span><strong>${ragModel ? escapeHtml(ragModel.display) : '—'}</strong> — ${rCost === 0 ? 'חינם' : '$' + rCost.toFixed(2)}</span>
+                    <span>💬 ${t('settingsAiChat100')}</span>
+                    <span><strong>${ragModel ? escapeHtml(ragModel.display) : '—'}</strong> — ${rCost === 0 ? t('settingsFree') : '$' + rCost.toFixed(2)}</span>
                 </div>
                 <div class="receipt-total">
-                    <span>סה"כ משוער</span>
-                    <span class="total-amount">${total === 0 ? 'חינם!' : '$' + total.toFixed(2)}</span>
+                    <span>${t('settingsCostTotal')}</span>
+                    <span class="total-amount">${total === 0 ? t('settingsFreeExclaim') : '$' + total.toFixed(2)}</span>
                 </div>
             `;
         }
@@ -2766,7 +3243,7 @@
             const statusEl = document.getElementById('settingsSaveStatus');
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> שומר...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('settingsSaving');
 
             try {
                 const body = { ...settingsData };
@@ -2793,7 +3270,7 @@
 
                 statusEl.style.display = 'inline';
                 statusEl.style.color = 'var(--accent-green)';
-                statusEl.textContent = '✓ נשמר בהצלחה!';
+                statusEl.textContent = t('settingsSaved');
                 setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 
                 loadSettings();
@@ -2801,10 +3278,10 @@
             } catch (err) {
                 statusEl.style.display = 'inline';
                 statusEl.style.color = 'var(--accent-red)';
-                statusEl.textContent = 'שגיאה בשמירה';
+                statusEl.textContent = t('settingsSaveError');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> שמור הגדרות';
+                btn.innerHTML = '<i class="fas fa-save"></i> ' + t('settingsSave');
             }
         }
 
