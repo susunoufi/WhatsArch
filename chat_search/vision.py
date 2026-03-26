@@ -169,9 +169,11 @@ def _read_image_as_data_url(image_path: str) -> str:
 # Image description: dispatcher + per-provider implementations
 # ---------------------------------------------------------------------------
 
-def describe_image(image_path: str, provider: str = "anthropic", model: str = None, api_key: str = None, ollama_url: str = None) -> str:
+def describe_image(image_path: str, provider: str = "anthropic", model: str = None, api_key: str = None, ollama_url: str = None, proxy_url: str = None, proxy_token: str = None) -> str:
     """Send a single image to AI and get a Hebrew description + OCR."""
-    if provider == "anthropic":
+    if provider == "proxy" and proxy_url:
+        return _describe_image_proxy(image_path, proxy_url, proxy_token)
+    elif provider == "anthropic":
         return _describe_image_anthropic(image_path, api_key, model or "claude-sonnet-4-20250514")
     elif provider == "openai":
         return _describe_image_openai(image_path, api_key, model or "gpt-4o-mini")
@@ -179,6 +181,109 @@ def describe_image(image_path: str, provider: str = "anthropic", model: str = No
         return _describe_image_gemini(image_path, api_key, model or "gemini-2.0-flash")
     elif provider == "ollama":
         return _describe_image_ollama(image_path, ollama_url or "http://localhost:11434", model or "llama3.2-vision")
+    else:
+        return f"[unsupported provider: {provider}]"
+
+
+def _describe_image_proxy(image_path: str, proxy_url: str, proxy_token: str = None) -> str:
+    """Send image to Railway proxy for description using admin's API keys."""
+    import urllib.request
+    try:
+        ext = os.path.splitext(image_path)[1].lower()
+        media_type = MEDIA_TYPES.get(ext, "image/jpeg")
+        with open(image_path, "rb") as f:
+            image_b64 = base64.standard_b64encode(f.read()).decode("utf-8")
+
+        payload = json.dumps({
+            "image_base64": image_b64,
+            "media_type": media_type,
+        }).encode()
+
+        headers = {"Content-Type": "application/json"}
+        if proxy_token:
+            headers["Authorization"] = f"Bearer {proxy_token}"
+
+        req = urllib.request.Request(
+            f"{proxy_url.rstrip('/')}/api/proxy/vision",
+            data=payload,
+            headers=headers,
+        )
+        res = urllib.request.urlopen(req, timeout=60)
+        result = json.loads(res.read())
+        return result.get("description", "[proxy: no description returned]")
+    except Exception as e:
+        return f"[proxy error: {str(e)}]"
+
+
+def describe_image_from_base64(image_b64: str, media_type: str, provider: str = "gemini",
+                                model: str = None, api_key: str = None,
+                                ollama_url: str = None, language: str = "he") -> str:
+    """Describe an image from base64 data (used by proxy endpoint, no file I/O)."""
+    prompt = get_image_prompt(language)
+
+    if provider == "anthropic":
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model=model or "claude-sonnet-4-20250514",
+            max_tokens=300,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
+                    {"type": "text", "text": prompt},
+                ],
+            }],
+        )
+        return response.content[0].text
+
+    elif provider == "openai":
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+        data_url = f"data:{media_type};base64,{image_b64}"
+        response = client.chat.completions.create(
+            model=model or "gpt-4o-mini",
+            max_tokens=300,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                    {"type": "text", "text": prompt},
+                ],
+            }],
+        )
+        return response.choices[0].message.content
+
+    elif provider == "gemini":
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        image_bytes = base64.standard_b64decode(image_b64)
+        response = client.models.generate_content(
+            model=model or "gemini-2.0-flash",
+            contents=[
+                genai.types.Part.from_bytes(data=image_bytes, mime_type=media_type),
+                prompt,
+            ],
+        )
+        return response.text
+
+    elif provider == "ollama":
+        from openai import OpenAI
+        client = OpenAI(base_url=(ollama_url or "http://localhost:11434").rstrip("/") + "/v1", api_key="ollama")
+        data_url = f"data:{media_type};base64,{image_b64}"
+        response = client.chat.completions.create(
+            model=model or "llama3.2-vision",
+            max_tokens=300,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                    {"type": "text", "text": prompt},
+                ],
+            }],
+        )
+        return response.choices[0].message.content
+
     else:
         return f"[unsupported provider: {provider}]"
 
@@ -425,7 +530,7 @@ def _should_skip_video(filename: str) -> bool:
 # Batch processing
 # ---------------------------------------------------------------------------
 
-def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", model: str = None, api_key: str = None, ollama_url: str = None, progress_callback=None, cancel_event=None, max_workers: int = 3) -> dict:
+def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", model: str = None, api_key: str = None, ollama_url: str = None, progress_callback=None, cancel_event=None, max_workers: int = 3, proxy_url: str = None, proxy_token: str = None) -> dict:
     """Batch-process all image files with parallel API calls. Returns cache dict {filename: description}."""
     extensions = ("*.jpg", "*.jpeg", "*.png")
     image_files = []
@@ -463,7 +568,7 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
         if cancel_event and cancel_event.is_set():
             return None, None
         filename = os.path.basename(filepath)
-        desc = describe_image(filepath, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url)
+        desc = describe_image(filepath, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, proxy_url=proxy_url, proxy_token=proxy_token)
         return filename, desc
 
     bar = tqdm(total=len(to_process), desc="  Describing images", unit="file", initial=0)

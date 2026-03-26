@@ -1189,6 +1189,79 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify({"status": "ok", "note": "Aliases saved. Run 'Update Search' to apply."})
 
     # ------------------------------------------------------------------
+    # Proxy endpoints (for local agent to use admin's API keys)
+    # ------------------------------------------------------------------
+
+    @app.route("/api/proxy/vision", methods=["POST"])
+    @require_auth
+    def api_proxy_vision():
+        """Proxy endpoint: agent sends base64 image, server calls Vision API with admin keys.
+
+        Accepts: {image_base64, media_type, language, provider_override, model_override}
+        Returns: {description}
+        """
+        data = request.get_json()
+        if not data or not data.get("image_base64"):
+            abort(400, "Missing image_base64")
+
+        image_b64 = data["image_base64"]
+        media_type = data.get("media_type", "image/jpeg")
+        language = data.get("language", "he")
+
+        # Use admin's configured settings (enforce user preset)
+        enforce_user_preset()
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        provider = settings.get("vision_provider", "gemini")
+        model = settings.get("vision_model", "gemini-2.0-flash")
+
+        from . import vision
+        from . import process_manager as pm
+
+        api_key = pm._get_api_key_for_provider(provider)
+        ollama_url = settings.get("ollama_base_url")
+
+        try:
+            description = vision.describe_image_from_base64(
+                image_b64, media_type, provider=provider, model=model,
+                api_key=api_key, ollama_url=ollama_url, language=language
+            )
+            return jsonify({"description": description, "provider": provider})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/proxy/rag", methods=["POST"])
+    @require_auth
+    def api_proxy_rag():
+        """Proxy endpoint: agent sends question + context, server calls RAG API with admin keys.
+
+        Accepts: {question, context, chat_name, language, history}
+        Returns: {answer, provider}
+        """
+        data = request.get_json()
+        if not data or not data.get("question"):
+            abort(400, "Missing question")
+
+        question = data["question"]
+        context_text = data.get("context", "")
+        chat_name = data.get("chat_name", "chat")
+        language = data.get("language", "he")
+        history = data.get("history", [])
+
+        # Use admin's configured settings (enforce user preset)
+        enforce_user_preset()
+        project_root = os.path.dirname(chats_dir)
+
+        try:
+            result = ai_chat.ask_with_context(
+                context_text, question, chat_name, history,
+                project_root=project_root, language=language
+            )
+            return jsonify(result)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # ------------------------------------------------------------------
     # File upload (ZIP) endpoint
     # ------------------------------------------------------------------
 

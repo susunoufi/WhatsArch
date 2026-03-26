@@ -354,10 +354,26 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
             settings = config.load_settings(project_root)
             provider = settings.get("vision_provider", "anthropic")
             model = settings.get("vision_model")
-            api_key = _get_api_key_for_provider(provider)
             ollama_url = settings.get("ollama_base_url")
             cache_path = os.path.join(data_dir, "descriptions.json")
-            process_images(chat_dir, cache_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, progress_callback=callback, cancel_event=cancel_event)
+
+            # Check for proxy mode (agent settings in DATA_DIR)
+            proxy_url = None
+            proxy_token = None
+            agent_settings_path = os.path.join(project_root, "settings.json")
+            try:
+                if os.path.exists(agent_settings_path):
+                    with open(agent_settings_path, "r") as f:
+                        agent_s = json.load(f)
+                    if agent_s.get("use_proxy_vision") and agent_s.get("railway_url"):
+                        provider = "proxy"
+                        proxy_url = agent_s["railway_url"]
+                        proxy_token = agent_s.get("auth_token", "")
+            except Exception:
+                pass
+
+            api_key = "" if provider == "proxy" else _get_api_key_for_provider(provider)
+            process_images(chat_dir, cache_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, progress_callback=callback, cancel_event=cancel_event, proxy_url=proxy_url, proxy_token=proxy_token)
 
         elif task == "videos":
             from .vision import process_videos
@@ -428,14 +444,13 @@ def _check_cancel(cancel_event):
 
 
 def _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
-    """Run the parsing + indexing + chunking pipeline."""
+    """Run the parsing + indexing + chunking pipeline (WhatsApp + Telegram)."""
     from .vision import load_cache as load_vision_cache
     from .transcribe import load_cache
-    from .parser import parse_chat, detect_chat_type
+    from .parser import parse_chat, parse_telegram, detect_chat_type, detect_platform
     from .indexer import build_index, build_chunks, save_chat_metadata
     from .chunker import segment_into_chunks
 
-    chat_file = os.path.join(chat_dir, "_chat.txt")
     db_path = os.path.join(data_dir, "chat.db")
 
     _check_cancel(cancel_event)
@@ -453,7 +468,16 @@ def _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
     settings = config.load_settings(project_root)
     chat_name_for_aliases = os.path.basename(os.path.dirname(data_dir))
     sender_aliases = settings.get("sender_aliases", {}).get(chat_name_for_aliases, {})
-    messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts, sender_aliases=sender_aliases)
+
+    # Detect platform and parse accordingly
+    platform = detect_platform(chat_dir)
+    if platform == "telegram":
+        telegram_file = os.path.join(chat_dir, "result.json")
+        messages = parse_telegram(telegram_file, transcriptions, descriptions, video_trans, pdf_texts, sender_aliases=sender_aliases)
+        chat_file = telegram_file
+    else:
+        chat_file = os.path.join(chat_dir, "_chat.txt")
+        messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts, sender_aliases=sender_aliases)
 
     _check_cancel(cancel_event)
     callback("Building index...", 2, 5)
@@ -500,10 +524,8 @@ def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=N
         # No chunks yet — need to build them from scratch
         from .vision import load_cache as load_vision_cache
         from .transcribe import load_cache
-        from .parser import parse_chat, detect_chat_type
+        from .parser import parse_chat, parse_telegram, detect_chat_type, detect_platform
         from .chunker import segment_into_chunks
-
-        chat_file = os.path.join(chat_dir, "_chat.txt")
 
         _check_cancel(cancel_event)
         callback("Loading caches...", 0, 5)
@@ -514,7 +536,13 @@ def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=N
 
         _check_cancel(cancel_event)
         callback("Parsing messages...", 1, 5)
-        messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
+        platform = detect_platform(chat_dir)
+        if platform == "telegram":
+            chat_file = os.path.join(chat_dir, "result.json")
+            messages = parse_telegram(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
+        else:
+            chat_file = os.path.join(chat_dir, "_chat.txt")
+            messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
 
         _check_cancel(cancel_event)
         callback("Detecting chat type...", 2, 5)

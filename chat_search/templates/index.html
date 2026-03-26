@@ -1650,6 +1650,49 @@
         let galleryLoaded = false;
         let analyticsLoaded = false;
 
+        // ===================== Local Agent =====================
+        const AGENT_URL = 'http://localhost:11470';
+        let agentAvailable = false;
+        let agentChats = new Set();  // chat names that are local (on agent)
+
+        async function detectAgent() {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 2000);
+                const res = await fetch(AGENT_URL + '/status', { signal: controller.signal });
+                clearTimeout(timeout);
+                if (res.ok) {
+                    const data = await res.json();
+                    agentAvailable = true;
+                    agentChats = new Set(data.chats || []);
+                    console.log('[Agent] detected, local chats:', [...agentChats]);
+                }
+            } catch {
+                agentAvailable = false;
+                agentChats = new Set();
+            }
+        }
+
+        function apiBase(chatName) {
+            // Route API calls to agent for local chats, Railway for cloud chats
+            if (agentAvailable && chatName && agentChats.has(chatName)) {
+                return AGENT_URL;
+            }
+            return '';  // relative = same origin (Railway)
+        }
+
+        function mediaBase(chatName) {
+            // Media URLs: local agent or same origin
+            if (agentAvailable && chatName && agentChats.has(chatName)) {
+                return AGENT_URL;
+            }
+            return '';
+        }
+
+        function isLocalChat(chatName) {
+            return agentAvailable && chatName && agentChats.has(chatName);
+        }
+
         // ===================== DOM Refs =====================
         const $query = document.getElementById('searchQuery');
         const $dateFrom = document.getElementById('dateFrom');
@@ -1667,9 +1710,10 @@
         const $chatSelector = document.getElementById('chatSelector');
 
         // ===================== Init =====================
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             applyLanguage();
-            loadChats();
+            await detectAgent();  // detect local agent before loading chats
+            await loadChats();    // merges cloud + local chats
             setupListeners();
             initAiChat();
             setupAiListeners();
@@ -1813,8 +1857,31 @@
         // ===================== Chats =====================
         async function loadChats() {
             try {
-                const res = await fetch('/api/chats');
-                chatsData = await res.json();
+                // Fetch cloud chats
+                let cloudChats = [];
+                try {
+                    const res = await fetch('/api/chats');
+                    cloudChats = await res.json();
+                    cloudChats.forEach(c => c.source = c.source || 'cloud');
+                } catch { }
+
+                // Fetch local agent chats
+                let localChats = [];
+                if (agentAvailable) {
+                    try {
+                        const res = await fetch(AGENT_URL + '/api/chats');
+                        localChats = await res.json();
+                        localChats.forEach(c => c.source = 'local');
+                        // Update agentChats set
+                        agentChats = new Set(localChats.map(c => c.name));
+                    } catch { }
+                }
+
+                // Merge: local chats first, then cloud (skip duplicates)
+                const seen = new Set();
+                chatsData = [];
+                localChats.forEach(c => { seen.add(c.name); chatsData.push(c); });
+                cloudChats.forEach(c => { if (!seen.has(c.name)) chatsData.push(c); });
 
                 $chatSelector.innerHTML = '';
                 // Add cross-chat search option
@@ -1828,7 +1895,8 @@
                 chatsData.forEach(chat => {
                     const opt = document.createElement('option');
                     opt.value = chat.name;
-                    opt.textContent = chat.name + (chat.total_messages ? ` (${chat.total_messages.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')})` : ' (' + t('notReady') + ')');
+                    const badge = chat.source === 'local' ? ' \uD83D\uDCBB' : '';
+                    opt.textContent = chat.name + badge + (chat.total_messages ? ` (${chat.total_messages.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')})` : ' (' + t('notReady') + ')');
                     opt.disabled = !chat.ready;
                     $chatSelector.appendChild(opt);
                 });
@@ -1870,7 +1938,7 @@
             // Re-show AI chat fab when switching back from __all__
             initAiChat();
             try {
-                const res = await fetch('/api/stats?chat=' + encodeURIComponent(currentChat));
+                const res = await fetch(apiBase(currentChat) + '/api/stats?chat=' + encodeURIComponent(currentChat));
                 if (!res.ok) throw new Error('Stats request failed');
                 statsData = await res.json();
                 renderStats(statsData);
@@ -1954,9 +2022,10 @@
             if (types.length > 0 && types.length < 5) params.set('type', types.join(','));
             params.set('page', currentPage);
 
+            const base = apiBase(currentChat);
             const searchEndpoint = currentChat === '__all__' ? '/api/search/all?' : '/api/search?';
             try {
-                const res = await fetch(searchEndpoint + params.toString());
+                const res = await fetch(base + searchEndpoint + params.toString());
                 if (!res.ok) throw new Error('Search request failed');
                 const data = await res.json();
 
@@ -2041,14 +2110,14 @@
             let mediaHtml = '';
 
             if (msg.media_type === 'audio' && msg.attachment) {
-                const audioSrc = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
+                const audioSrc = mediaBase(chatForMedia) + '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 mediaHtml = `
                     <div class="media-container">
                         <audio class="audio-player" controls preload="none" src="${audioSrc}">הדפדפן לא תומך בנגן שמע</audio>
                         ${msg.transcription ? `<div class="transcription"><div class="transcription-label"><i class="fas fa-closed-captioning"></i> תמלול</div>${transcriptionContent}</div>` : ''}
                     </div>`;
             } else if (msg.media_type === 'image' && msg.attachment) {
-                const src = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
+                const src = mediaBase(chatForMedia) + '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 const descHtml = msg.visual_description
                     ? `<div class="visual-description"><div class="transcription-label"><i class="fas fa-eye"></i> תיאור תמונה</div>${highlightInText(msg.visual_description, $query.value.trim())}</div>` : '';
                 mediaHtml = `
@@ -2057,8 +2126,8 @@
                         ${descHtml}
                     </div>`;
             } else if (msg.media_type === 'video' && msg.attachment) {
-                const videoSrc = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
-                const thumbSrc = '/api/thumbnail/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
+                const videoSrc = mediaBase(chatForMedia) + '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
+                const thumbSrc = mediaBase(chatForMedia) + '/api/thumbnail/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 const descHtml = msg.visual_description
                     ? `<div class="visual-description"><div class="transcription-label"><i class="fas fa-film"></i> תיאור וידאו</div>${highlightInText(msg.visual_description, $query.value.trim())}</div>` : '';
                 const videoTransHtml = msg.video_transcription
@@ -2078,7 +2147,7 @@
                         ${videoTransHtml}
                     </div>`;
             } else if (msg.media_type === 'pdf' && msg.attachment) {
-                const pdfSrc = '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
+                const pdfSrc = mediaBase(chatForMedia) + '/media/' + encodeURIComponent(chatForMedia) + '/' + encodeURIComponent(msg.attachment);
                 const previewText = msg.pdf_text ? escapeHtml(msg.pdf_text.substring(0, 200)) : '';
                 const pdfTextHtml = msg.pdf_text
                     ? `<div class="visual-description pdf-text"><div class="transcription-label"><i class="fas fa-file-pdf"></i> תוכן PDF</div>${highlightInText(msg.pdf_text.substring(0, 500), $query.value.trim())}${msg.pdf_text.length > 500 ? '<span style="color:var(--text-muted);">...</span>' : ''}</div>` : '';
@@ -2138,7 +2207,7 @@
 
             const contextChat = chatName || currentChat;
             try {
-                const res = await fetch(`/api/context/${messageId}?chat=${encodeURIComponent(contextChat)}&before=5&after=5`);
+                const res = await fetch(apiBase(contextChat) + `/api/context/${messageId}?chat=${encodeURIComponent(contextChat)}&before=5&after=5`);
                 if (!res.ok) throw new Error('Context request failed');
                 const data = await res.json();
 
@@ -2240,24 +2309,27 @@
             if (reset) grid.innerHTML = '';
 
             try {
-                const res = await fetch(`/api/media/list?chat=${encodeURIComponent(currentChat)}&type=${galleryType}&page=${galleryPage}`);
+                const res = await fetch(apiBase(currentChat) + `/api/media/list?chat=${encodeURIComponent(currentChat)}&type=${galleryType}&page=${galleryPage}`);
                 if (!res.ok) return;
                 const data = await res.json();
 
                 data.files.forEach(file => {
                     const item = document.createElement('div');
                     item.className = 'gallery-item';
+                    const mBase = mediaBase(currentChat);
+                    const fileUrl = mBase + file.url;
+                    const thumbUrl = file.thumbnail_url ? mBase + file.thumbnail_url : '';
 
                     if (file.type === 'image') {
                         const img = document.createElement('img');
-                        img.src = file.url;
+                        img.src = fileUrl;
                         img.alt = '';
                         img.loading = 'lazy';
-                        img.onclick = () => openLightbox(file.url);
+                        img.onclick = () => openLightbox(fileUrl);
                         item.appendChild(img);
                     } else {
                         const thumb = document.createElement('img');
-                        thumb.src = file.thumbnail_url;
+                        thumb.src = thumbUrl;
                         thumb.alt = '';
                         thumb.loading = 'lazy';
                         item.appendChild(thumb);
@@ -2265,7 +2337,7 @@
                         badge.className = 'video-badge';
                         badge.innerHTML = '<i class="fas fa-play"></i>';
                         item.appendChild(badge);
-                        item.onclick = () => window.open(file.url, '_blank');
+                        item.onclick = () => window.open(fileUrl, '_blank');
                     }
 
                     if (file.description) {
@@ -2309,7 +2381,7 @@
             container.innerHTML = '<div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div>';
 
             try {
-                const res = await fetch(`/api/analytics?chat=${encodeURIComponent(currentChat)}`);
+                const res = await fetch(apiBase(currentChat) + `/api/analytics?chat=${encodeURIComponent(currentChat)}`);
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -2415,6 +2487,39 @@
                 label.innerHTML = '<i class="fas fa-times"></i> ' + t('mgmtUploadError') + ': ' + err.message;
                 label.style.pointerEvents = '';
                 setTimeout(() => { label.innerHTML = origText; }, 4000);
+            }
+        }
+
+        async function handleLocalLoad() {
+            const input = document.getElementById('localPathInput');
+            const path = input ? input.value.trim() : '';
+            if (!path) return;
+
+            const statusEl = document.getElementById('localLoadStatus');
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (currentLang === 'he' ? 'טוען...' : 'Loading...');
+
+            try {
+                const res = await fetch(AGENT_URL + '/upload/local', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: path })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Load failed');
+
+                statusEl.innerHTML = '<i class="fas fa-check" style="color:#4db6ac;"></i> ' +
+                    (currentLang === 'he' ? `נטען בהצלחה: ${data.chat_name}` : `Loaded: ${data.chat_name}`);
+                input.value = '';
+                // Update agent chats set
+                agentChats.add(data.chat_name);
+                setTimeout(() => {
+                    loadChats();
+                    managementLoaded = false;
+                    loadManagementData();
+                }, 1500);
+            } catch (err) {
+                statusEl.innerHTML = '<i class="fas fa-times" style="color:#e57373;"></i> ' + err.message;
+                setTimeout(() => { statusEl.innerHTML = ''; }, 5000);
             }
         }
 
@@ -2585,15 +2690,31 @@
             container.innerHTML = '<div class="spinner-overlay active"><div class="spinner"></div></div>';
 
             try {
-                const chatsRes = await fetch('/api/chats');
-                const chats = await chatsRes.json();
+                // Merge cloud + local chats for management
+                let allMgmtChats = [];
+                try {
+                    const cloudRes = await fetch('/api/chats');
+                    const cloud = await cloudRes.json();
+                    cloud.forEach(c => c.source = c.source || 'cloud');
+                    allMgmtChats.push(...cloud);
+                } catch {}
+                if (agentAvailable) {
+                    try {
+                        const localRes = await fetch(AGENT_URL + '/api/chats');
+                        const local = await localRes.json();
+                        local.forEach(c => c.source = 'local');
+                        const seen = new Set(allMgmtChats.map(c => c.name));
+                        local.forEach(c => { if (!seen.has(c.name)) allMgmtChats.push(c); });
+                    } catch {}
+                }
+                const chats = allMgmtChats;
 
                 let html = '';
                 for (const chat of chats) {
                     try {
-                        const statusRes = await fetch('/api/process/status?chat=' + encodeURIComponent(chat.name));
+                        const statusRes = await fetch(apiBase(chat.name) + '/api/process/status?chat=' + encodeURIComponent(chat.name));
                         const status = await statusRes.json();
-                        html += renderManagementCard(chat.name, status);
+                        html += renderManagementCard(chat.name, status, chat.source);
                     } catch (err) {
                         html += `<div class="mgmt-chat-card"><div class="mgmt-chat-header"><span class="mgmt-chat-name"><i class="fab fa-whatsapp"></i> ${escapeHtml(chat.name)}</span></div><div style="color:#e57373;">${t('mgmtErrorLoading')}</div></div>`;
                     }
@@ -2628,7 +2749,27 @@
                             </div>
                         </div>
                     </div>`;
-                container.innerHTML = uploadCard + (html || '<div class="empty-state"><p>' + t('mgmtNoChats') + '</p></div>');
+                // Local agent card (load from disk)
+                let localCard = '';
+                if (agentAvailable) {
+                    localCard = `
+                    <div class="mgmt-chat-card" style="border: 2px dashed #4db6ac; padding: 24px;">
+                        <div style="text-align:center; margin-bottom: 16px;">
+                            <div style="font-size: 2em; margin-bottom: 8px; color: #4db6ac;"><i class="fas fa-desktop"></i></div>
+                            <h3 style="font-size: 1em; margin-bottom: 6px;">${currentLang === 'he' ? 'עיבוד מקומי' : 'Local Processing'}</h3>
+                            <p style="font-size: 0.82em; color: var(--text-secondary);">${currentLang === 'he' ? 'טען צ\'אט מהמחשב שלך — ללא הגבלת גודל' : 'Load chat from your computer — no size limit'}</p>
+                        </div>
+                        <div style="display:flex; gap:8px; max-width:500px; margin:0 auto;">
+                            <input type="text" id="localPathInput" dir="ltr" placeholder="${currentLang === 'he' ? 'נתיב לתיקיה או ZIP...' : 'Path to folder or ZIP...'}" style="flex:1; padding:10px; font-size:0.85em; background:var(--bg-tertiary); border:1px solid #4db6ac; border-radius:var(--radius); color:var(--text-primary);">
+                            <button class="btn btn-sm" onclick="handleLocalLoad()" style="background:#4db6ac; color:#fff; white-space:nowrap;">
+                                <i class="fas fa-folder-open"></i> ${currentLang === 'he' ? 'טען' : 'Load'}
+                            </button>
+                        </div>
+                        <div id="localLoadStatus" style="text-align:center; margin-top:8px; font-size:0.82em; color:var(--text-muted);"></div>
+                    </div>`;
+                }
+
+                container.innerHTML = uploadCard + localCard + (html || '<div class="empty-state"><p>' + t('mgmtNoChats') + '</p></div>');
                 managementLoaded = true;
 
                 // Start polling for any active tasks
@@ -2640,16 +2781,17 @@
             }
         }
 
-        function renderManagementCard(chatName, status) {
+        function renderManagementCard(chatName, status, source) {
             const isRunning = status.active_task && status.active_task.status === 'running';
             const runningTask = isRunning ? status.active_task.task : null;
             const safeName = escapeHtml(chatName);
             const cardId = 'mgmt-' + chatName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
+            const localBadge = source === 'local' ? `<span style="font-size:0.7em;background:#4db6ac;color:#fff;padding:2px 8px;border-radius:12px;margin:0 6px;vertical-align:middle;"><i class="fas fa-desktop"></i> ${currentLang === 'he' ? 'מקומי' : 'Local'}</span>` : '';
 
             return `
             <div class="mgmt-chat-card" id="${cardId}">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name"><svg style="width:18px;height:18px;vertical-align:middle;margin-left:4px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cardGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#0D9488"/><stop offset="100%" stop-color="#6366F1"/></linearGradient></defs><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#cardGrad)" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg> ${safeName}</span>
+                    <span class="mgmt-chat-name">${localBadge}<svg style="width:18px;height:18px;vertical-align:middle;margin-left:4px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cardGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#0D9488"/><stop offset="100%" stop-color="#6366F1"/></linearGradient></defs><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#cardGrad)" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg> ${safeName}</span>
                     ${status.index.exists
                         ? `<span class="mgmt-status-badge ready"><i class="fas fa-check-circle"></i> ${t('mgmtIndexed')} (${status.index.message_count.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')} ${t('totalMessages')})</span>`
                         : `<span class="mgmt-status-badge not-ready"><i class="fas fa-exclamation-triangle"></i> ${t('mgmtNotIndexed')}</span>`
@@ -2782,7 +2924,7 @@
             if (SLOW_TASKS[task] && !confirm(t(SLOW_TASKS[task]))) return;
 
             try {
-                const res = await fetch('/api/process/start', {
+                const res = await fetch(apiBase(chatName) + '/api/process/start', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({chat: chatName, task: task})
@@ -2818,7 +2960,7 @@
 
         async function stopProcessing(chatName) {
             try {
-                const res = await fetch('/api/process/stop', {
+                const res = await fetch(apiBase(chatName) + '/api/process/stop', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({chat: chatName})
@@ -2850,7 +2992,7 @@
             if (progressPollers[chatName]) return;
             progressPollers[chatName] = setInterval(async () => {
                 try {
-                    const res = await fetch('/api/process/progress?chat=' + encodeURIComponent(chatName));
+                    const res = await fetch(apiBase(chatName) + '/api/process/progress?chat=' + encodeURIComponent(chatName));
                     const data = await res.json();
 
                     if (data.status === 'running') {
@@ -2904,7 +3046,7 @@
         }
 
         function checkAndPollProgress(chatName) {
-            fetch('/api/process/progress?chat=' + encodeURIComponent(chatName))
+            fetch(apiBase(chatName) + '/api/process/progress?chat=' + encodeURIComponent(chatName))
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'running') startProgressPolling(chatName);
@@ -2921,7 +3063,7 @@
 
         async function initAiChat() {
             try {
-                const res = await fetch('/api/ai/status');
+                const res = await fetch(apiBase(currentChat) + '/api/ai/status');
                 const data = await res.json();
                 if (data.configured) {
                     document.getElementById('aiChatFab').style.display = 'flex';
@@ -2991,7 +3133,7 @@
         }
 
         async function sendAiMessageStreaming(question, typingEl) {
-            const res = await fetch('/api/ai/chat/stream', {
+            const res = await fetch(apiBase(currentChat) + '/api/ai/chat/stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat: currentChat, question: question, history: aiHistory.slice(-4) })
@@ -3096,7 +3238,7 @@
         }
 
         async function sendAiMessageFallback(question, typingEl) {
-            const res = await fetch('/api/ai/chat', {
+            const res = await fetch(apiBase(currentChat) + '/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat: currentChat, question: question, history: aiHistory.slice(-4) })
@@ -3172,7 +3314,7 @@
             }
 
             try {
-                const res = await fetch('/api/context/' + messageId + '?chat=' + encodeURIComponent(currentChat) + '&before=5&after=5');
+                const res = await fetch(apiBase(currentChat) + '/api/context/' + messageId + '?chat=' + encodeURIComponent(currentChat) + '&before=5&after=5');
                 const data = await res.json();
 
                 let html = '<div class="ai-context-inline"><div class="ctx-label"><i class="fas fa-stream"></i> ' + t('aiContextLabel') + '</div>';
@@ -3211,7 +3353,7 @@
 
         async function showSourceMessage(messageId) {
             try {
-                const res = await fetch('/api/context/' + messageId + '?chat=' + encodeURIComponent(currentChat) + '&before=5&after=5');
+                const res = await fetch(apiBase(currentChat) + '/api/context/' + messageId + '?chat=' + encodeURIComponent(currentChat) + '&before=5&after=5');
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -3323,7 +3465,7 @@
                 mediaCountsAll = { images: 0, videos: 0 };
                 mediaCountsPerChat = {};
                 const statusPromises = chatNames.map(name =>
-                    fetch(`/api/process/status?chat=${encodeURIComponent(name)}`)
+                    fetch(apiBase(name) + `/api/process/status?chat=${encodeURIComponent(name)}`)
                         .then(r => r.ok ? r.json() : null)
                         .then(data => {
                             if (data) {

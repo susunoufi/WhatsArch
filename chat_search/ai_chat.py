@@ -967,3 +967,34 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
     system = get_system_prompt(chat_name, language)
     for chunk in llm.chat_stream(system, user_message, max_tokens=2048):
         yield chunk
+
+
+def ask_with_context(context_text: str, question: str, chat_name: str, history: list = None,
+                     project_root: str = None, language: str = "he") -> dict:
+    """RAG answer using pre-formatted context (used by proxy endpoint).
+
+    Unlike ask(), this does NOT do retrieval — the caller already retrieved and
+    formatted the chunks. This just calls the LLM with the provided context.
+    """
+    # Build user message
+    user_message = f"קטעי שיחה רלוונטיים:\n{context_text}\n\nשאלה: {question}"
+
+    if history and len(history) > 0:
+        recent = history[-4:]
+        history_text = "\n".join(
+            f"{'שאלה קודמת' if h['role'] == 'user' else 'תשובה קודמת'}: {h['content'][:200]}"
+            for h in recent
+        )
+        user_message = f"היסטוריית שיחה אחרונה:\n{history_text}\n\n{user_message}"
+
+    llm = _get_llm_client(project_root)
+    system = get_system_prompt(chat_name, language)
+    answer = llm.chat(system, user_message, max_tokens=2048)
+
+    return {
+        "answer": answer,
+        "provider": llm.provider,
+        "sources": [],
+        "keywords": extract_keywords(question),
+        "debug": {"proxy": True, "context_length": len(context_text)},
+    }
