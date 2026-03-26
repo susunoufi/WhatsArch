@@ -64,6 +64,11 @@
         "filter": ["**/*", "!__pycache__/**"]
       },
       {
+        "from": "../agent",
+        "to": "app/agent",
+        "filter": ["**/*", "!__pycache__/**", "!*.pyc"]
+      },
+      {
         "from": "../requirements.txt",
         "to": "app/requirements.txt"
       }

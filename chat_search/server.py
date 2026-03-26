@@ -301,6 +301,12 @@ def create_app(chats_dir: str) -> Flask:
                                   as_attachment=True,
                                   download_name="installer.py")
 
+    @app.route("/download/setup")
+    def download_setup_exe():
+        """Redirect to the latest setup EXE download (hosted on GitHub Releases)."""
+        from flask import redirect
+        return redirect("https://github.com/susunoufi/WhatsArch/releases/download/v1.0.0/WhatsArch.Setup.1.0.0.exe")
+
     @app.route("/app")
     def app_page():
         """Main app page. Auth checked client-side via JS token."""

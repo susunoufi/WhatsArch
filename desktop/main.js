@@ -161,6 +161,24 @@ function downloadFile(url, dest, onProgress) {
 // Install missing tools
 // ============================================================
 
+function getLatestPythonVersion() {
+  // Fetch latest stable Python 3.x version from python.org API
+  try {
+    const data = execSync('curl -sL "https://endoflife.date/api/python.json"', { windowsHide: true, timeout: 10000 }).toString();
+    const versions = JSON.parse(data);
+    // Find latest stable 3.11+ (not pre-release)
+    for (const v of versions) {
+      if (v.latest && !v.latest.includes('a') && !v.latest.includes('b') && !v.latest.includes('rc')) {
+        const [major, minor] = v.latest.split('.').map(Number);
+        if (major === 3 && minor >= 11 && minor <= 13) {
+          return v.latest;
+        }
+      }
+    }
+  } catch (e) { /* fallback */ }
+  return '3.11.9'; // safe fallback
+}
+
 async function installPython(sendProgress) {
   const pythonDir = getPythonDir();
   fs.mkdirSync(pythonDir, { recursive: true });
@@ -168,8 +186,10 @@ async function installPython(sendProgress) {
   fs.mkdirSync(tmpDir, { recursive: true });
 
   if (isWin) {
-    // Download Python embeddable for Windows
-    const url = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip';
+    // Download latest Python embeddable for Windows
+    const pyVer = getLatestPythonVersion();
+    sendProgress(`מוריד Python ${pyVer}...`, 0);
+    const url = `https://www.python.org/ftp/python/${pyVer}/python-${pyVer}-embed-amd64.zip`;
     const zipPath = path.join(tmpDir, 'python.zip');
     sendProgress('מוריד Python...', 0);
     await downloadFile(url, zipPath, (pct) => sendProgress(`מוריד Python... ${pct}%`, pct));
@@ -196,11 +216,13 @@ async function installPython(sendProgress) {
     execSync(`"${path.join(pythonDir, 'python.exe')}" "${getPipPath}"`, { stdio: 'pipe', windowsHide: true });
     fs.unlinkSync(getPipPath);
   } else {
-    // Download python-build-standalone for Mac
+    // Download python-build-standalone for Mac (latest 3.11.x)
     const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
-    const url = `https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-3.11.12+20250317-${arch}-apple-darwin-install_only.tar.gz`;
+    const pyVer = getLatestPythonVersion();
+    // python-build-standalone uses date-based releases; use latest known
+    const url = `https://github.com/astral-sh/python-build-standalone/releases/download/20250317/cpython-${pyVer}+20250317-${arch}-apple-darwin-install_only.tar.gz`;
     const tarPath = path.join(tmpDir, 'python.tar.gz');
-    sendProgress('מוריד Python...', 0);
+    sendProgress(`מוריד Python ${pyVer}...`, 0);
     await downloadFile(url, tarPath, (pct) => sendProgress(`מוריד Python... ${pct}%`, pct));
 
     sendProgress('מחלץ Python...', 90);
@@ -590,6 +612,52 @@ function startFlask(port) {
   });
 }
 
+function startAgent(port) {
+  return new Promise((resolve, reject) => {
+    const python = detectPython();
+    if (!python.found) return reject(new Error('Python not found'));
+
+    const pythonPath = python.path;
+    const appDir = getAppPath();
+    const agentScript = path.join(appDir, 'agent', 'agent.py');
+    const ffmpeg = detectFfmpeg();
+
+    const env = { ...process.env };
+    if (ffmpeg.found && ffmpeg.path) env.PATH = ffmpeg.path + PATH_SEP + (env.PATH || '');
+    const localFfmpeg = getFfmpegDir();
+    if (fs.existsSync(localFfmpeg)) env.PATH = localFfmpeg + PATH_SEP + (env.PATH || '');
+    env.HF_HOME = getModelsDir();
+    env.XDG_CACHE_HOME = getModelsDir();
+    env.PYTHONIOENCODING = 'utf-8';
+
+    console.log(`Starting Agent: ${pythonPath} ${agentScript}`);
+    flaskProcess = spawn(pythonPath, [agentScript], { env, cwd: appDir, windowsHide: true });
+
+    const logFile = path.join(getLogsDir(), `agent-${Date.now()}.log`);
+    const logStream = fs.createWriteStream(logFile, { flags: 'a' });
+
+    let started = false;
+    const timeout = setTimeout(() => {
+      if (!started) { started = true; resolve(port); } // resolve anyway after timeout
+    }, 10000);
+
+    function checkStarted(text) {
+      if (!started && (text.includes('Listening on') || text.includes('Running on') || text.includes('11470'))) {
+        started = true;
+        clearTimeout(timeout);
+        setTimeout(() => resolve(port), 500);
+      }
+    }
+
+    flaskProcess.stdout.on('data', (d) => { const t = d.toString(); logStream.write(t); checkStarted(t); });
+    flaskProcess.stderr.on('data', (d) => { const t = d.toString(); logStream.write('[STDERR] ' + t); checkStarted(t); });
+    flaskProcess.on('error', (err) => { clearTimeout(timeout); logStream.write('[ERROR] ' + err.message + '\n'); reject(err); });
+    flaskProcess.on('close', (code) => {
+      logStream.write(`[EXIT] code ${code}\n`); logStream.end(); flaskProcess = null;
+    });
+  });
+}
+
 function stopFlask() {
   return new Promise((resolve) => {
     if (!flaskProcess) return resolve();
@@ -651,8 +719,10 @@ function createTray() {
   }
   tray = new Tray(trayIcon);
   tray.setToolTip('WhatsArch');
+  const { shell } = require('electron');
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'פתח WhatsArch', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } },
+    { label: 'פתח WhatsArch', click: () => { shell.openExternal('https://whatsarch-production.up.railway.app'); } },
+    { label: 'Agent Status', click: () => { shell.openExternal('http://localhost:11470/status'); } },
     { type: 'separator' },
     { label: 'יציאה', click: () => { isQuitting = true; app.quit(); } },
   ]));
@@ -691,17 +761,25 @@ if (!gotTheLock) {
 
       if (!isDev()) setupJunctions();
 
-      flaskPort = await findFreePort(5000);
-      console.log(`Using port: ${flaskPort}`);
-      await startFlask(flaskPort);
-      console.log('Flask started');
+      // Start the local agent (not full Flask server)
+      const agentPort = 11470;
+      console.log('Starting Agent on port', agentPort);
+      await startAgent(agentPort);
+      console.log('Agent started');
 
-      createMainWindow(flaskPort);
+      // Open the web UI in the default browser
+      const { shell } = require('electron');
+      shell.openExternal('https://whatsarch-production.up.railway.app');
+
+      // Show tray icon (agent runs in background)
       createTray();
+
+      // No main window needed — the web UI is in the browser
+      // App stays in tray to keep the agent running
     } catch (err) {
       console.error('Startup error:', err);
       dialog.showErrorBox('WhatsArch - שגיאה',
-        `לא ניתן להפעיל את האפליקציה:\n${err.message}\n\nודא ש-Python מותקן כראוי.`);
+        `לא ניתן להפעיל את ה-Agent:\n${err.message}\n\nודא ש-Python מותקן כראוי.`);
       app.quit();
     }
   });
