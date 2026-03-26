@@ -1130,6 +1130,19 @@
     <!-- ============ ANALYTICS TAB ============ -->
     <div id="analyticsTab" class="tab-content">
         <div class="management-container">
+            <!-- Usage & Costs -->
+            <div class="mgmt-chat-card">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-dollar-sign" style="color:var(--accent-amber);"></i> <span data-i18n="usageTitle">שימוש ועלויות</span></span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="usageUserFilter" style="font-size:0.8em;padding:4px 8px;border:1px solid var(--border-color);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);font-family:inherit;" onchange="loadUsage()">
+                            <option value="">כל המשתמשים</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="usageContent"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
+            </div>
+            <!-- Chat Analytics -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
                     <span class="mgmt-chat-name"><i class="fas fa-chart-bar" style="color:var(--accent-green);"></i> <span data-i18n="analyticsTitle">אנליטיקס</span></span>
@@ -1821,7 +1834,7 @@
                 analyticsLoaded = false;
                 if (activeTab === 'management') loadManagementData();
                 if (activeTab === 'gallery') { loadGallery(); galleryLoaded = true; }
-                if (activeTab === 'analytics') { loadAnalytics(); analyticsLoaded = true; }
+                if (activeTab === 'analytics') { loadUsage(); loadAnalytics(); analyticsLoaded = true; }
             });
 
             // Clean up pollers on page unload
@@ -2451,6 +2464,117 @@
             document.querySelectorAll('.gallery-filter').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             loadGallery(true);
+        }
+
+        // ===================== Usage & Costs =====================
+        async function loadUsage() {
+            const container = document.getElementById('usageContent');
+            const userFilter = document.getElementById('usageUserFilter');
+            const selectedUser = userFilter.value;
+
+            try {
+                const params = new URLSearchParams();
+                if (currentChat && currentChat !== '__all__') params.set('chat', currentChat);
+                if (selectedUser) params.set('user', selectedUser);
+
+                const base = (currentChat && agentChats.has(currentChat)) ? AGENT_URL : '';
+                const res = await fetch(base + '/api/usage?' + params.toString());
+                const data = await res.json();
+                const s = data.summary;
+                const he = currentLang === 'he';
+
+                // Update user filter dropdown
+                const prevVal = userFilter.value;
+                const usersHtml = `<option value="">${he ? 'כל המשתמשים' : 'All users'}</option>` +
+                    (data.users || []).map(u => `<option value="${escapeHtml(u)}" ${u === prevVal ? 'selected' : ''}>${escapeHtml(u)}</option>`).join('');
+                userFilter.innerHTML = usersHtml;
+
+                // Format duration
+                function fmtDur(sec) {
+                    if (!sec) return '0s';
+                    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), ss = Math.round(sec%60);
+                    return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${ss}s` : `${ss}s`;
+                }
+
+                // Type icons
+                const typeIcons = {
+                    vision: 'fa-image', video_vision: 'fa-video', video_transcription: 'fa-volume-up',
+                    transcription: 'fa-microphone', rag: 'fa-brain', pdf: 'fa-file-pdf',
+                    index: 'fa-database', embeddings: 'fa-brain',
+                };
+                const typeLabelsHe = {
+                    vision: 'תיאור תמונות', video_vision: 'תיאור סרטונים', video_transcription: 'תמלול סרטונים',
+                    transcription: 'תמלול הקלטות', rag: 'שאילתות AI', pdf: 'חילוץ PDF',
+                    index: 'אינדקס', embeddings: 'אמבדינגס',
+                };
+                const typeLabelsEn = {
+                    vision: 'Image descriptions', video_vision: 'Video descriptions', video_transcription: 'Video transcriptions',
+                    transcription: 'Audio transcriptions', rag: 'AI queries', pdf: 'PDF extraction',
+                    index: 'Indexing', embeddings: 'Embeddings',
+                };
+
+                // --- Card 1: Cost Summary ---
+                let modelRows = s.by_model.map(m => {
+                    const isFree = m.cost === 0;
+                    const costStr = isFree ? `<span style="color:var(--accent-green);">FREE</span>` : `$${m.cost.toFixed(4)}`;
+                    const tokens = (m.input_tokens || m.output_tokens) ? `<span style="color:var(--text-muted);font-size:0.8em;">${(m.input_tokens/1000).toFixed(0)}K in / ${(m.output_tokens/1000).toFixed(0)}K out</span>` : '';
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-color);">
+                        <div><strong>${escapeHtml(m.provider)}</strong> <span style="color:var(--text-secondary);">${escapeHtml(m.model)}</span></div>
+                        <div style="text-align:left;min-width:140px;">${m.calls} ${he ? 'קריאות' : 'calls'} &nbsp; ${costStr} ${tokens}</div>
+                    </div>`;
+                }).join('');
+
+                // --- Card 2: Processing Stats ---
+                const ms = s.media_stats;
+
+                // --- Card 3: Activity Log ---
+                let logRows = (data.log || []).slice(0, 50).map(e => {
+                    const time = e.timestamp ? new Date(e.timestamp).toLocaleString(he ? 'he-IL' : 'en-US', {dateStyle:'short', timeStyle:'short'}) : '';
+                    const icon = typeIcons[e.type] || 'fa-cog';
+                    const label = (he ? typeLabelsHe : typeLabelsEn)[e.type] || e.type;
+                    const fname = e.file ? (e.file.length > 30 ? '...' + e.file.slice(-27) : e.file) : (e.type === 'rag' ? 'AI Chat' : '');
+                    const costStr = e.cost_estimate > 0 ? `$${e.cost_estimate.toFixed(5)}` : '<span style="color:var(--accent-green);">FREE</span>';
+                    const userBadge = e.user ? `<span style="font-size:0.75em;background:rgba(99,102,241,0.15);color:#a5b4fc;padding:1px 6px;border-radius:10px;">${escapeHtml(e.user.split('@')[0])}</span>` : '';
+                    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82em;">
+                        <span style="color:var(--text-muted);min-width:110px;">${time}</span>
+                        <i class="fas ${icon}" style="color:var(--accent-green);width:16px;"></i>
+                        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" dir="ltr">${escapeHtml(fname)}</span>
+                        <span class="lsp-badge model" style="font-size:0.85em;">${escapeHtml(e.provider || '')}</span>
+                        ${userBadge}
+                        <span style="min-width:60px;text-align:left;">${costStr}</span>
+                    </div>`;
+                }).join('');
+
+                container.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color);">
+                            <div style="font-size:0.85em;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-dollar-sign"></i> ${he ? 'עלות כוללת' : 'Total Cost'}</div>
+                            <div style="font-size:1.8em;font-weight:700;color:var(--accent-amber);">$${s.total_cost.toFixed(4)}</div>
+                        </div>
+                        <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color);">
+                            <div style="font-size:0.85em;color:var(--text-muted);margin-bottom:8px;"><i class="fas fa-chart-pie"></i> ${he ? 'סטטיסטיקות עיבוד' : 'Processing Stats'}</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.85em;">
+                                <span><i class="fas fa-image" style="color:var(--accent-green);"></i> ${he ? 'תמונות:' : 'Images:'} <strong>${ms.images_processed}</strong></span>
+                                <span><i class="fas fa-video" style="color:var(--accent-blue);"></i> ${he ? 'סרטונים:' : 'Videos:'} <strong>${ms.videos_processed}</strong> (${fmtDur(ms.total_video_duration_sec)})</span>
+                                <span><i class="fas fa-microphone" style="color:var(--accent-amber);"></i> ${he ? 'הקלטות:' : 'Audio:'} <strong>${ms.audios_transcribed}</strong> (${fmtDur(ms.total_audio_duration_sec)})</span>
+                                <span><i class="fas fa-file-pdf" style="color:var(--accent-red);"></i> PDFs: <strong>${ms.pdfs_extracted}</strong> (${ms.pdfs_pages_total} ${he ? 'עמודים' : 'pages'})</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <div style="font-size:0.9em;font-weight:600;margin-bottom:8px;"><i class="fas fa-server"></i> ${he ? 'שימוש לפי מודל' : 'Usage by Model'}</div>
+                        ${modelRows || '<div style="color:var(--text-muted);font-size:0.85em;">' + (he ? 'אין נתונים עדיין' : 'No data yet') + '</div>'}
+                    </div>
+                    <div>
+                        <div style="font-size:0.9em;font-weight:600;margin-bottom:8px;"><i class="fas fa-history"></i> ${he ? 'לוג פעילות אחרון' : 'Recent Activity Log'}</div>
+                        <div style="max-height:300px;overflow-y:auto;">
+                            ${logRows || '<div style="color:var(--text-muted);font-size:0.85em;">' + (he ? 'אין פעילות עדיין' : 'No activity yet') + '</div>'}
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85em;">' + (currentLang === 'he' ? 'לא ניתן לטעון נתוני שימוש' : 'Could not load usage data') + '</div>';
+            }
         }
 
         // ===================== Analytics =====================
@@ -3916,8 +4040,8 @@
 
                     // We need the full preset data from config — fetch from a known mapping
                     const presetSettings = {
-                        budget: { vision_provider: 'gemini', vision_model: 'gemini-2.0-flash', video_provider: 'gemini', video_model: 'gemini-2.0-flash', rag_provider: 'gemini', rag_model: 'gemini-2.0-flash' },
-                        balanced: { vision_provider: 'gemini', vision_model: 'gemini-2.0-flash', video_provider: 'gemini', video_model: 'gemini-2.0-flash', rag_provider: 'openai', rag_model: 'gpt-4o-mini' },
+                        budget: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'gemini', rag_model: 'gemini-2.5-flash' },
+                        balanced: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'openai', rag_model: 'gpt-4o-mini' },
                         premium: { vision_provider: 'anthropic', vision_model: 'claude-sonnet-4-20250514', video_provider: 'anthropic', video_model: 'claude-sonnet-4-20250514', rag_provider: 'anthropic', rag_model: 'claude-opus-4-6' },
                         local: { vision_provider: 'ollama', vision_model: 'llama3.2-vision', video_provider: 'ollama', video_model: 'llama3.2-vision', rag_provider: 'ollama', rag_model: 'qwen2.5:14b' },
                     };

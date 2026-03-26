@@ -888,6 +888,21 @@ def api_analytics():
 
 
 # ===========================================================================
+# Usage Tracking
+# ===========================================================================
+
+@app.route("/api/usage")
+def api_usage():
+    """Get usage analytics: costs, token usage, processing log."""
+    from chat_search import usage_tracker
+    chat_name = request.args.get("chat", "").strip() or None
+    user = request.args.get("user", "").strip() or None
+    return jsonify(usage_tracker.get_usage_report(
+        _get_project_root(), chat_name=chat_name, user=user
+    ))
+
+
+# ===========================================================================
 # Export
 # ===========================================================================
 

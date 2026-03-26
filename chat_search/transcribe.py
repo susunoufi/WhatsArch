@@ -90,6 +90,18 @@ def transcribe_audio_files(
         # Save after each file so we can resume
         save_cache(cache_path, cache)
 
+        # Log usage
+        try:
+            from . import usage_tracker
+            audio_dur = info.duration if info and hasattr(info, "duration") else 0
+            usage_tracker.log_event({
+                "type": "transcription", "chat_name": os.path.basename(chat_dir),
+                "provider": "whisper", "model": f"faster-whisper ({model_size})",
+                "file": filename, "audio_duration_sec": audio_dur,
+            }, os.path.dirname(os.path.dirname(cache_path)))
+        except Exception:
+            pass
+
         if progress_callback:
             done = sum(1 for f in audio_files if os.path.basename(f) in cache)
             progress_callback(filename, done, len(audio_files))

@@ -178,7 +178,7 @@ def describe_image(image_path: str, provider: str = "anthropic", model: str = No
     elif provider == "openai":
         return _describe_image_openai(image_path, api_key, model or "gpt-4o-mini")
     elif provider == "gemini":
-        return _describe_image_gemini(image_path, api_key, model or "gemini-2.0-flash")
+        return _describe_image_gemini(image_path, api_key, model or "gemini-2.5-flash")
     elif provider == "ollama":
         return _describe_image_ollama(image_path, ollama_url or "http://localhost:11434", model or "llama3.2-vision")
     else:
@@ -259,7 +259,7 @@ def describe_image_from_base64(image_b64: str, media_type: str, provider: str = 
         client = genai.Client(api_key=api_key)
         image_bytes = base64.standard_b64decode(image_b64)
         response = client.models.generate_content(
-            model=model or "gemini-2.0-flash",
+            model=model or "gemini-2.5-flash",
             contents=[
                 genai.types.Part.from_bytes(data=image_bytes, mime_type=media_type),
                 prompt,
@@ -393,7 +393,7 @@ def describe_video_frames(frame_paths: list[str], provider: str = "anthropic", m
     elif provider == "openai":
         return _describe_video_openai(frame_paths, api_key, model or "gpt-4o-mini")
     elif provider == "gemini":
-        return _describe_video_gemini(frame_paths, api_key, model or "gemini-2.0-flash")
+        return _describe_video_gemini(frame_paths, api_key, model or "gemini-2.5-flash")
     elif provider == "ollama":
         return _describe_video_ollama(frame_paths, ollama_url or "http://localhost:11434", model or "llama3.2-vision")
     else:
@@ -562,6 +562,8 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
     workers = 1 if provider == "ollama" else max_workers
 
     processed_count = len(image_files) - len(to_process)
+    error_count = 0
+    first_error = ""
     lock = threading.Lock()
 
     def process_one(filepath):
@@ -588,9 +590,22 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
 
             with lock:
                 # Don't cache error responses — leave them for retry
-                if desc and not desc.startswith("[vision error:"):
+                if desc and not desc.startswith("[vision error:") and not desc.startswith("[proxy error:"):
                     cache[filename] = desc
                     save_cache(cache_path, cache)
+                    # Log usage
+                    try:
+                        from . import usage_tracker
+                        usage_tracker.log_event({
+                            "type": "vision", "chat_name": os.path.basename(chat_dir),
+                            "provider": provider, "model": model, "file": filename,
+                        }, os.path.dirname(os.path.dirname(cache_path)))
+                    except Exception:
+                        pass
+                else:
+                    error_count += 1
+                    if error_count == 1:
+                        first_error = desc  # Save first error for reporting
                 processed_count += 1
                 bar.update(1)
                 try:
@@ -602,7 +617,10 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                 progress_callback(filename, processed_count, len(image_files))
 
     bar.close()
-    print(f"  Image descriptions complete. {len(cache)} files total.")
+    success_count = len(cache) - (len(image_files) - len(to_process))  # newly described
+    print(f"  Image descriptions complete. {success_count} new, {error_count} errors, {len(cache)} total cached.")
+    if error_count > 0 and success_count == 0:
+        raise RuntimeError(f"All {error_count} image descriptions failed. First error: {first_error}")
     return cache
 
 
@@ -710,6 +728,28 @@ def process_videos(
         save_cache(descriptions_cache_path, desc_cache)
         save_cache(video_trans_cache_path, trans_cache)
 
+        # Log usage
+        try:
+            from . import usage_tracker
+            project_root = os.path.dirname(os.path.dirname(descriptions_cache_path))
+            vid_dur = get_video_duration(filepath)
+            if desc_cache.get(filename):
+                usage_tracker.log_event({
+                    "type": "video_vision", "chat_name": os.path.basename(chat_dir),
+                    "provider": provider, "model": model, "file": filename,
+                    "video_duration_sec": vid_dur,
+                }, project_root)
+            t_entry = trans_cache.get(filename, {})
+            t_text = t_entry.get("text", "") if isinstance(t_entry, dict) else t_entry
+            if t_text and not t_text.startswith("["):
+                usage_tracker.log_event({
+                    "type": "video_transcription", "chat_name": os.path.basename(chat_dir),
+                    "provider": "whisper", "model": f"faster-whisper ({model_size})",
+                    "file": filename, "video_duration_sec": vid_dur,
+                }, project_root)
+        except Exception:
+            pass
+
         if progress_callback:
             done = sum(1 for f in video_files if os.path.basename(f) in desc_cache)
             progress_callback(filename, done, len(video_files))
@@ -758,6 +798,18 @@ def process_pdfs(chat_dir: str, cache_path: str, progress_callback=None, cancel_
         text = extract_pdf_text(filepath)
         cache[filename] = text
         save_cache(cache_path, cache)
+
+        # Log usage
+        try:
+            from . import usage_tracker
+            page_count = text.count('\n\n') + 1 if text and not text.startswith('[') else 0
+            usage_tracker.log_event({
+                "type": "pdf", "chat_name": os.path.basename(chat_dir),
+                "provider": "pymupdf", "model": "PyMuPDF", "file": filename,
+                "pages": page_count,
+            }, os.path.dirname(os.path.dirname(cache_path)))
+        except Exception:
+            pass
 
         if progress_callback:
             done = sum(1 for f in pdf_files if os.path.basename(f) in cache)

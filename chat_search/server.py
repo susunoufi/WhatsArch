@@ -861,6 +861,20 @@ def create_app(chats_dir: str) -> Flask:
             conn.close()
 
     # ------------------------------------------------------------------
+    # Usage tracking endpoint
+    # ------------------------------------------------------------------
+
+    @app.route("/api/usage")
+    def api_usage():
+        """Get usage analytics: costs, token usage, processing log."""
+        from . import usage_tracker
+        chat_name = request.args.get("chat", "").strip() or None
+        user = request.args.get("user", "").strip() or None
+        return jsonify(usage_tracker.get_usage_report(
+            os.path.dirname(chats_dir), chat_name=chat_name, user=user
+        ))
+
+    # ------------------------------------------------------------------
     # Export endpoint
     # ------------------------------------------------------------------
 
@@ -1292,7 +1306,7 @@ def create_app(chats_dir: str) -> Flask:
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
         provider = settings.get("vision_provider", "gemini")
-        model = settings.get("vision_model", "gemini-2.0-flash")
+        model = settings.get("vision_model", "gemini-2.5-flash")
 
         from . import vision
         from . import process_manager as pm
