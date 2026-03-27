@@ -427,6 +427,84 @@ def search(db_path: str, query: str, sender: str = "", date_from: str = "", date
         conn.close()
 
 
+def search_filtered(db_path: str, sender: str = "", date_from: str = "", date_to: str = "", page: int = 1, per_page: int = 50, search_type: str = "all"):
+    """Search messages by filters only (no text query). Returns (results, total_count)."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        c = conn.cursor()
+
+        conditions = []
+        params = []
+
+        if sender:
+            sender_list = [s.strip() for s in sender.split(",") if s.strip()]
+            if len(sender_list) == 1:
+                conditions.append("m.sender = ?")
+                params.append(sender_list[0])
+            elif len(sender_list) > 1:
+                placeholders = ",".join(["?"] * len(sender_list))
+                conditions.append(f"m.sender IN ({placeholders})")
+                params.extend(sender_list)
+        if date_from:
+            conditions.append("m.datetime >= ?")
+            params.append(date_from)
+        if date_to:
+            conditions.append("m.datetime <= ?")
+            params.append(date_to + "T23:59:59")
+
+        if search_type and search_type != "all":
+            type_list = [t.strip() for t in search_type.split(",") if t.strip()]
+            type_conds = []
+            for st in type_list:
+                if st == "text":
+                    type_conds.append("(m.text IS NOT NULL AND m.text != '')")
+                elif st == "transcription":
+                    type_conds.append("(m.transcription IS NOT NULL AND m.transcription != '')")
+                elif st == "visual":
+                    type_conds.append("(m.visual_description IS NOT NULL AND m.visual_description != '')")
+                elif st == "image":
+                    type_conds.append("(m.media_type = 'image' AND m.visual_description IS NOT NULL AND m.visual_description != '')")
+                elif st == "video":
+                    type_conds.append("(m.media_type = 'video')")
+                elif st == "pdf":
+                    type_conds.append("(m.pdf_text IS NOT NULL AND m.pdf_text != '')")
+            if type_conds:
+                conditions.append("(" + " OR ".join(type_conds) + ")")
+
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        count_sql = f"SELECT COUNT(*) FROM messages m {where}"
+        c.execute(count_sql, params)
+        total = c.fetchone()[0]
+
+        offset = (page - 1) * per_page
+        results_sql = f"""
+            SELECT m.id, m.datetime, m.sender, m.text, m.attachment, m.media_type,
+                   m.transcription, m.visual_description, m.video_transcription, m.pdf_text,
+                   '' as text_snippet, '' as transcription_snippet,
+                   '' as visual_description_snippet, '' as video_transcription_snippet,
+                   '' as pdf_text_snippet
+            FROM messages m
+            {where}
+            ORDER BY m.datetime DESC
+            LIMIT ? OFFSET ?
+        """
+        c.execute(results_sql, params + [per_page, offset])
+
+        results = [dict(row) for row in c.fetchall()]
+        for r in results:
+            r["has_transcription"] = bool(r.get("transcription"))
+            r["has_visual"] = bool(r.get("visual_description"))
+            r["has_video_transcription"] = bool(r.get("video_transcription"))
+            r["has_pdf"] = bool(r.get("pdf_text"))
+            r["media_type"] = r.get("media_type", "")
+
+        return results, total
+    finally:
+        conn.close()
+
+
 def browse_enriched(db_path: str, per_category: int = 10):
     """Return a sample of enriched messages from each category (transcriptions, descriptions, etc.)."""
     conn = sqlite3.connect(db_path)

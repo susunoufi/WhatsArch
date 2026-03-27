@@ -3093,7 +3093,7 @@
             const from = dateToISO($dateFrom.value);
             const to = dateToISO($dateTo.value);
 
-            if (!q && senders.length === 0 && !from && !to) {
+            if (!q && senders.length === 0 && !from && !to && (types.length === 0 || types.length >= 5)) {
                 showState('initial');
                 return;
             }

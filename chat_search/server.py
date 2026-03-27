@@ -401,9 +401,6 @@ def create_app(chats_dir: str) -> Flask:
     def api_search_all():
         """Search across all chats simultaneously."""
         q = request.args.get("q", "").strip()
-        if not q:
-            return jsonify({"results": [], "total": 0})
-
         sender = request.args.get("sender", "").strip()
         date_from = request.args.get("from", "").strip()
         date_to = request.args.get("to", "").strip()
@@ -413,7 +410,12 @@ def create_app(chats_dir: str) -> Flask:
         except (ValueError, TypeError):
             page = 1
 
+        has_filters = sender or date_from or date_to or (search_type and search_type != "all")
+        if not q and not has_filters:
+            return jsonify({"results": [], "total": 0})
+
         all_results = []
+        use_filtered = not q or q == "*"
 
         # Search each chat
         for name in sorted(os.listdir(chats_dir)):
@@ -423,10 +425,16 @@ def create_app(chats_dir: str) -> Flask:
                 continue
 
             try:
-                results, total = indexer.search(
-                    db_path, q, sender=sender, date_from=date_from, date_to=date_to,
-                    page=1, per_page=20, search_type=search_type
-                )
+                if use_filtered:
+                    results, total = indexer.search_filtered(
+                        db_path, sender=sender, date_from=date_from, date_to=date_to,
+                        page=1, per_page=20, search_type=search_type
+                    )
+                else:
+                    results, total = indexer.search(
+                        db_path, q, sender=sender, date_from=date_from, date_to=date_to,
+                        page=1, per_page=20, search_type=search_type
+                    )
                 for r in results:
                     r["chat_name"] = name
                 all_results.extend(results)
@@ -467,6 +475,13 @@ def create_app(chats_dir: str) -> Flask:
             page = 1
 
         if not q or q == "*":
+            # If filters are active, use filter-only search instead of browse mode
+            if sender or date_from or date_to or (search_type and search_type != "all"):
+                results, total = indexer.search_filtered(
+                    db_path, sender=sender, date_from=date_from, date_to=date_to,
+                    page=page, search_type=search_type
+                )
+                return jsonify({"results": results, "total": total, "page": page, "per_page": 50})
             # Browse mode: show samples from each enriched category
             results, total = indexer.browse_enriched(db_path)
             return jsonify({"results": results, "total": total, "page": 1, "browse": True})
