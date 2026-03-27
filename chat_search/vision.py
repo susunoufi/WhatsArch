@@ -606,7 +606,6 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                 is_error = not desc or desc.startswith("[vision error:") or desc.startswith("[proxy error:")
                 if not is_error:
                     cache[filename] = desc
-                    save_cache(cache_path, cache)
                     consecutive_errors = 0  # Reset on success
                     # Log usage
                     try:
@@ -618,6 +617,9 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                     except Exception:
                         pass
                 else:
+                    # Save empty string so this file is marked as attempted
+                    # and won't be retried on next run
+                    cache[filename] = ""
                     error_count += 1
                     consecutive_errors += 1
                     if error_count == 1:
@@ -625,6 +627,8 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                     # Abort early if we have a systematic failure
                     if consecutive_errors >= EARLY_ABORT_THRESHOLD:
                         abort_event.set()
+                # Save after every image (success or failure)
+                save_cache(cache_path, cache)
                 processed_count += 1
                 bar.update(1)
                 try:
