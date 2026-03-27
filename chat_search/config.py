@@ -208,6 +208,13 @@ def get_settings_path(project_root: str) -> str:
     return os.path.join(project_root, "settings.json")
 
 
+_RETIRED_MODELS = {
+    "gemini-2.0-flash": "gemini-2.5-flash",
+    "gemini-1.5-flash": "gemini-2.5-flash",
+    "gemini-2.0-flash-lite": "gemini-2.5-flash",
+}
+
+
 def load_settings(project_root: str) -> dict:
     """Load settings from file, merging with defaults for any missing keys."""
     settings = dict(DEFAULT_SETTINGS)
@@ -219,6 +226,12 @@ def load_settings(project_root: str) -> dict:
             settings.update(stored)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         pass
+
+    # Auto-fix retired model names
+    for key in ("vision_model", "video_model", "rag_model", "transcription_model"):
+        val = settings.get(key, "")
+        if val in _RETIRED_MODELS:
+            settings[key] = _RETIRED_MODELS[val]
     return settings
 
 
