@@ -569,11 +569,16 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
 
     processed_count = len(image_files) - len(to_process)
     error_count = 0
+    consecutive_errors = 0
     first_error = ""
     lock = threading.Lock()
+    abort_event = threading.Event()  # Signal workers to stop on systematic failures
+
+    # Early abort threshold: if first N images ALL fail, stop immediately
+    EARLY_ABORT_THRESHOLD = 5
 
     def process_one(filepath):
-        if cancel_event and cancel_event.is_set():
+        if (cancel_event and cancel_event.is_set()) or abort_event.is_set():
             return None, None
         filename = os.path.basename(filepath)
         desc = describe_image(filepath, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, proxy_url=proxy_url, proxy_token=proxy_token)
@@ -585,9 +590,12 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
         futures = {executor.submit(process_one, f): f for f in to_process}
 
         for future in as_completed(futures):
-            if cancel_event and cancel_event.is_set():
+            if (cancel_event and cancel_event.is_set()) or abort_event.is_set():
                 executor.shutdown(wait=False, cancel_futures=True)
-                print("  Image processing cancelled by user.")
+                if abort_event.is_set():
+                    print(f"  Aborting: {consecutive_errors} consecutive errors suggest a systematic problem.")
+                else:
+                    print("  Image processing cancelled by user.")
                 break
 
             filename, desc = future.result()
@@ -595,10 +603,11 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                 continue
 
             with lock:
-                # Don't cache error responses — leave them for retry
-                if desc and not desc.startswith("[vision error:") and not desc.startswith("[proxy error:"):
+                is_error = not desc or desc.startswith("[vision error:") or desc.startswith("[proxy error:")
+                if not is_error:
                     cache[filename] = desc
                     save_cache(cache_path, cache)
+                    consecutive_errors = 0  # Reset on success
                     # Log usage
                     try:
                         from . import usage_tracker
@@ -610,8 +619,12 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                         pass
                 else:
                     error_count += 1
+                    consecutive_errors += 1
                     if error_count == 1:
-                        first_error = desc  # Save first error for reporting
+                        first_error = desc
+                    # Abort early if we have a systematic failure
+                    if consecutive_errors >= EARLY_ABORT_THRESHOLD:
+                        abort_event.set()
                 processed_count += 1
                 bar.update(1)
                 try:
