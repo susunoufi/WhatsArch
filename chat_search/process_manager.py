@@ -392,6 +392,9 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
             ollama_url = settings.get("ollama_base_url")
             cache_path = os.path.join(data_dir, "descriptions.json")
 
+            print(f"[IMAGES] chat={chat_name} provider={provider} model={model}")
+            print(f"[IMAGES] cache_path={cache_path} exists={os.path.exists(cache_path)}")
+
             # Check for proxy mode (agent settings in DATA_DIR)
             proxy_url = None
             proxy_token = None
@@ -408,9 +411,18 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
                 pass
 
             api_key = "" if provider == "proxy" else _get_api_key_for_provider(provider)
+            print(f"[IMAGES] api_key={'present (' + api_key[:8] + '...)' if api_key else 'MISSING'}")
             is_local = provider in ("ollama", "proxy")
             _update_task_meta(chat_name, provider=provider, model=model or "default", engine="local" if is_local else "cloud")
             process_images(chat_dir, cache_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, progress_callback=callback, cancel_event=cancel_event, proxy_url=proxy_url, proxy_token=proxy_token)
+
+            # Verify save
+            if os.path.exists(cache_path):
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                print(f"[IMAGES] After processing: {len(saved)} entries in descriptions.json")
+            else:
+                print(f"[IMAGES] WARNING: descriptions.json does NOT exist after processing!")
 
         elif task == "videos":
             from .vision import process_videos

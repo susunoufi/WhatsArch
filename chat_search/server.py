@@ -735,6 +735,55 @@ def create_app(chats_dir: str) -> Flask:
         task_info = process_manager.get_task_status(chat_name)
         return jsonify(task_info or {"status": "idle"})
 
+    @app.route("/api/process/debug")
+    def api_process_debug():
+        """Debug endpoint: show exactly what image processing would use."""
+        chat_name = request.args.get("chat", "").strip()
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+
+        result = {
+            "vision_provider": settings.get("vision_provider"),
+            "vision_model": settings.get("vision_model"),
+            "settings_path": config.get_settings_path(project_root),
+            "settings_exists": os.path.exists(config.get_settings_path(project_root)),
+        }
+
+        # Check API key
+        provider = settings.get("vision_provider", "anthropic")
+        key_map = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY", "gemini": "GOOGLE_API_KEY"}
+        env_var = key_map.get(provider, "")
+        api_key = os.environ.get(env_var, "")
+        if not api_key and provider == "gemini":
+            api_key = os.environ.get("GEMINI_API_KEY", "")
+        result["api_key_env_var"] = env_var
+        result["api_key_present"] = bool(api_key)
+        result["api_key_preview"] = api_key[:8] + "..." if api_key else "MISSING"
+
+        # Check chat
+        if chat_name:
+            chat_dir = os.path.join(chats_dir, chat_name)
+            data_dir = os.path.join(chat_dir, "data")
+            desc_path = os.path.join(data_dir, "descriptions.json")
+            result["chat_dir_exists"] = os.path.isdir(chat_dir)
+            result["data_dir_exists"] = os.path.isdir(data_dir)
+            result["descriptions_path"] = desc_path
+            result["descriptions_exists"] = os.path.exists(desc_path)
+            if os.path.exists(desc_path):
+                import json as _json
+                with open(desc_path, "r", encoding="utf-8") as f:
+                    descs = _json.load(f)
+                result["descriptions_count"] = len(descs)
+
+            # Count images
+            import glob
+            images = []
+            for ext in ("*.jpg", "*.jpeg", "*.png"):
+                images.extend(glob.glob(os.path.join(chat_dir, ext)))
+            result["image_files_on_disk"] = len(images)
+
+        return jsonify(result)
+
     @app.route("/api/process/stop", methods=["POST"])
     def api_process_stop():
         """Request cancellation of a running processing task."""
