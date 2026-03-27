@@ -5261,9 +5261,13 @@
                 });
                 if (res.ok) {
                     showToast(t('settingsAutoSaved'), 'success', 2000);
+                } else {
+                    console.error('Auto-save failed:', res.status, await res.text());
+                    showToast(t('settingsSaveError'), 'error', 3000);
                 }
             } catch (err) {
-                // Silently fail on auto-save
+                console.error('Auto-save error:', err);
+                showToast(t('settingsSaveError'), 'error', 3000);
             }
         }
 
