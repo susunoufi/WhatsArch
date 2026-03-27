@@ -440,3 +440,35 @@ All tables have Row Level Security: each user sees only their own data.
 - Local agent not yet connected to web UI
 - Upload via URL may timeout for very large files on Railway
 - Mobile UI needs more polish
+
+---
+
+## 11. Design Philosophy
+
+You are a world-class UI/UX designer and frontend engineer.
+Your design standard is Stripe, Linear, Vercel, and Apple.
+
+### Core Rules
+- Every UI must feel premium, modern, and intentional
+- Use whitespace aggressively — less is more
+- Typography is the foundation — hierarchy must be clear
+- Animations must be subtle and purposeful, never flashy
+- Mobile-first, always responsive
+
+### Visual Style
+- Clean, minimal, high contrast
+- Dark mode preferred unless specified
+- Micro-interactions on every clickable element
+- Consistent spacing system (4px grid)
+- Use glassmorphism and gradients sparingly and tastefully
+
+### When Building Components
+- Always think: "Would this look at home on Stripe.com?"
+- Prefer custom CSS over generic libraries
+- Never use default browser styles
+- Every shadow, radius, and color must be intentional
+
+### DALL-E Integration
+- When you need a hero image, illustration, or icon set — generate it with DALL-E
+- Prompt DALL-E with: ultra-realistic, minimalist, professional, white background, product photography style
+- Always request SVG or high-res PNG

@@ -504,6 +504,24 @@ _chunk_ranges_cache = {}   # db_path -> list of (id, start, end)
 _chunk_threads_cache = {}  # db_path -> dict {chunk_id: thread_id}
 
 
+def invalidate_caches(chat_name=None):
+    """Clear chunk range and thread caches.
+
+    If chat_name is given, only clear entries whose db_path contains that name.
+    Otherwise, clear all entries.
+    """
+    if chat_name is None:
+        _chunk_ranges_cache.clear()
+        _chunk_threads_cache.clear()
+    else:
+        to_remove = [k for k in _chunk_ranges_cache if chat_name in k]
+        for k in to_remove:
+            _chunk_ranges_cache.pop(k, None)
+        to_remove = [k for k in _chunk_threads_cache if chat_name in k]
+        for k in to_remove:
+            _chunk_threads_cache.pop(k, None)
+
+
 def _load_chunk_ranges(db_path: str) -> list[tuple]:
     """Load all chunk (id, start_message_id, end_message_id) for mapping. Cached."""
     if db_path in _chunk_ranges_cache:
@@ -641,7 +659,7 @@ class LLMClient:
         if provider is None and project_root:
             settings = config.load_settings(project_root)
             provider = settings.get("rag_provider", "anthropic")
-            model = settings.get("rag_model", "claude-opus-4-6")
+            model = settings.get("rag_model", "claude-opus-4-20250514")
 
         if provider == "anthropic":
             anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -650,7 +668,7 @@ class LLMClient:
             import anthropic
             self.provider = "anthropic"
             self.client = anthropic.Anthropic(api_key=anthropic_key)
-            self.model = model or "claude-opus-4-6"
+            self.model = model or "claude-opus-4-20250514"
 
         elif provider == "openai":
             openai_key = os.environ.get("OPENAI_API_KEY")
@@ -690,7 +708,7 @@ class LLMClient:
                 import anthropic
                 self.provider = "anthropic"
                 self.client = anthropic.Anthropic(api_key=anthropic_key)
-                self.model = "claude-opus-4-6"
+                self.model = "claude-opus-4-20250514"
             elif openai_key:
                 from openai import OpenAI
                 self.provider = "openai"

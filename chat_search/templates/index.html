@@ -6,7 +6,7 @@
     <title>WhatsArch - חיפוש בצ'אט WhatsApp</title>
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#0D9488">
+    <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
@@ -20,46 +20,46 @@
         }
 
         :root {
-            --bg-primary: #0a0f1a;
-            --bg-secondary: rgba(255,255,255,0.04);
-            --bg-tertiary: rgba(255,255,255,0.06);
-            --bg-hover: rgba(255,255,255,0.08);
-            --bg-message: rgba(255,255,255,0.05);
-            --bg-message-focus: rgba(13,148,136,0.1);
-            --bg-context: rgba(255,255,255,0.03);
-            --bg-card: rgba(255,255,255,0.06);
-            --text-primary: #e4e8f0;
-            --text-secondary: #8892a4;
-            --text-muted: #5a6478;
-            --accent-green: #0D9488;
-            --accent-green-dark: #0F766E;
-            --accent-blue: #6366F1;
-            --accent-blue-dark: #4F46E5;
-            --accent-amber: #F59E0B;
-            --accent-red: #EF4444;
-            --sender-dad: #818cf8;
-            --sender-dad-bg: rgba(99, 102, 241, 0.15);
-            --sender-su: #2dd4bf;
-            --sender-su-bg: rgba(13, 148, 136, 0.15);
-            --mark-bg: rgba(250, 204, 21, 0.3);
-            --mark-text: #fef3c7;
-            --border-color: rgba(255,255,255,0.08);
-            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --bg-primary: #f8fafc;
+            --bg-secondary: rgba(0,0,0,0.02);
+            --bg-tertiary: rgba(0,0,0,0.03);
+            --bg-hover: rgba(0,0,0,0.04);
+            --bg-message: #ffffff;
+            --bg-message-focus: rgba(37,99,235,0.06);
+            --bg-context: rgba(0,0,0,0.02);
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-green: #2563eb;
+            --accent-green-dark: #1d4ed8;
+            --accent-blue: #7c3aed;
+            --accent-blue-dark: #6d28d9;
+            --accent-amber: #2563eb;
+            --accent-red: #ef4444;
+            --sender-dad: #7c3aed;
+            --sender-dad-bg: rgba(124, 58, 237, 0.08);
+            --sender-su: #2563eb;
+            --sender-su-bg: rgba(37, 99, 235, 0.08);
+            --mark-bg: rgba(250, 204, 21, 0.35);
+            --mark-text: #92400e;
+            --border-color: rgba(0,0,0,0.08);
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.1);
             --radius: 12px;
             --radius-lg: 16px;
-            --progress-bg: rgba(255,255,255,0.08);
-            --progress-fill: #0D9488;
+            --progress-bg: rgba(0,0,0,0.06);
+            --progress-fill: #2563eb;
         }
 
-        html { direction: rtl; color-scheme: dark; }
+        html { direction: rtl; color-scheme: light; }
 
         body {
             font-family: "Heebo", "Segoe UI", "Arial", sans-serif;
             background: var(--bg-primary);
             background-image:
-                radial-gradient(ellipse at 20% 50%, rgba(13,148,136,0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 50%, rgba(99,102,241,0.06) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(124,58,237,0.03) 0%, transparent 50%);
             background-attachment: fixed;
             color: var(--text-primary);
             line-height: 1.6;
@@ -71,19 +71,20 @@
         /* --- Scrollbar --- */
         ::-webkit-scrollbar { width: 7px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
         /* --- Header --- */
         .header {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: linear-gradient(135deg, rgba(13,148,136,0.9), rgba(99,102,241,0.9));
+            background: rgba(255,255,255,0.85);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
             padding: 16px 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .header-top {
@@ -101,51 +102,51 @@
 
         .header-logo-icon { width: 32px; height: 32px; flex-shrink: 0; }
         .header-title h1 { font-size: 1.15em; font-weight: 700; }
-        .header-title h1 .logo-whats { color: #FFFFFF; }
-        .header-title h1 .logo-arch { color: rgba(255, 255, 255, 0.75); }
+        .header-title h1 .logo-whats { color: #1e293b; font-weight: 800; }
+        .header-title h1 .logo-arch { color: #7c3aed; font-weight: 600; }
 
         .chat-selector {
             margin-right: auto;
             padding: 7px 14px;
             font-size: 0.92em;
             min-width: 160px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: var(--radius);
-            color: #FFFFFF;
+            color: var(--text-primary);
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
-            backdrop-filter: blur(4px);
         }
-        .chat-selector option { background: #1a1f2e; color: var(--text-primary); }
+        .chat-selector option { background: #ffffff; color: var(--text-primary); }
 
         .chat-selector:focus { border-color: rgba(255, 255, 255, 0.6); outline: none; }
 
         /* Header inputs on gradient */
-        .header .search-input-wrapper input { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.25); color: #fff; backdrop-filter: blur(4px); }
-        .header .search-input-wrapper input::placeholder { color: rgba(255,255,255,0.6); }
-        .header .search-input-wrapper input:focus { border-color: rgba(255,255,255,0.6); }
-        .header .search-input-wrapper i { color: rgba(255,255,255,0.7); }
-        .header .date-group label { color: rgba(255,255,255,0.8); }
-        .header .date-group input[type="text"] { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.25); color: #fff; backdrop-filter: blur(4px); }
-        .header .date-group input[type="text"]::placeholder { color: rgba(255,255,255,0.6); }
-        .header .date-group input[type="text"]:focus { border-color: rgba(255,255,255,0.6); }
-        .header .date-picker-btn { color: rgba(255,255,255,0.7); }
-        .header .date-picker-btn:hover { color: #fff; }
-        .header .filter-dropdown-btn { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.25); color: #fff; backdrop-filter: blur(4px); }
-        .header .filter-dropdown-btn:hover { border-color: rgba(255,255,255,0.5); }
-        .header .filter-dropdown-btn .filter-count { background: #fff; color: var(--accent-green); }
-        .header .btn-primary { background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); box-shadow: none; backdrop-filter: blur(4px); }
-        .header .btn-primary:hover { background: rgba(255,255,255,0.3); box-shadow: none; transform: none; }
+        .header .search-input-wrapper input { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: var(--text-primary); }
+        .header .search-input-wrapper input::placeholder { color: var(--text-muted); }
+        .header .search-input-wrapper input:focus { border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .header .search-input-wrapper i { color: var(--accent-green); opacity: 0.6; }
+        .header .date-group label { color: var(--text-secondary); }
+        .header .date-group input[type="text"] { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: var(--text-primary); }
+        .header .date-group input[type="text"]::placeholder { color: var(--text-muted); }
+        .header .date-group input[type="text"]:focus { border-color: var(--accent-green); }
+        .header .date-picker-btn { color: var(--text-secondary); }
+        .header .date-picker-btn:hover { color: var(--accent-green); }
+        .header .filter-dropdown-btn { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: var(--text-primary); }
+        .header .filter-dropdown-btn:hover { border-color: var(--accent-green); }
+        .header .filter-dropdown-btn .filter-count { background: var(--accent-green); color: #fff; }
+        .header .btn-primary { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none; box-shadow: 0 2px 12px rgba(37,99,235,0.25); font-weight: 600; }
+        .header .btn-primary:hover { box-shadow: 0 4px 20px rgba(37,99,235,0.35); transform: translateY(-1px); }
 
         /* --- Tab Navigation --- */
         .tab-nav {
             display: flex;
             gap: 0;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            background: rgba(10,15,26,0.95);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: rgba(255,255,255,0.9);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .tab-btn {
@@ -200,8 +201,8 @@
         }
 
         input, select {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.1);
             border-radius: var(--radius);
             color: var(--text-primary);
             font-family: inherit;
@@ -213,7 +214,7 @@
 
         input:focus, select:focus { border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2); }
         input::placeholder { color: var(--text-muted); }
-        select option { background: #1a1f2e; color: var(--text-primary); }
+        select option { background: #ffffff; color: var(--text-primary); }
         input[type="date"] { min-width: 140px; color-scheme: dark; }
         input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.7); }
 
@@ -264,8 +265,8 @@
         }
 
         .btn:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(135deg, #0D9488, #6366F1); color: #fff; border: none; box-shadow: 0 4px 15px rgba(13,148,136,0.3); }
-        .btn-primary:hover { box-shadow: 0 6px 20px rgba(13,148,136,0.4); transform: translateY(-1px); }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none; box-shadow: 0 4px 15px rgba(245,158,11,0.3); }
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(245,158,11,0.4); transform: translateY(-1px); }
         .btn-secondary { background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.12); }
         .btn-secondary:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
         .btn-sm { padding: 6px 12px; font-size: 0.82em; }
@@ -310,9 +311,9 @@
             position: absolute;
             top: calc(100% + 4px);
             right: 0;
-            background: rgba(20,25,40,0.95);
+            background: rgba(255,255,255,0.97);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(0,0,0,0.08);
             border-radius: var(--radius);
             padding: 6px;
             z-index: 200;
@@ -422,7 +423,7 @@
         .sender-badge.dad { background: var(--sender-dad-bg); color: var(--sender-dad); }
         .sender-badge.su { background: var(--sender-su-bg); color: var(--sender-su); }
         .sender-badge.other { background: rgba(107, 114, 128, 0.1); color: var(--text-secondary); }
-        .chat-name-badge { font-size: 0.72em; background: rgba(99,102,241,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+        .chat-name-badge { font-size: 0.72em; background: rgba(59,130,246,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
 
         .message-time { font-size: 0.8em; color: var(--text-muted); direction: ltr; unicode-bidi: embed; }
         .message-text { font-size: 0.95em; line-height: 1.7; word-wrap: break-word; overflow-wrap: break-word; }
@@ -436,14 +437,14 @@
 
         .transcription {
             margin-top: 8px; padding: 10px 14px; background: rgba(13, 148, 136, 0.08); border-radius: var(--radius);
-            border-right: 3px solid rgba(13,148,136,0.3); font-size: 0.9em; color: var(--text-secondary); line-height: 1.7;
+            border-right: 3px solid rgba(245,158,11,0.3); font-size: 0.9em; color: var(--text-secondary); line-height: 1.7;
         }
 
         .transcription-label { font-size: 0.78em; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
 
         .visual-description {
             margin-top: 8px; padding: 10px 14px; background: rgba(99, 102, 241, 0.08); border-radius: var(--radius);
-            border-right: 3px solid rgba(99,102,241,0.3); font-size: 0.9em; color: var(--text-secondary); line-height: 1.7;
+            border-right: 3px solid rgba(59,130,246,0.3); font-size: 0.9em; color: var(--text-secondary); line-height: 1.7;
         }
 
         .visual-description.pdf-text { border-right-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); max-height: 200px; overflow-y: auto; }
@@ -461,7 +462,7 @@
             display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.3em;
             transition: background 0.2s, transform 0.2s;
         }
-        .video-thumb-container:hover .video-thumb-overlay { background: rgba(13,148,136,0.75); transform: translate(-50%, -50%) scale(1.08); }
+        .video-thumb-container:hover .video-thumb-overlay { background: rgba(245,158,11,0.75); transform: translate(-50%, -50%) scale(1.08); }
         .video-thumb-container:hover .video-thumb { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
         .video-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius); color: var(--text-primary); cursor: pointer; font-family: inherit; font-size: 0.9em; transition: background 0.2s; }
         .video-trigger:hover { background: rgba(255,255,255,0.1); }
@@ -540,7 +541,7 @@
         .mgmt-status-badge {
             font-size: 0.82em; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;
         }
-        .mgmt-status-badge.ready { background: rgba(13,148,136,0.08); color: var(--accent-green); }
+        .mgmt-status-badge.ready { background: rgba(245,158,11,0.08); color: var(--accent-green); }
         .mgmt-status-badge.not-ready { background: rgba(245,158,11,0.08); color: var(--accent-amber); }
 
         .mgmt-section { margin-bottom: 20px; }
@@ -558,7 +559,7 @@
         .progress-row-icon { width: 28px; text-align: center; font-size: 0.9em; flex-shrink: 0; }
         .progress-row-label { min-width: 130px; font-size: 0.9em; color: var(--text-secondary); flex-shrink: 0; }
         .progress-bar-container { flex: 1; height: 8px; background: var(--progress-bg); border-radius: 4px; overflow: hidden; min-width: 80px; }
-        .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; background: linear-gradient(90deg, #0D9488, #6366F1); }
+        .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; background: linear-gradient(90deg, #2563eb, #3b82f6); }
         .progress-row-count { min-width: 80px; font-size: 0.83em; color: var(--text-muted); text-align: left; flex-shrink: 0; }
         .progress-row-pct { min-width: 42px; font-size: 0.82em; font-weight: 600; text-align: left; flex-shrink: 0; }
         .progress-row-expand { width: 20px; text-align: center; color: var(--text-muted); font-size: 0.75em; transition: transform 0.2s; flex-shrink: 0; }
@@ -610,8 +611,8 @@
         }
         .live-status-panel {
             margin-top: 12px; padding: 14px 16px; border-radius: var(--radius);
-            background: linear-gradient(135deg, rgba(13,148,136,0.08), rgba(99,102,241,0.08));
-            border: 1px solid rgba(13,148,136,0.25);
+            background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(59,130,246,0.08));
+            border: 1px solid rgba(245,158,11,0.25);
         }
         .live-status-panel.lsp-new { animation: lspFadeIn 0.3s ease; }
         @keyframes lspFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
@@ -621,8 +622,8 @@
             display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
             border-radius:20px; font-size:0.78em; font-weight:500;
         }
-        .lsp-badge.cloud { background:rgba(99,102,241,0.15); color:#a5b4fc; }
-        .lsp-badge.local { background:rgba(13,148,136,0.15); color:#5eead4; }
+        .lsp-badge.cloud { background:rgba(59,130,246,0.15); color:#a5b4fc; }
+        .lsp-badge.local { background:rgba(245,158,11,0.15); color:#818cf8; }
         .lsp-badge.model { background:rgba(255,255,255,0.08); color:var(--text-secondary); }
         .lsp-progress-wrap { margin-bottom:8px; }
         .lsp-progress-bar { height:6px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden; }
@@ -643,37 +644,38 @@
         /* --- AI Chat FAB & Panel --- */
         /* ============================================== */
         .ai-chat-fab {
-            display: none; position: fixed; bottom: 24px; left: 24px; width: 56px; height: 56px;
-            border-radius: 50%; background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            display: none; position: fixed; bottom: 24px; left: 24px; width: 60px; height: 60px;
+            border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed);
             border: none; color: #fff; font-size: 1.4em; cursor: pointer;
-            box-shadow: 0 4px 20px rgba(13, 148, 136, 0.35); z-index: 500;
-            transition: transform 0.2s, box-shadow 0.2s; align-items: center; justify-content: center;
+            box-shadow: 0 4px 20px rgba(37,99,235,0.3), 0 8px 32px rgba(124,58,237,0.15); z-index: 500;
+            transition: transform 0.3s, box-shadow 0.3s; align-items: center; justify-content: center;
+            padding: 0; overflow: hidden;
         }
-        .ai-chat-fab .fab-logo { width: 30px; height: 30px; }
-        .ai-chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(13, 148, 136, 0.45); }
-        .ai-chat-fab.active { background: rgba(20,25,40,0.95); border: 1px solid rgba(255,255,255,0.15); color: var(--text-secondary); box-shadow: var(--shadow-lg); }
+        .ai-chat-fab .fab-logo { width: 38px; height: 38px; border-radius: 50%; }
+        .ai-chat-fab:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(37,99,235,0.4), 0 12px 40px rgba(124,58,237,0.2); }
+        .ai-chat-fab.active { background: #ffffff; border: 2px solid rgba(0,0,0,0.08); box-shadow: var(--shadow-lg); }
 
         .ai-chat-panel {
             display: none; position: fixed; bottom: 92px; left: 24px; width: 420px; max-width: calc(100vw - 48px);
-            height: 520px; max-height: calc(100vh - 120px); background: rgba(10,15,26,0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg);
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3); z-index: 499; flex-direction: column; overflow: hidden;
+            height: 520px; max-height: calc(100vh - 120px); background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-lg);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06); z-index: 499; flex-direction: column; overflow: hidden;
         }
         .ai-chat-panel.active { display: flex; }
 
-        .ai-chat-header { padding: 14px 16px; background: linear-gradient(135deg, rgba(13,148,136,0.12), rgba(99,102,241,0.12)); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .ai-chat-header { padding: 14px 16px; background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(59,130,246,0.12)); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .ai-chat-header i { color: var(--accent-green); }
         .ai-chat-header span { font-weight: 600; font-size: 0.95em; }
-        .ai-provider-badge { margin-right: auto; font-size: 0.72em; padding: 2px 8px; border-radius: 10px; background: rgba(13,148,136,0.08); color: var(--accent-green); }
+        .ai-provider-badge { margin-right: auto; font-size: 0.72em; padding: 2px 8px; border-radius: 10px; background: rgba(245,158,11,0.08); color: var(--accent-green); }
 
         .ai-chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         .ai-msg { max-width: 88%; padding: 10px 14px; border-radius: var(--radius-lg); font-size: 0.9em; line-height: 1.7; word-wrap: break-word; overflow-wrap: break-word; }
         .ai-msg.user { align-self: flex-start; background: var(--accent-green); color: #fff; border-bottom-right-radius: 4px; }
         .ai-msg.assistant { align-self: flex-end; background: rgba(255,255,255,0.06); color: var(--text-primary); border-bottom-left-radius: 4px; }
         .ai-sources { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.82em; color: var(--text-secondary); }
-        .ai-source-link { display: inline-block; background: rgba(13,148,136,0.08); color: var(--accent-green); padding: 2px 8px; border-radius: 10px; margin: 2px 4px 2px 0; cursor: pointer; transition: background 0.2s; font-size: 0.9em; border: none; font-family: inherit; }
-        .ai-source-link:hover { background: rgba(13,148,136,0.15); }
+        .ai-source-link { display: inline-block; background: rgba(245,158,11,0.08); color: var(--accent-green); padding: 2px 8px; border-radius: 10px; margin: 2px 4px 2px 0; cursor: pointer; transition: background 0.2s; font-size: 0.9em; border: none; font-family: inherit; }
+        .ai-source-link:hover { background: rgba(245,158,11,0.15); }
 
         .ai-chat-input-bar { padding: 12px 16px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; flex-shrink: 0; }
         .ai-chat-input-bar input { flex: 1; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-primary); font-family: inherit; font-size: 0.9em; outline: none; }
@@ -747,7 +749,7 @@
         .model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
         .model-card { position: relative; background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.06); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all 0.2s; }
         .model-card:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.07); }
-        .model-card.selected { border-color: var(--accent-green); background: rgba(13,148,136,0.1); box-shadow: 0 0 20px rgba(13,148,136,0.1); }
+        .model-card.selected { border-color: var(--accent-green); background: rgba(245,158,11,0.1); box-shadow: 0 0 20px rgba(245,158,11,0.1); }
         .model-card .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .provider-dot { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8em; color: #fff; flex-shrink: 0; }
         .provider-dot.gemini { background: #4285f4; }
@@ -758,8 +760,8 @@
         .model-card .card-provider { font-size: 0.75em; color: var(--text-muted); }
         .model-card .card-badges { display: flex; gap: 4px; margin-right: auto; }
         .model-badge { font-size: 0.68em; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
-        .model-badge.recommended { background: rgba(99,102,241,0.12); color: var(--accent-blue); }
-        .model-badge.free { background: rgba(13,148,136,0.12); color: var(--accent-green); }
+        .model-badge.recommended { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
+        .model-badge.free { background: rgba(245,158,11,0.12); color: var(--accent-green); }
         .model-badge.best { background: rgba(245,158,11,0.12); color: var(--accent-amber); }
         .model-card .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; padding-top: 8px; border-top: 1px solid var(--border-color); font-size: 0.78em; }
         .model-card .detail-label { color: var(--text-muted); }
@@ -769,6 +771,45 @@
         .model-card.selected .check-mark i { color: #fff; font-size: 0.6em; }
         .cost-calc { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius); font-size: 0.88em; }
         .cost-calc .cost-amount { font-weight: 700; color: var(--accent-green); margin-right: auto; direction: ltr; }
+
+        /* Multi-select chat dropdown */
+        .cost-chat-multiselect { position: relative; max-width: 400px; }
+        .cost-chat-toggle { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; font-size: 0.88em; }
+        .cost-chat-toggle:hover { border-color: var(--accent-blue); }
+        .cost-chat-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); margin-top: 4px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .cost-chat-checkbox { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 0.85em; cursor: pointer; }
+        .cost-chat-checkbox:hover { background: rgba(255,255,255,0.06); }
+        .cost-chat-checkbox input[type="checkbox"] { accent-color: var(--accent-green); }
+
+        /* Cost dashboard receipt */
+        .cost-dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--border-color); border-radius: var(--radius); overflow: hidden; }
+        .cost-dashboard-grid .cd-header { background: rgba(255,255,255,0.06); padding: 10px 14px; font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
+        .cost-dashboard-grid .cd-row { display: contents; }
+        .cost-dashboard-grid .cd-cell { padding: 8px 14px; font-size: 0.85em; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .cost-dashboard-grid .cd-cell.label { color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+        .cost-dashboard-grid .cd-cell.value { font-weight: 600; direction: ltr; text-align: right; }
+        .cost-dashboard-grid .cd-total { background: rgba(255,255,255,0.04); font-weight: 700; font-size: 0.95em; padding: 10px 14px; }
+        .cost-color-green { color: var(--accent-green); }
+        .cost-color-amber { color: var(--accent-amber); }
+        .cost-color-red { color: var(--accent-red); }
+
+        /* Per-chat breakdown table */
+        .cost-chat-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+        .cost-chat-table th { text-align: start; padding: 8px 10px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.3px; }
+        .cost-chat-table td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .cost-chat-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+        /* Cost log */
+        .cost-log-row { display: flex; align-items: center; gap: 10px; padding: 5px 8px; font-size: 0.8em; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .cost-log-row:hover { background: rgba(255,255,255,0.03); }
+        .cost-log-time { color: var(--text-muted); min-width: 120px; direction: ltr; }
+        .cost-log-type { min-width: 24px; text-align: center; }
+        .cost-log-file { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
+        .cost-log-provider { color: var(--text-muted); font-size: 0.9em; }
+        .cost-log-cost { font-weight: 600; direction: ltr; min-width: 60px; text-align: right; }
+
+        /* Preset custom indicator */
+        .preset-custom-card { border-style: dashed !important; }
         .hw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 16px; }
         .hw-stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius); padding: 14px; }
         .hw-stat .hw-label { font-size: 0.72em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -780,7 +821,7 @@
         .hw-meter-fill.medium { background: var(--accent-amber); width: 55%; }
         .hw-meter-fill.good { background: var(--accent-green); width: 80%; }
         .hw-meter-fill.excellent { background: var(--accent-green); width: 100%; }
-        .hw-recommendation { padding: 12px 16px; border-radius: var(--radius); border: 1px solid rgba(13,148,136,0.3); background: rgba(13,148,136,0.08); font-size: 0.85em; line-height: 1.6; }
+        .hw-recommendation { padding: 12px 16px; border-radius: var(--radius); border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); font-size: 0.85em; line-height: 1.6; }
         .section-title { font-size: 1em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
         .section-divider { height: 1px; background: var(--border-color); margin: 24px 0; }
         .receipt-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 0.9em; }
@@ -790,7 +831,7 @@
         .perf-tag { font-size: 0.68em; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
         .perf-tag.slow { background: rgba(239,68,68,0.1); color: var(--accent-red); }
         .perf-tag.medium { background: rgba(245,158,11,0.1); color: var(--accent-amber); }
-        .perf-tag.ok { background: rgba(13,148,136,0.1); color: var(--accent-green); }
+        .perf-tag.ok { background: rgba(245,158,11,0.1); color: var(--accent-green); }
         .api-warning { display: none; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 10px; background: rgba(239,68,68,0.12); border-radius: 6px; font-size: 0.78em; color: var(--accent-red); }
         .api-warning.show { display: flex; }
 
@@ -799,7 +840,7 @@
 
         /* --- Source citation modal --- */
         .source-modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-        .source-modal-box { background:rgba(15,20,35,0.95); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-lg); padding:24px; max-width:700px; width:90%; max-height:80vh; overflow-y:auto; position:relative; box-shadow:var(--shadow-lg); }
+        .source-modal-box { background:rgba(255,255,255,0.97); backdrop-filter:blur(20px); border:1px solid rgba(0,0,0,0.08); border-radius:var(--radius-lg); padding:24px; max-width:700px; width:90%; max-height:80vh; overflow-y:auto; position:relative; box-shadow:var(--shadow-lg); }
         .source-modal-close { position:absolute; top:10px; left:10px; background:none; border:none; font-size:1.5em; cursor:pointer; color:var(--text-muted); }
         .source-modal-close:hover { color:var(--text-primary); }
         .source-link { color:var(--accent-blue); text-decoration:underline; cursor:pointer; font-weight:600; }
@@ -842,18 +883,17 @@
         /* --- Language Toggle --- */
         .lang-toggle {
             padding: 5px 10px;
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.1);
             border-radius: var(--radius);
-            color: #fff;
+            color: var(--text-primary);
             font-weight: 700;
             font-size: 0.82em;
             cursor: pointer;
             font-family: inherit;
-            backdrop-filter: blur(4px);
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .lang-toggle:hover { background: rgba(255,255,255,0.3); }
+        .lang-toggle:hover { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.3); }
 
         /* --- LTR adjustments --- */
         [dir="ltr"] .chat-selector { margin-right: 0; margin-left: auto; }
@@ -863,8 +903,8 @@
         [dir="ltr"] .ai-chat-fab { left: auto; right: 24px; }
         [dir="ltr"] .search-input-wrapper i { right: auto; left: 12px; }
         [dir="ltr"] .search-input-wrapper input { padding: 10px 12px 10px 38px; }
-        [dir="ltr"] .transcription { border-right: none; border-left: 3px solid rgba(13,148,136,0.3); }
-        [dir="ltr"] .visual-description { border-right: none; border-left: 3px solid rgba(99,102,241,0.3); }
+        [dir="ltr"] .transcription { border-right: none; border-left: 3px solid rgba(245,158,11,0.3); }
+        [dir="ltr"] .visual-description { border-right: none; border-left: 3px solid rgba(59,130,246,0.3); }
         [dir="ltr"] .visual-description.pdf-text { border-right: none; border-left-color: rgba(239,68,68,0.3); }
         [dir="ltr"] .context-message.focused { border-right: none; border-left: 3px solid var(--accent-green); }
         [dir="ltr"] .filter-dropdown-content { right: auto; left: 0; }
@@ -875,9 +915,889 @@
             [dir="ltr"] .ai-chat-panel { right: 0; left: 0; }
             [dir="ltr"] .ai-chat-fab { right: 16px; left: auto; }
         }
+
+        /* ================================================================ */
+        /* WHATSARCH DESIGN SYSTEM v2 — Stripe/Linear Quality             */
+        /* Auto light/dark via prefers-color-scheme                        */
+        /* ================================================================ */
+        :root {
+            --wa-bg: #fafafa; --wa-bg-raised: #ffffff; --wa-bg-subtle: #f4f4f5;
+            --wa-border: rgba(0,0,0,0.08); --wa-border-strong: rgba(0,0,0,0.14);
+            --wa-text: #09090b; --wa-text-secondary: #52525b; --wa-text-muted: #a1a1aa;
+            --wa-primary: #4f46e5; --wa-primary-hover: #4338ca;
+            --wa-primary-subtle: rgba(79,70,229,0.07); --wa-primary-text: #fff;
+            --wa-accent: #2563eb; --wa-success: #16a34a; --wa-warning: #d97706; --wa-danger: #dc2626;
+            --wa-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --wa-shadow: 0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+            --wa-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07),0 2px 4px -2px rgba(0,0,0,0.05);
+            --wa-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08),0 4px 6px rgba(0,0,0,0.04);
+            --wa-radius: 10px; --wa-radius-lg: 14px; --wa-radius-full: 9999px;
+            color-scheme: light dark;
+        }
+        @media(prefers-color-scheme:dark){:root{
+            --wa-bg:#09090b;--wa-bg-raised:#18181b;--wa-bg-subtle:#27272a;
+            --wa-border:rgba(255,255,255,0.08);--wa-border-strong:rgba(255,255,255,0.14);
+            --wa-text:#fafafa;--wa-text-secondary:#a1a1aa;--wa-text-muted:#52525b;
+            --wa-primary:#6366f1;--wa-primary-hover:#818cf8;
+            --wa-primary-subtle:rgba(99,102,241,0.12);
+            --wa-accent:#3b82f6;--wa-success:#22c55e;--wa-warning:#f59e0b;--wa-danger:#ef4444;
+            --wa-shadow-sm:0 1px 2px rgba(0,0,0,0.3);
+            --wa-shadow:0 1px 3px rgba(0,0,0,0.4);
+            --wa-shadow-md:0 4px 6px rgba(0,0,0,0.4);
+            --wa-shadow-lg:0 10px 15px rgba(0,0,0,0.5);
+        }}
+        /* Map old vars */
+        :root{--bg-primary:var(--wa-bg);--bg-secondary:var(--wa-bg-subtle);--bg-tertiary:var(--wa-bg-subtle);--bg-hover:var(--wa-primary-subtle);--bg-message:var(--wa-bg-raised);--bg-card:var(--wa-bg-raised);--text-primary:var(--wa-text);--text-secondary:var(--wa-text-secondary);--text-muted:var(--wa-text-muted);--accent-green:var(--wa-primary);--accent-blue:var(--wa-accent);--accent-amber:var(--wa-warning);--accent-red:var(--wa-danger);--border-color:var(--wa-border);--shadow:var(--wa-shadow);--shadow-lg:var(--wa-shadow-lg);--radius:var(--wa-radius);--radius-lg:var(--wa-radius-lg);--progress-bg:var(--wa-bg-subtle);--progress-fill:var(--wa-primary);}
+
+        /* --- Base --- */
+        html{direction:rtl}
+        body{font-family:"Heebo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;background:var(--wa-bg)!important;background-image:none!important;color:var(--wa-text)!important;-webkit-font-smoothing:antialiased}
+        body::before,body::after,body>.noise-overlay{display:none!important}
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--wa-text-muted);border-radius:3px;opacity:.3}
+
+        /* --- Header --- */
+        .header{background:var(--wa-bg-raised)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;border-bottom:1px solid var(--wa-border)!important;padding:12px 24px!important;box-shadow:var(--wa-shadow-sm)!important}
+        .header-title h1 .logo-whats{color:var(--wa-text)!important}.header-title h1 .logo-arch{color:var(--wa-primary)!important;font-weight:600}
+        .chat-selector{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text)!important;border-radius:8px!important;font-size:.88em!important}
+        .chat-selector option{background:var(--wa-bg-raised);color:var(--wa-text)}
+        .lang-toggle{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text-secondary)!important;border-radius:8px!important;font-size:.8em!important;padding:4px 10px!important}
+        .lang-toggle:hover{background:var(--wa-primary-subtle)!important;color:var(--wa-primary)!important;border-color:var(--wa-primary)!important}
+
+        /* --- Inputs --- */
+        .header input,.header select{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text)!important;border-radius:8px!important;font-size:.88em!important}
+        .header input::placeholder{color:var(--wa-text-muted)!important}
+        .header input:focus,.header select:focus{border-color:var(--wa-primary)!important;box-shadow:0 0 0 3px var(--wa-primary-subtle)!important}
+        .header .search-input-wrapper i{color:var(--wa-text-muted)!important}
+        .header .date-group label{color:var(--wa-text-secondary)!important}
+        input,select{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text)!important;border-radius:8px!important}
+        input:focus,select:focus{border-color:var(--wa-primary)!important;box-shadow:0 0 0 3px var(--wa-primary-subtle)!important}
+        input::placeholder{color:var(--wa-text-muted)!important}
+        select option{background:var(--wa-bg-raised);color:var(--wa-text)}
+
+        /* --- Buttons --- */
+        .btn-primary{background:var(--wa-primary)!important;color:var(--wa-primary-text)!important;border:none!important;box-shadow:var(--wa-shadow-sm)!important;font-weight:600!important;border-radius:8px!important;transition:all .15s ease!important}
+        .btn-primary:hover{background:var(--wa-primary-hover)!important;box-shadow:var(--wa-shadow)!important;transform:translateY(-1px)!important}
+        .btn-primary:active{transform:translateY(0) scale(.98)!important}
+        .btn-primary::after{display:none!important}
+        .btn-secondary{background:var(--wa-bg-subtle)!important;color:var(--wa-text-secondary)!important;border:1px solid var(--wa-border)!important;border-radius:8px!important}
+        .btn-secondary:hover{background:var(--wa-primary-subtle)!important;color:var(--wa-primary)!important;border-color:var(--wa-primary)!important}
+        .filter-dropdown-btn{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text-secondary)!important;border-radius:8px!important}
+        .filter-dropdown-btn:hover{border-color:var(--wa-primary)!important}
+        .filter-dropdown-btn .filter-count{background:var(--wa-primary)!important;color:#fff!important}
+        .filter-dropdown-content{background:var(--wa-bg-raised)!important;border:1px solid var(--wa-border)!important;box-shadow:var(--wa-shadow-lg)!important;border-radius:var(--wa-radius)!important}
+        .filter-option:hover{background:var(--wa-primary-subtle)!important}
+        .filter-option input[type="checkbox"]{accent-color:var(--wa-primary)}
+
+        /* --- Tabs — Clean underline --- */
+        .tab-nav{background:var(--wa-bg-raised)!important;border-bottom:1px solid var(--wa-border)!important;padding:0 24px!important;gap:0!important;backdrop-filter:none!important}
+        .tab-btn{padding:12px 20px!important;border-radius:0!important;border-bottom:2px solid transparent!important;color:var(--wa-text-muted)!important;font-size:.88em!important;font-weight:500!important;background:transparent!important;box-shadow:none!important;transition:all .15s ease!important}
+        .tab-btn::before{display:none!important}
+        .tab-btn.active{color:var(--wa-primary)!important;border-bottom-color:var(--wa-primary)!important;background:transparent!important;box-shadow:none!important}
+        .tab-btn:hover:not(.active){color:var(--wa-text)!important;background:transparent!important}
+
+        /* --- Stats --- */
+        .stats-banner{background:var(--wa-bg-raised)!important;border-bottom:1px solid var(--wa-border)!important}
+        .stat-chip{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text-secondary)!important;border-radius:var(--wa-radius-full)!important}
+        .stat-value{color:var(--wa-text)!important}
+
+        /* --- Message Cards --- */
+        .message-card{background:var(--wa-bg-raised)!important;border:1px solid var(--wa-border)!important;border-radius:var(--wa-radius-lg)!important;box-shadow:var(--wa-shadow-sm)!important;transition:all .2s ease!important;animation:none!important}
+        .message-card:hover{border-color:var(--wa-border-strong)!important;box-shadow:var(--wa-shadow-md)!important;transform:translateY(-1px)!important}
+        .sender-badge.dad{background:rgba(124,58,237,.08)!important;color:#7c3aed!important}
+        .sender-badge.su{background:rgba(37,99,235,.08)!important;color:#2563eb!important}
+        .sender-badge.other{background:var(--wa-bg-subtle)!important;color:var(--wa-text-secondary)!important}
+        .message-time{color:var(--wa-text-muted)!important}
+        .message-text{color:var(--wa-text)!important}
+        .transcription{background:var(--wa-primary-subtle)!important;border-right:3px solid var(--wa-primary)!important;border-radius:var(--wa-radius)!important}
+        .transcription::before{display:none!important}
+        [dir="ltr"] .transcription{border-right:none!important;border-left:3px solid var(--wa-primary)!important}
+        .visual-description{background:rgba(37,99,235,.06)!important;border-right:3px solid var(--wa-accent)!important;border-radius:var(--wa-radius)!important}
+        .visual-description::before{display:none!important}
+        [dir="ltr"] .visual-description{border-right:none!important;border-left:3px solid var(--wa-accent)!important}
+        .visual-description.pdf-text{border-right-color:var(--wa-danger)!important;background:rgba(220,38,38,.04)!important}
+        .image-thumb{border-radius:var(--wa-radius)!important;border:1px solid var(--wa-border)!important}
+        .image-thumb:hover{box-shadow:var(--wa-shadow-md)!important;transform:scale(1.02)!important}
+        .context-wrapper{border-top:1px solid var(--wa-border)!important}
+        .context-message{background:var(--wa-bg-subtle)!important;border-radius:8px!important}
+        .context-message.focused{background:var(--wa-primary-subtle)!important;border-right:3px solid var(--wa-primary)!important}
+        .context-message .ctx-sender.dad{color:#7c3aed!important}.context-message .ctx-sender.su{color:#2563eb!important}
+
+        /* --- Management --- */
+        .mgmt-chat-card{background:var(--wa-bg-raised)!important;border:1px solid var(--wa-border)!important;border-radius:var(--wa-radius-lg)!important;box-shadow:var(--wa-shadow-sm)!important;overflow:visible!important;position:relative!important}
+        .mgmt-chat-card::before{display:none!important}
+        .mgmt-chat-card:hover{border-color:var(--wa-border-strong)!important;box-shadow:var(--wa-shadow-md)!important;transform:none!important}
+        .mgmt-status-badge.ready{background:rgba(22,163,74,.08)!important;color:var(--wa-success)!important;box-shadow:none!important}
+        .mgmt-status-badge.not-ready{background:rgba(217,119,6,.08)!important;color:var(--wa-warning)!important;box-shadow:none!important}
+        .progress-bar-container{background:var(--wa-bg-subtle)!important}
+        .progress-bar-fill{background:var(--wa-primary)!important;animation:none!important}
+        .btn-action{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text)!important;border-radius:8px!important}
+        .btn-action:hover:not(:disabled){border-color:var(--wa-primary)!important;color:var(--wa-primary)!important;background:var(--wa-primary-subtle)!important}
+        .btn-action.running{border-color:var(--wa-warning)!important;color:var(--wa-warning)!important}
+        .btn-stop{border:1px solid rgba(220,38,38,.3)!important;background:rgba(220,38,38,.04)!important;color:var(--wa-danger)!important;border-radius:8px!important}
+        .btn-stop.inactive{border-color:var(--wa-border)!important;background:var(--wa-bg-subtle)!important;color:var(--wa-text-muted)!important}
+        .live-status-panel{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;border-radius:var(--wa-radius)!important}
+        .lsp-task-name{color:var(--wa-primary)!important}
+        .lsp-badge.cloud{background:var(--wa-primary-subtle)!important;color:var(--wa-primary)!important}
+        .lsp-badge.local{background:rgba(22,163,74,.08)!important;color:var(--wa-success)!important}
+        .lsp-badge.model{background:var(--wa-bg-subtle)!important;color:var(--wa-text-secondary)!important}
+        .lsp-progress-fill{background:var(--wa-primary)!important;animation:none!important}
+
+        /* --- Settings --- */
+        .settings-input{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text)!important;border-radius:8px!important}
+        .settings-input:focus{border-color:var(--wa-primary)!important;box-shadow:0 0 0 3px var(--wa-primary-subtle)!important}
+        .settings-status.configured{color:var(--wa-success)!important}
+        .settings-status.not-configured{color:var(--wa-text-muted)!important}
+        .model-card{background:var(--wa-bg-raised)!important;border:1px solid var(--wa-border)!important;border-radius:var(--wa-radius)!important;overflow:hidden!important}
+        .model-card::before{display:none!important}
+        .model-card:hover{border-color:var(--wa-border-strong)!important;box-shadow:var(--wa-shadow)!important;transform:translateY(-1px)!important}
+        .model-card.selected{border-color:var(--wa-primary)!important;background:var(--wa-primary-subtle)!important;box-shadow:0 0 0 1px var(--wa-primary)!important}
+        .model-card.selected .check-mark{background:var(--wa-primary)!important;border-color:var(--wa-primary)!important}
+        .model-badge.recommended{background:var(--wa-primary-subtle)!important;color:var(--wa-primary)!important}
+        .model-badge.free{background:rgba(22,163,74,.08)!important;color:var(--wa-success)!important}
+        .model-badge.best{background:rgba(217,119,6,.08)!important;color:var(--wa-warning)!important}
+        .provider-dot.openai{background:#000!important}
+        .cost-calc{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;border-radius:var(--wa-radius)!important}
+        .cost-calc .cost-amount{color:var(--wa-primary)!important}
+        .receipt-row{border-color:var(--wa-border)!important}
+        .receipt-total{border-top:2px solid var(--wa-primary)!important;border-image:none!important;background:transparent!important;border-radius:0!important}
+        .receipt-total .total-amount{color:var(--wa-primary)!important}
+        .hw-stat{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;border-radius:var(--wa-radius)!important}
+        .hw-meter{background:var(--wa-bg-subtle)!important}
+        .hw-meter-fill.good,.hw-meter-fill.excellent{background:var(--wa-success)!important;box-shadow:none!important}
+        .hw-meter-fill.medium{background:var(--wa-warning)!important;box-shadow:none!important}
+        .hw-meter-fill.low{background:var(--wa-danger)!important;box-shadow:none!important}
+        .api-warning.show{background:rgba(220,38,38,.06)!important;color:var(--wa-danger)!important}
+        .section-title{color:var(--wa-text)!important}.section-divider{background:var(--wa-border)!important}
+
+        /* --- AI Chat --- */
+        .ai-chat-fab{background:var(--wa-primary)!important;box-shadow:var(--wa-shadow-lg)!important;border:none!important;animation:none!important;width:56px!important;height:56px!important}
+        .ai-chat-fab:hover{background:var(--wa-primary-hover)!important;transform:scale(1.05)!important;box-shadow:0 12px 24px rgba(79,70,229,.25)!important}
+        .ai-chat-fab.active{background:var(--wa-bg-raised)!important;border:1px solid var(--wa-border)!important}
+        .ai-chat-panel{background:var(--wa-bg-raised)!important;border:1px solid var(--wa-border)!important;box-shadow:var(--wa-shadow-lg)!important;border-radius:var(--wa-radius-lg)!important}
+        .ai-chat-header{background:var(--wa-bg-subtle)!important;border-bottom:1px solid var(--wa-border)!important}
+        .ai-chat-header span{color:var(--wa-text)!important}
+        .ai-provider-badge{background:var(--wa-primary-subtle)!important;color:var(--wa-primary)!important}
+        .ai-chat-messages{background:var(--wa-bg)!important}
+        .ai-msg.user{background:var(--wa-primary)!important;color:#fff!important;border-radius:14px 14px 4px 14px!important;box-shadow:none!important}
+        [dir="ltr"] .ai-msg.user{border-radius:14px 14px 14px 4px!important}
+        .ai-msg.assistant{background:var(--wa-bg-raised)!important;color:var(--wa-text)!important;border:1px solid var(--wa-border)!important;border-radius:14px 14px 14px 4px!important}
+        .ai-chat-input-bar{border-top:1px solid var(--wa-border)!important;background:var(--wa-bg-raised)!important}
+        .ai-chat-input-bar input{background:var(--wa-bg-subtle)!important;border:1px solid var(--wa-border)!important;color:var(--wa-text)!important}
+        .ai-chat-input-bar input:focus{border-color:var(--wa-primary)!important}
+        .ai-send-btn{background:var(--wa-primary)!important}.ai-send-btn:hover{background:var(--wa-primary-hover)!important}
+        .ai-typing span{background:var(--wa-primary)!important}
+        .ai-sources{border-top:1px solid var(--wa-border)!important}
+        .ai-source-link{background:var(--wa-primary-subtle)!important;color:var(--wa-primary)!important}
+        .why-btn{border:1px solid var(--wa-border)!important;color:var(--wa-text-muted)!important;background:var(--wa-bg-subtle)!important}
+        .why-btn::before{display:none!important}
+        .why-btn:hover{border-color:var(--wa-primary)!important;color:var(--wa-primary)!important}
+
+        /* --- Gallery --- */
+        .gallery-item{border-radius:var(--wa-radius)!important;border:1px solid var(--wa-border);overflow:hidden!important}
+        .gallery-item:hover{box-shadow:var(--wa-shadow-md)!important;transform:scale(1.02)!important;opacity:1!important}
+        .gallery-filter.active{background:var(--wa-primary)!important;color:#fff!important;border-color:var(--wa-primary)!important}
+
+        /* --- Analytics --- */
+        .bar-fill{background:var(--wa-primary)!important;border-radius:6px!important}
+        .hour-bar{background:var(--wa-primary)!important;opacity:.7}.hour-bar:hover{opacity:1}
+        .busiest-day{border-color:var(--wa-border)!important}
+        .busiest-day .day-rank.top{background:var(--wa-primary)!important}
+
+        /* --- Modals/Lightbox --- */
+        .lightbox{background:rgba(0,0,0,.7)!important;backdrop-filter:blur(8px)!important}
+        .lightbox img{border-radius:var(--wa-radius-lg)!important;box-shadow:var(--wa-shadow-lg)!important}
+        .source-modal-overlay{backdrop-filter:blur(4px)!important}
+        .source-modal-box{background:var(--wa-bg-raised)!important;border:1px solid var(--wa-border)!important;box-shadow:var(--wa-shadow-lg)!important;border-radius:var(--wa-radius-lg)!important}
+
+        /* --- Toast --- */
+        .toast{border-radius:var(--wa-radius)!important;box-shadow:var(--wa-shadow-lg)!important}
+        .toast.success{background:var(--wa-success)!important;border:none!important}
+        .toast.error{background:var(--wa-danger)!important;border:none!important}
+        .toast.info{background:var(--wa-primary)!important;border:none!important}
+        .toast.warning{background:var(--wa-warning)!important;border:none!important}
+
+        /* --- Empty State --- */
+        .empty-state i{color:var(--wa-text-muted)!important;-webkit-text-fill-color:var(--wa-text-muted)!important;background:none!important;-webkit-background-clip:unset!important;font-size:2.5em!important;opacity:.35!important}
+        .empty-state h3{color:var(--wa-text-secondary)!important}.empty-state p{color:var(--wa-text-muted)!important}
+
+        /* --- Spinner --- */
+        .spinner{border:2px solid var(--wa-border)!important;border-top-color:var(--wa-primary)!important;background:none!important;-webkit-mask:none!important;mask:none!important}
+
+        /* --- Subtle animations --- */
+        .tab-content.active{animation:sfade .2s ease!important}
+        @keyframes sfade{from{opacity:.85}to{opacity:1}}
+
+        /* --- Remove all old decorative cruft --- */
+        .mgmt-chat-card::before,.model-card::before,.why-btn::before,.btn-primary::after{display:none!important}
+
+        /* --- Responsive --- */
+        @media(max-width:768px){
+            .header{padding:10px 16px!important}
+            .tab-nav{padding:0 12px!important;overflow-x:auto!important}
+            .tab-btn{font-size:.82em!important;padding:10px 14px!important;white-space:nowrap}
+            .management-container{padding:12px!important}
+            .ai-chat-panel{left:0!important;right:0!important;bottom:0!important;width:100%!important;max-width:100%!important;border-radius:16px 16px 0 0!important;max-height:75vh!important}
+            .ai-chat-fab{width:48px!important;height:48px!important;bottom:16px!important}
+        }
+
+        /* --- OLD ENHANCEMENT LAYER REMOVED — all overrides above --- */
+        /* DEAD CODE BELOW - kept only as comments for reference */
+        /* --- Animated Aurora Background --- DISABLED */
+        /*
+        @keyframes auroraShift {
+            0%   { transform: translate(0, 0) rotate(0deg); }
+            33%  { transform: translate(30px, -20px) rotate(120deg); }
+            66%  { transform: translate(-20px, 15px) rotate(240deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        @keyframes auroraShift2 {
+            0%   { transform: translate(0, 0) rotate(0deg); }
+            33%  { transform: translate(-40px, 25px) rotate(-120deg); }
+            66%  { transform: translate(25px, -30px) rotate(-240deg); }
+            100% { transform: translate(0, 0) rotate(-360deg); }
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -30%;
+            left: -30%;
+            width: 160%;
+            height: 160%;
+            background:
+                radial-gradient(ellipse 600px 600px at 25% 30%, rgba(245,158,11,0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 500px at 75% 70%, rgba(59,130,246,0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 400px 400px at 50% 50%, rgba(251,191,36,0.03) 0%, transparent 70%);
+            animation: auroraShift 25s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -2;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -30%;
+            left: -30%;
+            width: 160%;
+            height: 160%;
+            background:
+                radial-gradient(ellipse 500px 500px at 70% 25%, rgba(251,191,36,0.05) 0%, transparent 70%),
+                radial-gradient(ellipse 600px 600px at 30% 75%, rgba(59,130,246,0.04) 0%, transparent 70%);
+            animation: auroraShift2 30s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        /* Subtle noise texture */
+        body > .noise-overlay {
+            position: fixed;
+            inset: 0;
+            opacity: 0.025;
+            pointer-events: none;
+            z-index: -1;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+
+        /* --- Enhanced Global Transitions --- */
+        *, *::before, *::after {
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- Enhanced Header with Depth --- */
+        .header {
+            background: rgba(255,255,255,0.88);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 0 rgba(37,99,235,0.03) inset;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        /* --- Modern Tab Navigation --- */
+        .tab-nav {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 4px 8px;
+            gap: 2px;
+        }
+        .tab-btn {
+            border-radius: 8px;
+            border-bottom: none;
+            padding: 10px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(59,130,246,0.15));
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 8px;
+        }
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom: none;
+            background: rgba(37,99,235,0.08);
+            box-shadow: 0 0 20px rgba(37,99,235,0.06);
+        }
+        .tab-btn.active::before { opacity: 1; }
+        .tab-btn:hover:not(.active) {
+            background: rgba(0,0,0,0.03);
+        }
+        .tab-btn:hover:not(.active)::before { opacity: 0.5; }
+
+        /* --- Enhanced Cards with Glass + Glow --- */
+        .message-card {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .message-card:hover {
+            border-color: rgba(37,99,235,0.15);
+            box-shadow: 0 8px 24px rgba(37,99,235,0.08), 0 2px 6px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+        }
+
+        .mgmt-chat-card {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .mgmt-chat-card:hover {
+            border-color: rgba(124,58,237,0.15);
+            box-shadow: 0 8px 24px rgba(124,58,237,0.06), 0 2px 6px rgba(0,0,0,0.05);
+            transform: translateY(-1px);
+        }
+
+        /* --- Enhanced Buttons --- */
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            box-shadow: 0 4px 15px rgba(245,158,11,0.25), 0 0 0 1px rgba(255,255,255,0.1) inset;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 6px 25px rgba(245,158,11,0.35), 0 0 0 1px rgba(255,255,255,0.15) inset;
+            transform: translateY(-2px);
+        }
+        .btn-primary:hover::after { opacity: 1; }
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 10px rgba(245,158,11,0.2);
+        }
+
+        .btn-secondary {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-action {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-action:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245,158,11,0.15);
+        }
+
+        /* --- Enhanced Model Cards --- */
+        .model-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .model-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .model-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        .model-card:hover::before { opacity: 0.6; }
+        .model-card.selected::before { opacity: 1; }
+        .model-card.selected {
+            box-shadow: 0 0 30px rgba(245,158,11,0.12), 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        /* --- Enhanced Progress Bars --- */
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #2563eb, #3b82f6, #2563eb);
+            background-size: 200% 100%;
+            animation: progressGlow 3s linear infinite;
+        }
+        @keyframes progressGlow {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .lsp-progress-fill {
+            background: linear-gradient(90deg, #2563eb, #3b82f6, #2563eb);
+            background-size: 200% 100%;
+            animation: progressGlow 2s linear infinite;
+        }
+
+        /* --- FAB with Pulse --- */
+        @keyframes fabPulse {
+            0%   { box-shadow: 0 4px 20px rgba(245,158,11,0.35); }
+            50%  { box-shadow: 0 4px 20px rgba(245,158,11,0.35), 0 0 0 8px rgba(245,158,11,0.1); }
+            100% { box-shadow: 0 4px 20px rgba(245,158,11,0.35); }
+        }
+        .ai-chat-fab {
+            animation: fabPulse 3s ease-in-out infinite;
+        }
+        .ai-chat-fab:hover {
+            animation: none;
+            transform: scale(1.12) rotate(-5deg);
+            box-shadow: 0 6px 30px rgba(245,158,11,0.5);
+        }
+        .ai-chat-fab.active {
+            animation: none;
+        }
+
+        /* --- Enhanced AI Chat Panel --- */
+        .ai-chat-panel {
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.1), 0 0 0 1px rgba(37,99,235,0.04) inset;
+        }
+        .ai-msg.user {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.2);
+        }
+        .ai-msg.assistant {
+            background: rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+
+        /* --- Toast Notifications --- */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.88em;
+            font-weight: 500;
+            color: #fff;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset;
+            animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            max-width: 420px;
+            line-height: 1.4;
+        }
+        .toast.removing {
+            animation: toastOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+        }
+        .toast.success {
+            background: rgba(245,158,11,0.9);
+            border: 1px solid rgba(45,212,191,0.3);
+        }
+        .toast.error {
+            background: rgba(220,38,38,0.9);
+            border: 1px solid rgba(248,113,113,0.3);
+        }
+        .toast.info {
+            background: rgba(79,70,229,0.9);
+            border: 1px solid rgba(129,140,248,0.3);
+        }
+        .toast.warning {
+            background: rgba(180,130,10,0.9);
+            border: 1px solid rgba(245,158,11,0.3);
+        }
+        .toast i { font-size: 1.1em; flex-shrink: 0; }
+        @keyframes toastIn {
+            0% { opacity: 0; transform: translateY(-16px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes toastOut {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-12px) scale(0.95); }
+        }
+
+        /* --- Skeleton Loading Shimmer --- */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.8s ease-in-out infinite;
+            border-radius: var(--radius);
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-text { height: 14px; margin-bottom: 8px; border-radius: 6px; }
+        .skeleton-text:last-child { width: 60%; }
+        .skeleton-title { height: 20px; width: 40%; margin-bottom: 12px; border-radius: 6px; }
+        .skeleton-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+        .skeleton-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+        .skeleton-card .skeleton-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        /* --- Enhanced Gallery Items --- */
+        .gallery-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .gallery-item:hover {
+            opacity: 1;
+            transform: scale(1.03);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            z-index: 2;
+        }
+        .gallery-item:hover .gallery-overlay {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        .gallery-item img, .gallery-item video {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .gallery-item:hover img, .gallery-item:hover video {
+            transform: scale(1.08);
+        }
+
+        /* --- Enhanced Stats Banner --- */
+        .stats-banner {
+            background: rgba(255,255,255,0.02);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .stat-chip {
+            transition: all 0.2s;
+        }
+        .stat-chip:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+
+        /* --- Enhanced Scrollbar --- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.12);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.2);
+        }
+
+        /* --- Enhanced Inputs Focus Glow --- */
+        input:focus, select:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.15), 0 0 20px rgba(245,158,11,0.08);
+        }
+        .header input:focus, .header select:focus {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.15), 0 0 20px rgba(255,255,255,0.08);
+        }
+
+        /* --- Lightbox Enhancement --- */
+        .lightbox {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .lightbox.active {
+            animation: fadeIn 0.25s ease;
+        }
+        .lightbox img {
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+        }
+
+        /* --- Enhanced Empty States --- */
+        .empty-state {
+            animation: fadeIn 0.5s ease;
+        }
+        .empty-state i {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0.6;
+            font-size: 3.5em;
+        }
+
+        /* --- Source Modal Enhancement --- */
+        .source-modal-overlay {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .source-modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+        .source-modal-box {
+            animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalIn {
+            0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* --- Enhanced Sender Badges --- */
+        .sender-badge {
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+        .sender-badge:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- Enhanced Transcription/Description Blocks --- */
+        .transcription {
+            position: relative;
+            overflow: hidden;
+        }
+        .transcription::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, #2563eb, #818cf8);
+            border-radius: 0 3px 3px 0;
+        }
+        [dir="ltr"] .transcription::before {
+            right: auto;
+            left: 0;
+            border-radius: 3px 0 0 3px;
+        }
+        .transcription { border-right: none; }
+        [dir="ltr"] .transcription { border-left: none; }
+
+        .visual-description {
+            position: relative;
+            overflow: hidden;
+        }
+        .visual-description::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, #3b82f6, #60a5fa);
+            border-radius: 0 3px 3px 0;
+        }
+        [dir="ltr"] .visual-description::before {
+            right: auto;
+            left: 0;
+            border-radius: 3px 0 0 3px;
+        }
+        .visual-description { border-right: none; }
+        [dir="ltr"] .visual-description { border-left: none; }
+
+        /* --- Processing Status Badge Glow --- */
+        .mgmt-status-badge.ready {
+            box-shadow: 0 0 12px rgba(245,158,11,0.15);
+        }
+        .mgmt-status-badge.not-ready {
+            box-shadow: 0 0 12px rgba(245,158,11,0.1);
+        }
+
+        /* --- Enhanced Live Status Panel --- */
+        .live-status-panel {
+            background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(59,130,246,0.06));
+            border: 1px solid rgba(245,158,11,0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* --- Enhanced Filter Dropdown --- */
+        .filter-dropdown-content {
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04) inset;
+            animation: dropdownIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes dropdownIn {
+            0% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* --- Tab Content Transition --- */
+        .tab-content.active {
+            animation: tabFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes tabFadeIn {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Typing Indicator Enhancement --- */
+        .ai-typing span {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+        }
+
+        /* --- Receipt/Cost Summary Enhancement --- */
+        .receipt-total {
+            background: linear-gradient(90deg, rgba(245,158,11,0.06), transparent);
+            padding: 14px 8px;
+            border-radius: 8px;
+            border-top: 2px solid;
+            border-image: linear-gradient(90deg, var(--accent-green), var(--accent-blue)) 1;
+        }
+
+        /* --- Hardware Meter Enhancement --- */
+        .hw-meter-fill.good, .hw-meter-fill.excellent {
+            background: linear-gradient(90deg, #2563eb, #818cf8);
+            box-shadow: 0 0 8px rgba(245,158,11,0.3);
+        }
+        .hw-meter-fill.medium {
+            background: linear-gradient(90deg, #F59E0B, #f97316);
+            box-shadow: 0 0 8px rgba(245,158,11,0.3);
+        }
+        .hw-meter-fill.low {
+            background: linear-gradient(90deg, #EF4444, #f87171);
+            box-shadow: 0 0 8px rgba(239,68,68,0.3);
+        }
+
+        /* --- Search Mark Enhancement --- */
+        .message-text mark, .transcription mark, .visual-description mark {
+            background: linear-gradient(135deg, rgba(250,204,21,0.35), rgba(251,191,36,0.25));
+            padding: 1px 4px;
+            border-radius: 4px;
+            box-shadow: 0 0 8px rgba(250,204,21,0.1);
+        }
+
+        /* --- Enhanced Image Thumbnails --- */
+        .image-thumb {
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .image-thumb:hover {
+            border-color: rgba(245,158,11,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 20px rgba(245,158,11,0.1);
+        }
+
+        /* --- Modern Spinner --- */
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.05);
+            border-top: 3px solid transparent;
+            background: conic-gradient(from 0deg, transparent, var(--accent-green));
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #fff 0);
+            mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #fff 0);
+        }
+
+        /* --- Page Load Animation --- */
+        body > header,
+        body > nav,
+        body > .tab-content.active {
+            animation: pageIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        body > nav { animation-delay: 0.05s; }
+        body > .tab-content.active { animation-delay: 0.1s; }
+        @keyframes pageIn {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Why Button Enhancement --- */
+        .why-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .why-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(59,130,246,0.1));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .why-btn:hover::before { opacity: 1; }
+
+        /* --- PDF Card Enhancement --- */
+        .pdf-preview-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pdf-preview-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        /* --- Video Overlay Enhancement --- */
+        .video-thumb-overlay {
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        /* --- Processing Status Card Decorative --- */
+        .mgmt-chat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.3), rgba(59,130,246,0.3), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .mgmt-chat-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .mgmt-chat-card:hover::before { opacity: 1; }
+        END OF DEAD CODE */
+
     </style>
 </head>
 <body>
+    <!-- Noise texture overlay -->
+    <div class="noise-overlay"></div>
+    <!-- Toast notification container -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- Header -->
     <header class="header">
@@ -971,12 +1891,12 @@
             </div>
             <div class="spinner-overlay" id="spinner"><div class="spinner"></div></div>
             <div class="empty-state" id="emptyInitial">
-                <i class="fas fa-comments"></i>
+                <img src="/static/empty_state.png" alt="" style="width:200px;height:200px;margin-bottom:16px;opacity:0.85;border-radius:20px;">
                 <h3 data-i18n="welcome">ברוכים הבאים</h3>
                 <p data-i18n="welcomeHint">הקלידו מילת חיפוש או סננו לפי שולח ותאריך</p>
             </div>
             <div class="empty-state" id="emptyNoResults" style="display:none;">
-                <i class="fas fa-search"></i>
+                <img src="/static/empty_state.png" alt="" style="width:160px;height:160px;margin-bottom:16px;opacity:0.7;border-radius:16px;filter:grayscale(0.3);">
                 <h3 data-i18n="noResults">לא נמצאו תוצאות</h3>
                 <p data-i18n="noResultsHint">נסו לשנות את מילות החיפוש או להרחיב את טווח התאריכים</p>
             </div>
@@ -1083,23 +2003,63 @@
                 <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsRagDesc">שאלות על השיחה בשפה טבעית עם תשובות מבוססות תוכן הצ'אט.</p>
                 <div class="model-grid" id="models-rag"></div>
                 <div class="cost-calc" id="cost-rag"></div>
+
+                <div class="section-divider"></div>
+
+                <div class="section-title"><i class="fas fa-microphone-lines"></i> <span data-i18n="settingsTranscription">תמלול הקלטות</span></div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsTranscriptionDesc">תמלול הודעות קוליות לטקסט — ניתן לבחור מודל מקומי (חינם) או שירות ענן.</p>
+                <div class="model-grid" id="models-transcription"></div>
+                <div class="cost-calc" id="cost-transcription"></div>
             </div>
 
-            <!-- Cost Summary -->
+            <!-- Cost Dashboard -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
                     <span class="mgmt-chat-name"><i class="fas fa-receipt" style="color:var(--accent-green);"></i> <span data-i18n="settingsCostSummary">סיכום עלויות</span></span>
                 </div>
-                <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-                    <label style="font-size:0.88em;font-weight:600;" data-i18n="settingsCostFor">חישוב עבור:</label>
-                    <select id="costChatSelector" style="flex:1;max-width:300px;font-size:0.88em;padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);font-family:inherit;cursor:pointer;" onchange="onCostChatChange()">
-                        <option value="__all__" data-i18n="allChats">כל הצ'אטים</option>
-                    </select>
+
+                <!-- Multi-select chat filter -->
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:0.88em;font-weight:600;display:block;margin-bottom:6px;" data-i18n="settingsCostFor">חישוב עבור:</label>
+                    <div class="cost-chat-multiselect" id="costChatMultiselect">
+                        <div class="cost-chat-toggle" id="costChatToggle" onclick="toggleCostChatDropdown()">
+                            <span id="costChatLabel">כל הצ'אטים</span>
+                            <i class="fas fa-chevron-down" style="font-size:0.75em;"></i>
+                        </div>
+                        <div class="cost-chat-dropdown" id="costChatDropdown" style="display:none;">
+                            <div style="display:flex;gap:6px;padding:6px 10px;border-bottom:1px solid var(--border-color);">
+                                <button class="btn btn-secondary btn-sm" onclick="costChatSelectAll(true)" data-i18n="selectAll" style="font-size:0.75em;">בחר הכל</button>
+                                <button class="btn btn-secondary btn-sm" onclick="costChatSelectAll(false)" data-i18n="deselectAll" style="font-size:0.75em;">נקה הכל</button>
+                            </div>
+                            <div id="costChatCheckboxes" style="max-height:200px;overflow-y:auto;padding:4px 0;"></div>
+                        </div>
+                    </div>
                 </div>
-                <div id="costSummary"></div>
+
+                <!-- Estimated vs Actual comparison -->
+                <div id="costDashboard"></div>
+
+                <!-- Per-chat breakdown -->
+                <div id="costPerChatBreakdown" style="margin-top:16px;"></div>
+
+                <!-- Activity log (collapsible) -->
+                <div style="margin-top:16px;">
+                    <div class="cost-log-header" onclick="toggleCostLog()" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.9em;font-weight:600;">
+                        <i class="fas fa-chevron-right" id="costLogChevron" style="transition:transform 0.2s;font-size:0.75em;"></i>
+                        <i class="fas fa-history"></i>
+                        <span data-i18n="costActivityLog">לוג פעילות</span>
+                        <span id="costLogCount" style="font-size:0.8em;color:var(--text-muted);font-weight:400;"></span>
+                    </div>
+                    <div id="costLogContent" style="display:none;margin-top:10px;">
+                        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;" id="costLogFilters"></div>
+                        <div id="costLogEntries" style="max-height:350px;overflow-y:auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Save button (for API keys only) -->
                 <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
                     <button class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()">
-                        <i class="fas fa-save"></i> <span data-i18n="settingsSave">שמור הגדרות</span>
+                        <i class="fas fa-save"></i> <span data-i18n="settingsSave">שמור מפתחות API</span>
                     </button>
                     <span id="settingsSaveStatus" style="font-size:0.85em;display:none;"></span>
                 </div>
@@ -1130,7 +2090,7 @@
     <!-- ============ ANALYTICS TAB ============ -->
     <div id="analyticsTab" class="tab-content">
         <div class="management-container">
-            <!-- Usage & Costs -->
+            <!-- Usage & Costs (lightweight — full dashboard in Settings tab) -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
                     <span class="mgmt-chat-name"><i class="fas fa-dollar-sign" style="color:var(--accent-amber);"></i> <span data-i18n="usageTitle">שימוש ועלויות</span></span>
@@ -1141,6 +2101,11 @@
                     </div>
                 </div>
                 <div id="usageContent"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
+                <div style="margin-top:10px;font-size:0.82em;">
+                    <a href="#" onclick="switchTab('settingsTab');return false;" style="color:var(--accent-blue);text-decoration:none;">
+                        <i class="fas fa-arrow-right"></i> <span data-i18n="costFullDashboard">דשבורד עלויות מלא בהגדרות</span>
+                    </a>
+                </div>
             </div>
             <!-- Chat Analytics -->
             <div class="mgmt-chat-card">
@@ -1171,12 +2136,12 @@
     </div>
 
     <!-- AI Chat FAB -->
-    <button class="ai-chat-fab" id="aiChatFab" onclick="toggleAiChat()" title="עוזר AI"><svg class="fab-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="white" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="#0D9488" opacity="0.8"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="#0D9488" opacity="0.5"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="#0D9488" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="#6366F1" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg></button>
+    <button class="ai-chat-fab" id="aiChatFab" onclick="toggleAiChat()" title="עוזר AI"><img class="fab-logo" src="/static/fab_icon.png" alt="AI" style="width:36px;height:36px;border-radius:50%;"></button>
 
     <!-- AI Chat Panel -->
     <div class="ai-chat-panel" id="aiChatPanel">
         <div class="ai-chat-header">
-            <svg style="width:22px;height:22px;flex-shrink:0;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="#0D9488" opacity="0.9"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg>
+            <img src="/static/fab_icon.png" alt="" style="width:24px;height:24px;border-radius:50%;flex-shrink:0;">
             <span data-i18n="aiChatTitle">WhatsArch AI</span>
             <span class="ai-provider-badge" id="aiProviderBadge"></span>
         </div>
@@ -1190,6 +2155,25 @@
     </div>
 
     <script>
+        // ===================== Toast Notification System =====================
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-circle',
+                warning: 'fas fa-exclamation-triangle',
+                info: 'fas fa-info-circle'
+            };
+            toast.innerHTML = `<i class="${icons[type] || icons.info}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
         // ===================== i18n =====================
         const TRANSLATIONS = {
             he: {
@@ -1261,9 +2245,22 @@
                 settingsVideoDesc: 'AI צופה בפריימים מהסרטון ומתאר מה קורה. האודיו מתומלל לוקאלית (חינם).',
                 settingsRag: 'צ\'אט AI — תשאול חכם',
                 settingsRagDesc: 'שאלות על השיחה בשפה טבעית עם תשובות מבוססות תוכן הצ\'אט.',
+                settingsTranscription: 'תמלול הקלטות',
+                settingsTranscriptionDesc: 'תמלול הודעות קוליות לטקסט — ניתן לבחור מודל מקומי (חינם) או שירות ענן.',
                 settingsCostSummary: 'סיכום עלויות',
                 settingsCostFor: 'חישוב עבור:',
-                settingsSave: 'שמור הגדרות',
+                settingsSave: 'שמור מפתחות API',
+                selectAll: 'בחר הכל',
+                deselectAll: 'נקה הכל',
+                costEstimated: 'צפוי',
+                costActual: 'בפועל',
+                costActivityLog: 'לוג פעילות',
+                costPerChat: 'פירוט לפי צ\'אט',
+                costNoData: 'אין נתוני שימוש עדיין',
+                costFullDashboard: 'דשבורד עלויות מלא בהגדרות',
+                settingsCustom: 'מותאם אישית',
+                settingsCustomDesc: 'בחר provider שונה לכל משימה באופן ידני.',
+                settingsAutoSaved: 'הגדרות נשמרו',
                 settingsSaved: '<i class="fas fa-check"></i> נשמר בהצלחה!',
                 settingsSaveError: 'שגיאה בשמירה',
                 settingsSaving: 'שומר...',
@@ -1481,9 +2478,22 @@
                 settingsVideoDesc: 'AI watches video frames and describes what happens. Audio is transcribed locally (free).',
                 settingsRag: 'AI Chat — Smart Q&A',
                 settingsRagDesc: 'Ask questions about the chat in natural language and get answers based on chat content.',
+                settingsTranscription: 'Voice Transcription',
+                settingsTranscriptionDesc: 'Transcribe voice messages to text — choose a local model (free) or cloud service.',
                 settingsCostSummary: 'Cost Summary',
                 settingsCostFor: 'Calculate for:',
-                settingsSave: 'Save Settings',
+                settingsSave: 'Save API Keys',
+                selectAll: 'Select All',
+                deselectAll: 'Deselect All',
+                costEstimated: 'Estimated',
+                costActual: 'Actual',
+                costActivityLog: 'Activity Log',
+                costFullDashboard: 'Full cost dashboard in Settings',
+                costPerChat: 'Per-Chat Breakdown',
+                costNoData: 'No usage data yet',
+                settingsCustom: 'Custom',
+                settingsCustomDesc: 'Choose a different provider for each task manually.',
+                settingsAutoSaved: 'Settings saved',
                 settingsSaved: '<i class="fas fa-check"></i> Saved successfully!',
                 settingsSaveError: 'Error saving',
                 settingsSaving: 'Saving...',
@@ -2534,7 +3544,7 @@
                     const label = (he ? typeLabelsHe : typeLabelsEn)[e.type] || e.type;
                     const fname = e.file ? (e.file.length > 30 ? '...' + e.file.slice(-27) : e.file) : (e.type === 'rag' ? 'AI Chat' : '');
                     const costStr = e.cost_estimate > 0 ? `$${e.cost_estimate.toFixed(5)}` : '<span style="color:var(--accent-green);">FREE</span>';
-                    const userBadge = e.user ? `<span style="font-size:0.75em;background:rgba(99,102,241,0.15);color:#a5b4fc;padding:1px 6px;border-radius:10px;">${escapeHtml(e.user.split('@')[0])}</span>` : '';
+                    const userBadge = e.user ? `<span style="font-size:0.75em;background:rgba(59,130,246,0.15);color:#a5b4fc;padding:1px 6px;border-radius:10px;">${escapeHtml(e.user.split('@')[0])}</span>` : '';
                     return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82em;">
                         <span style="color:var(--text-muted);min-width:110px;">${time}</span>
                         <i class="fas ${icon}" style="color:var(--accent-green);width:16px;"></i>
@@ -2680,7 +3690,7 @@
             if (mode === 'cloud') {
                 cloudBtn.style.background = 'linear-gradient(135deg, var(--accent-green), var(--accent-blue))';
                 cloudBtn.style.color = '#fff';
-                cloudBtn.style.boxShadow = '0 2px 8px rgba(13,148,136,0.3)';
+                cloudBtn.style.boxShadow = '0 2px 8px rgba(245,158,11,0.3)';
                 localBtn.style.background = 'transparent';
                 localBtn.style.color = 'var(--text-secondary)';
                 localBtn.style.boxShadow = 'none';
@@ -2689,7 +3699,7 @@
             } else {
                 localBtn.style.background = 'linear-gradient(135deg, var(--accent-green), var(--accent-blue))';
                 localBtn.style.color = '#fff';
-                localBtn.style.boxShadow = '0 2px 8px rgba(13,148,136,0.3)';
+                localBtn.style.boxShadow = '0 2px 8px rgba(245,158,11,0.3)';
                 cloudBtn.style.background = 'transparent';
                 cloudBtn.style.color = 'var(--text-secondary)';
                 cloudBtn.style.boxShadow = 'none';
@@ -2764,7 +3774,7 @@
         async function handleBrowseFolder() {
             const statusEl = document.getElementById('localLoadStatus');
             const he = currentLang === 'he';
-            statusEl.innerHTML = '<i class="fas fa-folder-open" style="color:#4db6ac;"></i> ' + (he ? 'בחר תיקייה...' : 'Select folder...');
+            statusEl.innerHTML = '<i class="fas fa-folder-open" style="color:#2563eb;"></i> ' + (he ? 'בחר תיקייה...' : 'Select folder...');
 
             try {
                 // Ask Agent to open native folder picker
@@ -2790,7 +3800,7 @@
                 try { data = JSON.parse(resText); } catch { throw new Error(he ? 'שגיאה בטעינת התיקייה' : 'Folder load error'); }
                 if (!res.ok) throw new Error(data.error || 'Load failed');
 
-                statusEl.innerHTML = '<i class="fas fa-check" style="color:#4db6ac;"></i> ' +
+                statusEl.innerHTML = '<i class="fas fa-check" style="color:#2563eb;"></i> ' +
                     (he ? `נוסף: ${data.chat_name}` : `Added: ${data.chat_name}`);
                 agentChats.add(data.chat_name);
                 setTimeout(() => {
@@ -3045,7 +4055,7 @@
                         <button class="mgmt-mode-btn" id="mgmtModeCloud" onclick="setMgmtMode('cloud')" style="padding:10px 28px; border-radius:8px; font-size:0.88em; font-family:'Heebo',sans-serif; border:none; cursor:pointer; background:transparent; color:var(--text-secondary); transition:all 0.3s; display:flex; align-items:center; gap:8px;">
                             <i class="fas fa-cloud"></i> ${t('mgmtModeCloud')}
                         </button>
-                        <button class="mgmt-mode-btn" id="mgmtModeLocal" onclick="setMgmtMode('local')" style="padding:10px 28px; border-radius:8px; font-size:0.88em; font-family:'Heebo',sans-serif; border:none; cursor:pointer; background:linear-gradient(135deg, var(--accent-green), var(--accent-blue)); color:#fff; box-shadow:0 2px 8px rgba(13,148,136,0.3); transition:all 0.3s; display:flex; align-items:center; gap:8px;">
+                        <button class="mgmt-mode-btn" id="mgmtModeLocal" onclick="setMgmtMode('local')" style="padding:10px 28px; border-radius:8px; font-size:0.88em; font-family:'Heebo',sans-serif; border:none; cursor:pointer; background:linear-gradient(135deg, var(--accent-green), var(--accent-blue)); color:#fff; box-shadow:0 2px 8px rgba(245,158,11,0.3); transition:all 0.3s; display:flex; align-items:center; gap:8px;">
                             <i class="fas fa-desktop"></i> ${t('mgmtModeLocal')}
                         </button>
                     </div>` : '';
@@ -3084,12 +4094,12 @@
                 const localContentAvailable = `
                     <div id="mgmtLocalContent" style="display:${agentAvailable ? 'block' : 'none'};">
                         <div style="text-align:center; margin-bottom:16px;">
-                            <div style="font-size: 2em; margin-bottom: 8px; color: #4db6ac;"><i class="fas fa-desktop"></i></div>
+                            <div style="font-size: 2em; margin-bottom: 8px; color: #2563eb;"><i class="fas fa-desktop"></i></div>
                             <h3 style="font-size: 1em; margin-bottom: 6px;">${t('mgmtLocalTitle')}</h3>
                             <p style="font-size: 0.82em; color: var(--text-secondary);">${t('mgmtLocalDesc')}</p>
                         </div>
                         <div style="text-align:center; max-width:380px; margin:0 auto;">
-                            <button class="btn btn-sm" onclick="handleBrowseFolder()" style="background:#4db6ac; color:#fff; width:100%; padding:12px; font-size:0.95em; margin-bottom:8px;">
+                            <button class="btn btn-sm" onclick="handleBrowseFolder()" style="background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; width:100%; padding:12px; font-size:0.95em; margin-bottom:8px;">
                                 <i class="fas fa-folder-open"></i> ${t('mgmtLocalFolder')}
                             </button>
                             <div style="font-size:0.75em; color:var(--text-muted); margin-bottom:16px;">${t('mgmtLocalFolderDesc')}</div>
@@ -3102,7 +4112,7 @@
                         </div>
                         <div id="localLoadStatus" style="text-align:center; margin-top:10px; font-size:0.82em; color:var(--text-muted);"></div>
                         <div style="text-align:center; margin-top:16px; padding-top:12px; border-top:1px solid var(--border-color);">
-                            <span style="font-size:0.78em; color:#4db6ac;">
+                            <span style="font-size:0.78em; color:#2563eb;">
                                 <i class="fas fa-circle" style="font-size:0.5em; vertical-align:middle;"></i>
                                 ${t('mgmtAgentActive')}
                             </span>
@@ -3111,11 +4121,11 @@
 
                 // Local content: agent NOT available — install prompt
                 const localContentInstall = !agentAvailable ? `
-                    <div class="mgmt-chat-card" style="border: 2px dashed #4db6ac; padding: 24px; text-align:center;">
-                        <div style="font-size: 2em; margin-bottom: 8px; color: #4db6ac; opacity:0.5;"><i class="fas fa-desktop"></i></div>
+                    <div class="mgmt-chat-card" style="border: 2px dashed #2563eb; padding: 24px; text-align:center;">
+                        <div style="font-size: 2em; margin-bottom: 8px; color: #2563eb; opacity:0.5;"><i class="fas fa-desktop"></i></div>
                         <h3 style="font-size: 1em; margin-bottom: 6px;">${t('mgmtLocalInstallTitle')}</h3>
                         <p style="font-size: 0.82em; color: var(--text-secondary); margin-bottom: 16px;">${t('mgmtLocalInstallDesc')}</p>
-                        <a href="/download/setup" class="btn btn-sm" style="background:#4db6ac; color:#fff; text-decoration:none;">
+                        <a href="/download/setup" class="btn btn-sm" style="background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; text-decoration:none;">
                             <i class="fas fa-download"></i> ${t('mgmtLocalInstallBtn')}
                         </a>
                         <p style="font-size: 0.72em; color: var(--text-muted); margin-top: 8px;">${t('mgmtLocalInstallNote')}</p>
@@ -3146,12 +4156,12 @@
             const runningTask = isRunning ? status.active_task.task : null;
             const safeName = escapeHtml(chatName);
             const cardId = 'mgmt-' + chatName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
-            const localBadge = source === 'local' ? `<span style="font-size:0.7em;background:#4db6ac;color:#fff;padding:2px 8px;border-radius:12px;margin:0 6px;vertical-align:middle;"><i class="fas fa-desktop"></i> ${currentLang === 'he' ? 'מקומי' : 'Local'}</span>` : '';
+            const localBadge = source === 'local' ? `<span style="font-size:0.7em;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:2px 8px;border-radius:12px;margin:0 6px;vertical-align:middle;"><i class="fas fa-desktop"></i> ${currentLang === 'he' ? 'מקומי' : 'Local'}</span>` : '';
 
             return `
             <div class="mgmt-chat-card" id="${cardId}">
                 <div class="mgmt-chat-header">
-                    <span class="mgmt-chat-name">${localBadge}<svg style="width:18px;height:18px;vertical-align:middle;margin-left:4px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cardGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#0D9488"/><stop offset="100%" stop-color="#6366F1"/></linearGradient></defs><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#cardGrad)" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg> ${safeName}</span>
+                    <span class="mgmt-chat-name">${localBadge}<svg style="width:18px;height:18px;vertical-align:middle;margin-left:4px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cardGrad" x1="10" y1="10" x2="90" y2="90"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient></defs><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="url(#cardGrad)" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="white" opacity="0.9"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="white" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="white" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg> ${safeName}</span>
                     ${status.index.exists
                         ? `<span class="mgmt-status-badge ready"><i class="fas fa-check-circle"></i> ${t('mgmtIndexed')} (${status.index.message_count.toLocaleString(currentLang === 'he' ? 'he-IL' : 'en-US')} ${t('totalMessages')})</span>`
                         : `<span class="mgmt-status-badge not-ready"><i class="fas fa-exclamation-triangle"></i> ${t('mgmtNotIndexed')}</span>`
@@ -3291,7 +4301,7 @@
                     body: JSON.stringify({chat: chatName, task: task})
                 });
                 const data = await res.json();
-                if (data.error) { alert(data.error); return; }
+                if (data.error) { showToast(data.error, 'error'); return; }
 
                 // Update UI immediately
                 const cardId = 'mgmt-' + chatName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
@@ -3313,9 +4323,10 @@
                     });
                 }
 
+                showToast(t('mgmtProcessing2') + ': ' + task, 'info');
                 startProgressPolling(chatName);
             } catch (err) {
-                alert(t('mgmtErrorTask'));
+                showToast(t('mgmtErrorTask'), 'error');
             }
         }
 
@@ -3327,8 +4338,9 @@
                     body: JSON.stringify({chat: chatName})
                 });
                 const data = await res.json();
-                if (data.error) { alert(data.error); return; }
+                if (data.error) { showToast(data.error, 'error'); return; }
 
+                showToast(t('mgmtStopping'), 'warning');
                 // Update stop button to show "stopping" state
                 const cardId = 'mgmt-' + chatName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
                 const actions = document.getElementById(cardId + '-actions');
@@ -3348,7 +4360,7 @@
                     }
                 }
             } catch (err) {
-                alert(t('mgmtErrorStop'));
+                showToast(t('mgmtErrorStop'), 'error');
             }
         }
 
@@ -3365,9 +4377,11 @@
                         // Task finished (idle, cancelled, or error)
                         stopProgressPolling(chatName);
                         if (data.status === 'error' && data.error) {
-                            alert('שגיאה: ' + data.error);
+                            showToast(data.error, 'error', 6000);
                         } else if (data.status === 'cancelled') {
-                            // Silently handle cancellation - UI refreshes below
+                            showToast(t('mgmtStopping'), 'warning');
+                        } else if (data.status === 'idle') {
+                            showToast(t('mgmtCompleted') || 'Processing completed!', 'success', 5000);
                         }
                         // Refresh management data
                         loadManagementData();
@@ -3565,7 +4579,7 @@
             } else {
                 $panel.classList.remove('active');
                 $fab.classList.remove('active');
-                $fab.innerHTML = '<svg class="fab-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 8C26.8 8 8 24.5 8 45c0 11.5 5.8 21.8 15 28.5L18 88l17-9c4.6 1.6 9.6 2.5 15 2.5 23.2 0 42-16.5 42-37.5S73.2 8 50 8z" fill="white" opacity="0.95"/><rect x="30" y="30" width="28" height="3" rx="1.5" fill="#0D9488" opacity="0.8"/><rect x="30" y="38" width="22" height="3" rx="1.5" fill="#0D9488" opacity="0.5"/><rect x="30" y="46" width="25" height="3" rx="1.5" fill="#0D9488" opacity="0.4"/><circle cx="62" cy="56" r="12" stroke="#6366F1" stroke-width="3.5" fill="none" opacity="0.95"/><line x1="71" y1="65" x2="80" y2="74" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" opacity="0.95"/></svg>';
+                $fab.innerHTML = '<img class="fab-logo" src="/static/fab_icon.png" alt="AI" style="width:36px;height:36px;border-radius:50%;">';
             }
         }
 
@@ -3880,9 +4894,9 @@
         let settingsData = {};
         let hardwareData = {};
         let modelsData = {};
-        let mediaCountsForSettings = { images: 0, videos: 0 };
-        let mediaCountsPerChat = {}; // chat_name -> {images, videos}
-        let mediaCountsAll = { images: 0, videos: 0 };
+        let mediaCountsForSettings = { images: 0, videos: 0, audio: 0 };
+        let mediaCountsPerChat = {}; // chat_name -> {images, videos, audio}
+        let mediaCountsAll = { images: 0, videos: 0, audio: 0 };
 
         async function loadSettings() {
             try {
@@ -3911,6 +4925,7 @@
                     renderModelCards('vision', modelsData.vision || []);
                     renderModelCards('video', modelsData.video || []);
                     renderModelCards('rag', modelsData.rag || []);
+                    renderModelCards('transcription', modelsData.transcription || []);
                 }
 
                 // Build cost chat selector and load media counts per chat
@@ -3920,45 +4935,45 @@
                     chatNames = chats.filter(c => c.ready).map(c => c.name);
                 }
 
-                const selector = document.getElementById('costChatSelector');
-                if (selector) {
-                    selector.innerHTML = '<option value="__all__">' + t('allChats') + '</option>';
-                    chatNames.forEach(name => {
-                        const opt = document.createElement('option');
-                        opt.value = name;
-                        opt.textContent = name;
-                        if (name === currentChat) opt.selected = true;
-                        selector.appendChild(opt);
-                    });
-                    // Default to current chat if one is selected
-                    if (currentChat && selector.value === '__all__') {
-                        selector.value = currentChat;
-                    }
+                // Build multi-select chat checkboxes
+                const checkboxContainer = document.getElementById('costChatCheckboxes');
+                if (checkboxContainer) {
+                    checkboxContainer.innerHTML = chatNames.map(name => `
+                        <label class="cost-chat-checkbox">
+                            <input type="checkbox" value="${escapeHtml(name)}" checked onchange="onCostChatSelectionChange()">
+                            <span>${escapeHtml(name)}</span>
+                        </label>
+                    `).join('');
                 }
 
                 // Load media counts for all ready chats in parallel
-                mediaCountsAll = { images: 0, videos: 0 };
+                mediaCountsAll = { images: 0, videos: 0, audio: 0 };
                 mediaCountsPerChat = {};
                 const statusPromises = chatNames.map(name =>
                     fetch(apiBase(name) + `/api/process/status?chat=${encodeURIComponent(name)}`)
                         .then(r => r.ok ? r.json() : null)
                         .then(data => {
                             if (data) {
-                                const counts = { images: (data.images && data.images.total) || 0, videos: (data.videos && data.videos.total) || 0 };
+                                const counts = {
+                                    images: (data.images && data.images.total) || 0,
+                                    videos: (data.videos && data.videos.total) || 0,
+                                    audio: (data.audio && data.audio.total) || 0,
+                                };
                                 mediaCountsPerChat[name] = counts;
                                 mediaCountsAll.images += counts.images;
                                 mediaCountsAll.videos += counts.videos;
+                                mediaCountsAll.audio += counts.audio;
                             }
                         })
                         .catch(() => {})
                 );
                 await Promise.all(statusPromises);
 
-                // Set initial media counts based on selector
-                onCostChatChange();
+                // Set initial media counts (all selected)
+                mediaCountsForSettings = { ...mediaCountsAll };
 
                 updateCostCalculators();
-                updateCostSummary();
+                updateCostDashboard();
 
                 // Load presets
                 loadPresets();
@@ -3986,6 +5001,9 @@
             return map[icon] || icon;
         }
 
+        // Active preset tracking
+        let activePreset = null;
+
         function renderPresets(data) {
             const grid = document.getElementById('presetsGrid');
             const estimate = document.getElementById('presetsEstimate');
@@ -3995,7 +5013,6 @@
             const isMobile = window.innerWidth <= 768;
             let html = '';
             data.presets.forEach(p => {
-                // Hide "local" preset on mobile — can't install Ollama on phone
                 if (isMobile && p.key === 'local') return;
                 const name = isHe ? p.name_he : p.name_en;
                 const desc = isHe ? p.description_he : p.description_en;
@@ -4003,7 +5020,7 @@
                 const isRec = p.recommended;
 
                 html += `
-                <div class="model-card ${isRec ? 'selected' : ''}" onclick="applyPreset('${p.key}', this)" style="text-align:center;padding:20px 14px;">
+                <div class="model-card ${isRec ? 'selected' : ''}" data-preset="${p.key}" onclick="applyPreset('${p.key}', this)" style="text-align:center;padding:20px 14px;">
                     <div class="check-mark"><i class="fas fa-check"></i></div>
                     <div style="font-size:2em;margin-bottom:6px;">${presetIconMap(p.icon)}</div>
                     <div style="font-size:1em;font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>
@@ -4012,9 +5029,19 @@
                     ${isRec ? '<div style="margin-top:6px;"><span class="model-badge recommended">' + t('presetRecommended') + '</span></div>' : ''}
                 </div>`;
             });
+
+            // Add "Custom" preset card
+            html += `
+            <div class="model-card preset-custom-card" data-preset="custom" onclick="applyPreset('custom', this)" style="text-align:center;padding:20px 14px;">
+                <div class="check-mark"><i class="fas fa-check"></i></div>
+                <div style="font-size:2em;margin-bottom:6px;"><i class="fas fa-sliders" style="color:var(--accent-blue);"></i></div>
+                <div style="font-size:1em;font-weight:700;margin-bottom:4px;">${t('settingsCustom')}</div>
+                <div style="font-size:0.78em;color:var(--text-secondary);margin-bottom:10px;line-height:1.5;">${t('settingsCustomDesc')}</div>
+                <div style="font-size:1.1em;font-weight:700;color:var(--accent-blue);">Mix & Match</div>
+            </div>`;
+
             grid.innerHTML = html;
 
-            // Show estimate summary
             if (data.image_count > 0 || data.video_count > 0) {
                 estimate.innerHTML = '<div style="font-size:0.82em;color:var(--text-muted);"><i class="fas fa-chart-bar"></i> ' +
                     (data.chat_name ? escapeHtml(data.chat_name) + ' — ' : '') +
@@ -4023,42 +5050,63 @@
             } else {
                 estimate.innerHTML = '';
             }
+
+            // Detect which preset matches current settings
+            detectActivePreset();
+        }
+
+        const PRESET_SETTINGS = {
+            budget: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'gemini', rag_model: 'gemini-2.5-flash', transcription_provider: 'gemini', transcription_model: 'gemini-2.5-flash' },
+            balanced: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'openai', rag_model: 'gpt-4o-mini', transcription_provider: 'openai', transcription_model: 'whisper-1' },
+            premium: { vision_provider: 'anthropic', vision_model: 'claude-sonnet-4-20250514', video_provider: 'anthropic', video_model: 'claude-sonnet-4-20250514', rag_provider: 'anthropic', rag_model: 'claude-opus-4-20250514', transcription_provider: 'openai', transcription_model: 'whisper-1' },
+            local: { vision_provider: 'ollama', vision_model: 'llama3.2-vision', video_provider: 'ollama', video_model: 'llama3.2-vision', rag_provider: 'ollama', rag_model: 'qwen2.5:14b', transcription_provider: 'local', transcription_model: 'base' },
+        };
+
+        function detectActivePreset() {
+            const keys = ['vision_provider', 'vision_model', 'video_provider', 'video_model', 'rag_provider', 'rag_model', 'transcription_provider', 'transcription_model'];
+            let matched = null;
+            for (const [name, preset] of Object.entries(PRESET_SETTINGS)) {
+                if (keys.every(k => settingsData[k] === preset[k])) {
+                    matched = name;
+                    break;
+                }
+            }
+            activePreset = matched || 'custom';
+
+            // Update visual selection
+            const grid = document.getElementById('presetsGrid');
+            if (grid) {
+                grid.querySelectorAll('.model-card').forEach(c => {
+                    c.classList.toggle('selected', c.dataset.preset === activePreset);
+                });
+            }
         }
 
         function applyPreset(key, cardEl) {
-            // Visual selection
             const grid = cardEl.parentElement;
             grid.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
             cardEl.classList.add('selected');
+            activePreset = key;
 
-            // Fetch preset config and apply to settings
-            fetch('/api/presets?chat=' + encodeURIComponent(currentChat || ''))
-                .then(r => r.json())
-                .then(data => {
-                    const preset = data.presets.find(p => p.key === key);
-                    if (!preset) return;
+            if (key === 'custom') {
+                // Custom: don't change any settings, just mark as custom
+                return;
+            }
 
-                    // We need the full preset data from config — fetch from a known mapping
-                    const presetSettings = {
-                        budget: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'gemini', rag_model: 'gemini-2.5-flash' },
-                        balanced: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'openai', rag_model: 'gpt-4o-mini' },
-                        premium: { vision_provider: 'anthropic', vision_model: 'claude-sonnet-4-20250514', video_provider: 'anthropic', video_model: 'claude-sonnet-4-20250514', rag_provider: 'anthropic', rag_model: 'claude-opus-4-6' },
-                        local: { vision_provider: 'ollama', vision_model: 'llama3.2-vision', video_provider: 'ollama', video_model: 'llama3.2-vision', rag_provider: 'ollama', rag_model: 'qwen2.5:14b' },
-                    };
+            const s = PRESET_SETTINGS[key];
+            if (!s) return;
 
-                    const s = presetSettings[key];
-                    if (!s) return;
+            Object.assign(settingsData, s);
 
-                    // Update settingsData
-                    Object.assign(settingsData, s);
+            renderModelCards('vision', modelsData.vision || []);
+            renderModelCards('video', modelsData.video || []);
+            renderModelCards('rag', modelsData.rag || []);
+            renderModelCards('transcription', modelsData.transcription || []);
+            updateCostCalculators();
+            updateCostDashboard();
 
-                    // Re-render model cards to reflect selection
-                    renderModelCards('vision', modelsData.vision || []);
-                    renderModelCards('video', modelsData.video || []);
-                    renderModelCards('rag', modelsData.rag || []);
-                    updateCostCalculators();
-                    updateCostSummary();
-                });
+            // Auto-save
+            autoSaveSettings();
         }
 
         function renderApiKeyStatus(keys) {
@@ -4123,17 +5171,19 @@
             if (!container) return;
 
             // Determine which model is currently selected
-            const providerKey = task === 'rag' ? 'rag_provider' : task + '_provider';
-            const modelKey = task === 'rag' ? 'rag_model' : task + '_model';
-            const selectedProvider = settingsData[providerKey] || 'anthropic';
+            const providerKey = task + '_provider';
+            const modelKey = task + '_model';
+            const selectedProvider = settingsData[providerKey] || '';
             const selectedModel = settingsData[modelKey] || '';
 
             let html = '';
             models.forEach((m, i) => {
                 const isSelected = m.provider === selectedProvider && (m.model === selectedModel || !selectedModel);
-                const costKey = task === 'rag' ? 'cost_per_query' : (task === 'video' ? 'cost_per_minute' : 'cost_per_image');
+                const costKeyMap = { rag: 'cost_per_query', video: 'cost_per_minute', vision: 'cost_per_image', transcription: 'cost_per_minute' };
+                const costKey = costKeyMap[task] || 'cost_per_image';
                 const cost = m[costKey];
-                const costLabel = task === 'rag' ? t('settingsPerQuestion') : (task === 'video' ? t('settingsPerMinute') : t('settingsPerImage'));
+                const costLabelMap = { rag: t('settingsPerQuestion'), video: t('settingsPerMinute'), vision: t('settingsPerImage'), transcription: t('settingsPerMinute') };
+                const costLabel = costLabelMap[task] || t('settingsPerImage');
 
                 const stars = '★'.repeat(m.hebrew_quality || 3) + '☆'.repeat(5 - (m.hebrew_quality || 3));
                 const speedClass = m.speed === 'fast' ? 'color:var(--accent-green)' : 'color:var(--accent-amber)';
@@ -4185,13 +5235,36 @@
             cardEl.classList.add('selected');
 
             // Update settings
-            const providerKey = task === 'rag' ? 'rag_provider' : task + '_provider';
-            const modelKey = task === 'rag' ? 'rag_model' : task + '_model';
+            const providerKey = task + '_provider';
+            const modelKey = task + '_model';
             settingsData[providerKey] = provider;
             settingsData[modelKey] = model;
 
             updateCostCalculators();
-            updateCostSummary();
+            updateCostDashboard();
+
+            // Detect if we still match a preset
+            detectActivePreset();
+
+            // Auto-save
+            autoSaveSettings();
+        }
+
+        // Auto-save settings without affecting API key inputs
+        async function autoSaveSettings() {
+            try {
+                const body = { ...settingsData };
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    showToast(t('settingsAutoSaved'), 'success', 2000);
+                }
+            } catch (err) {
+                // Silently fail on auto-save
+            }
         }
 
         function updateCostCalculators() {
@@ -4220,58 +5293,236 @@
             if (ragEl) {
                 ragEl.innerHTML = `<i class="fas fa-comments"></i> ${t('settingsCostFor100')} <span class="cost-amount">${ragCost === 0 ? t('settingsFree') : '$' + ragCost.toFixed(2)}</span>`;
             }
+
+            // Transcription
+            const transModel = (modelsData.transcription || []).find(m => m.provider === settingsData.transcription_provider && m.model === settingsData.transcription_model);
+            const transCost = transModel ? transModel.cost_per_minute * mediaCountsForSettings.audio : 0;
+            const transEl = document.getElementById('cost-transcription');
+            if (transEl) {
+                const count = mediaCountsForSettings.audio || 0;
+                transEl.innerHTML = `<i class="fas fa-microphone-lines"></i> ${t('settingsYouHave')} <strong>${count}</strong> ${t('settingsTranscription')} — ${t('settingsCostLabel')} <span class="cost-amount">${transCost === 0 ? t('settingsFree') : '$' + transCost.toFixed(2)}</span>`;
+            }
         }
 
-        function onCostChatChange() {
-            const selector = document.getElementById('costChatSelector');
-            if (!selector) return;
-            const val = selector.value;
-            if (val === '__all__') {
+        // --- Multi-select chat filter for cost dashboard ---
+        let selectedCostChats = new Set(); // empty = all
+
+        function toggleCostChatDropdown() {
+            const dd = document.getElementById('costChatDropdown');
+            dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function costChatSelectAll(selectAll) {
+            const checkboxes = document.querySelectorAll('#costChatCheckboxes input[type="checkbox"]');
+            checkboxes.forEach(cb => { cb.checked = selectAll; });
+            onCostChatSelectionChange();
+        }
+
+        function onCostChatSelectionChange() {
+            const checkboxes = document.querySelectorAll('#costChatCheckboxes input[type="checkbox"]');
+            selectedCostChats.clear();
+            checkboxes.forEach(cb => { if (cb.checked) selectedCostChats.add(cb.value); });
+
+            // Update label
+            const label = document.getElementById('costChatLabel');
+            const he = currentLang === 'he';
+            if (selectedCostChats.size === 0 || selectedCostChats.size === checkboxes.length) {
+                label.textContent = he ? 'כל הצ\'אטים' : 'All chats';
+                selectedCostChats.clear(); // treat as all
+            } else {
+                label.textContent = selectedCostChats.size + (he ? ' צ\'אטים נבחרו' : ' chats selected');
+            }
+
+            // Recalculate media counts
+            if (selectedCostChats.size === 0) {
                 mediaCountsForSettings = { ...mediaCountsAll };
             } else {
-                mediaCountsForSettings = mediaCountsPerChat[val] || { images: 0, videos: 0 };
+                mediaCountsForSettings = { images: 0, videos: 0, audio: 0 };
+                selectedCostChats.forEach(name => {
+                    const c = mediaCountsPerChat[name] || {};
+                    mediaCountsForSettings.images += c.images || 0;
+                    mediaCountsForSettings.videos += c.videos || 0;
+                    mediaCountsForSettings.audio += c.audio || 0;
+                });
             }
+
             updateCostCalculators();
-            updateCostSummary();
+            updateCostDashboard();
         }
 
-        function updateCostSummary() {
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const ms = document.getElementById('costChatMultiselect');
+            if (ms && !ms.contains(e.target)) {
+                document.getElementById('costChatDropdown').style.display = 'none';
+            }
+        });
+
+        // --- Cost Dashboard: Estimated vs Actual ---
+        let costUsageData = null;
+
+        async function updateCostDashboard() {
+            const el = document.getElementById('costDashboard');
+            if (!el) return;
+
+            // Calculate estimated costs
             const visionModel = (modelsData.vision || []).find(m => m.provider === settingsData.vision_provider && m.model === settingsData.vision_model);
             const videoModel = (modelsData.video || []).find(m => m.provider === settingsData.video_provider && m.model === settingsData.video_model);
             const ragModel = (modelsData.rag || []).find(m => m.provider === settingsData.rag_provider && m.model === settingsData.rag_model);
+            const transModel = (modelsData.transcription || []).find(m => m.provider === settingsData.transcription_provider && m.model === settingsData.transcription_model);
 
-            const vCost = visionModel ? visionModel.cost_per_image * mediaCountsForSettings.images : 0;
-            const vidCost = videoModel ? videoModel.cost_per_minute * mediaCountsForSettings.videos : 0;
-            const rCost = ragModel ? ragModel.cost_per_query * 100 : 0;
-            const total = vCost + vidCost + rCost;
+            const estVision = visionModel ? visionModel.cost_per_image * mediaCountsForSettings.images : 0;
+            const estVideo = videoModel ? videoModel.cost_per_minute * mediaCountsForSettings.videos : 0;
+            const estRag = ragModel ? ragModel.cost_per_query * 100 : 0;
+            const estTrans = transModel ? transModel.cost_per_minute * (mediaCountsForSettings.audio || 0) : 0;
+            const estTotal = estVision + estVideo + estRag + estTrans;
 
-            const el = document.getElementById('costSummary');
-            if (!el) return;
+            // Fetch actual usage
+            let chatParam = '';
+            if (selectedCostChats.size > 0) {
+                chatParam = Array.from(selectedCostChats).join(',');
+            }
+            try {
+                const res = await fetch('/api/usage' + (chatParam ? '?chat=' + encodeURIComponent(chatParam) : ''));
+                if (res.ok) costUsageData = await res.json();
+            } catch (e) {}
 
-            const selector = document.getElementById('costChatSelector');
-            const chatLabel = selector && selector.value !== '__all__' ? escapeHtml(selector.value) : 'כל הצ\'אטים';
-            const imgCount = mediaCountsForSettings.images;
-            const vidCount = mediaCountsForSettings.videos;
+            const actual = costUsageData ? costUsageData.summary : null;
+            const actVision = actual ? (actual.by_type.vision || {}).cost || 0 : 0;
+            const actVideo = actual ? ((actual.by_type.video_vision || {}).cost || 0) + ((actual.by_type.video_transcription || {}).cost || 0) : 0;
+            const actRag = actual ? (actual.by_type.rag || {}).cost || 0 : 0;
+            const actTrans = actual ? (actual.by_type.transcription || {}).cost || 0 : 0;
+            const actTotal = actual ? actual.total_cost : 0;
+
+            const he = currentLang === 'he';
+            function fmtCost(v) { return v === 0 ? t('settingsFree') : '$' + v.toFixed(4); }
+            function colorClass(est, act) {
+                if (act === 0) return 'cost-color-green';
+                if (est === 0) return act > 0 ? 'cost-color-amber' : 'cost-color-green';
+                if (act <= est) return 'cost-color-green';
+                if (act <= est * 1.5) return 'cost-color-amber';
+                return 'cost-color-red';
+            }
+
+            const rows = [
+                { icon: 'fa-camera', label: he ? 'תיאור תמונות' : 'Image Descriptions', est: estVision, act: actVision },
+                { icon: 'fa-film', label: he ? 'תיאור סרטונים' : 'Video Descriptions', est: estVideo, act: actVideo },
+                { icon: 'fa-microphone-lines', label: he ? 'תמלול הקלטות' : 'Transcriptions', est: estTrans, act: actTrans },
+                { icon: 'fa-comments', label: he ? 'צ\'אט AI (100 שאלות)' : 'AI Chat (100 queries)', est: estRag, act: actRag },
+            ];
 
             el.innerHTML = `
-                <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">${imgCount} ${t('images')}, ${vidCount} ${t('videos')}</div>
-                <div class="receipt-row">
-                    <span><i class="fas fa-camera"></i> ${t('settingsImageDescCost')}</span>
-                    <span><strong>${visionModel ? escapeHtml(visionModel.display) : '—'}</strong> — ${vCost === 0 ? t('settingsFree') : '$' + vCost.toFixed(2)}</span>
+                <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">
+                    ${mediaCountsForSettings.images} ${t('images')}, ${mediaCountsForSettings.videos} ${t('videos')}${mediaCountsForSettings.audio ? ', ' + mediaCountsForSettings.audio + ' ' + (he ? 'הקלטות' : 'audio') : ''}
                 </div>
-                <div class="receipt-row">
-                    <span><i class="fas fa-film"></i> ${t('settingsVideoDescCost')}</span>
-                    <span><strong>${videoModel ? escapeHtml(videoModel.display) : '—'}</strong> — ${vidCost === 0 ? t('settingsFree') : '$' + vidCost.toFixed(2)}</span>
-                </div>
-                <div class="receipt-row">
-                    <span><i class="fas fa-comments"></i> ${t('settingsAiChat100')}</span>
-                    <span><strong>${ragModel ? escapeHtml(ragModel.display) : '—'}</strong> — ${rCost === 0 ? t('settingsFree') : '$' + rCost.toFixed(2)}</span>
-                </div>
-                <div class="receipt-total">
-                    <span>${t('settingsCostTotal')}</span>
-                    <span class="total-amount">${total === 0 ? t('settingsFreeExclaim') : '$' + total.toFixed(2)}</span>
-                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--border-color);">
+                            <th style="text-align:start;padding:8px 6px;color:var(--text-muted);font-weight:600;"></th>
+                            <th style="text-align:end;padding:8px 6px;color:var(--accent-blue);font-weight:600;">${t('costEstimated')}</th>
+                            <th style="text-align:end;padding:8px 6px;color:var(--accent-amber);font-weight:600;">${t('costActual')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(r => `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                            <td style="padding:7px 6px;"><i class="fas ${r.icon}" style="width:18px;text-align:center;color:var(--text-muted);"></i> ${r.label}</td>
+                            <td style="padding:7px 6px;text-align:end;direction:ltr;">${fmtCost(r.est)}</td>
+                            <td style="padding:7px 6px;text-align:end;direction:ltr;" class="${colorClass(r.est, r.act)}">${fmtCost(r.act)}</td>
+                        </tr>`).join('')}
+                        <tr style="border-top:2px solid var(--border-color);font-weight:700;">
+                            <td style="padding:10px 6px;">${t('settingsCostTotal')}</td>
+                            <td style="padding:10px 6px;text-align:end;direction:ltr;">${fmtCost(estTotal)}</td>
+                            <td style="padding:10px 6px;text-align:end;direction:ltr;" class="${colorClass(estTotal, actTotal)}">${fmtCost(actTotal)}</td>
+                        </tr>
+                    </tbody>
+                </table>
             `;
+
+            // Per-chat breakdown
+            renderCostPerChat();
+
+            // Activity log count
+            const logCount = costUsageData ? costUsageData.log.length : 0;
+            const logCountEl = document.getElementById('costLogCount');
+            if (logCountEl) logCountEl.textContent = `(${logCount})`;
+        }
+
+        function renderCostPerChat() {
+            const el = document.getElementById('costPerChatBreakdown');
+            if (!el || !costUsageData) { if (el) el.innerHTML = ''; return; }
+
+            const perChat = costUsageData.per_chat || {};
+            const chatNames = Object.keys(perChat);
+            if (chatNames.length < 2) { el.innerHTML = ''; return; }
+
+            const he = currentLang === 'he';
+            let rows = chatNames.map(name => {
+                const s = perChat[name];
+                const ms = s.media_stats;
+                return { name, cost: s.total_cost, images: ms.images_processed, videos: ms.videos_processed, audio: ms.audios_transcribed, pdfs: ms.pdfs_extracted };
+            }).sort((a, b) => b.cost - a.cost);
+
+            el.innerHTML = `
+                <div style="font-size:0.9em;font-weight:600;margin-bottom:8px;"><i class="fas fa-list"></i> ${t('costPerChat')}</div>
+                <table class="cost-chat-table">
+                    <thead><tr>
+                        <th>${he ? 'צ\'אט' : 'Chat'}</th>
+                        <th><i class="fas fa-camera"></i></th>
+                        <th><i class="fas fa-film"></i></th>
+                        <th><i class="fas fa-microphone"></i></th>
+                        <th><i class="fas fa-file-pdf"></i></th>
+                        <th style="text-align:end;">${he ? 'עלות בפועל' : 'Actual Cost'}</th>
+                    </tr></thead>
+                    <tbody>
+                        ${rows.map(r => `<tr>
+                            <td style="font-weight:500;">${escapeHtml(r.name)}</td>
+                            <td>${r.images}</td>
+                            <td>${r.videos}</td>
+                            <td>${r.audio}</td>
+                            <td>${r.pdfs}</td>
+                            <td style="text-align:end;direction:ltr;font-weight:600;color:${r.cost === 0 ? 'var(--accent-green)' : 'var(--accent-amber)'};">${r.cost === 0 ? t('settingsFree') : '$' + r.cost.toFixed(4)}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function toggleCostLog() {
+            const content = document.getElementById('costLogContent');
+            const chevron = document.getElementById('costLogChevron');
+            const open = content.style.display === 'none';
+            content.style.display = open ? 'block' : 'none';
+            chevron.style.transform = open ? 'rotate(90deg)' : '';
+            if (open) renderCostLog();
+        }
+
+        function renderCostLog() {
+            const el = document.getElementById('costLogEntries');
+            if (!el || !costUsageData) { if (el) el.innerHTML = `<div style="color:var(--text-muted);font-size:0.85em;">${t('costNoData')}</div>`; return; }
+
+            const typeIcons = { vision: 'fa-camera', video_vision: 'fa-film', video_transcription: 'fa-film', transcription: 'fa-microphone', pdf: 'fa-file-pdf', rag: 'fa-comments', index: 'fa-database', embeddings: 'fa-brain' };
+            const typeColors = { vision: 'var(--accent-green)', video_vision: 'var(--accent-blue)', transcription: 'var(--accent-amber)', pdf: 'var(--accent-red)', rag: 'var(--accent-blue)' };
+
+            const logs = costUsageData.log.slice(0, 100);
+            if (logs.length === 0) {
+                el.innerHTML = `<div style="color:var(--text-muted);font-size:0.85em;">${t('costNoData')}</div>`;
+                return;
+            }
+
+            el.innerHTML = logs.map(e => {
+                const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '';
+                const icon = typeIcons[e.type] || 'fa-circle';
+                const color = typeColors[e.type] || 'var(--text-muted)';
+                const cost = (e.cost_estimate || 0);
+                return `<div class="cost-log-row">
+                    <span class="cost-log-time">${ts}</span>
+                    <span class="cost-log-type"><i class="fas ${icon}" style="color:${color};"></i></span>
+                    <span class="cost-log-file" title="${escapeHtml(e.file || '')}">${escapeHtml(e.file || e.type || '')}</span>
+                    <span class="cost-log-provider">${escapeHtml((e.provider || '') + (e.model ? ' / ' + e.model : ''))}</span>
+                    <span class="cost-log-cost" style="color:${cost === 0 ? 'var(--text-muted)' : 'var(--accent-amber)'};">${cost === 0 ? '-' : '$' + cost.toFixed(4)}</span>
+                </div>`;
+            }).join('');
         }
 
         async function saveSettings() {
@@ -4307,6 +5558,7 @@
                 statusEl.style.display = 'inline';
                 statusEl.style.color = 'var(--accent-green)';
                 statusEl.innerHTML = t('settingsSaved');
+                showToast(t('settingsSaved').replace(/<[^>]*>/g, ''), 'success');
                 setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 
                 loadSettings();
@@ -4315,6 +5567,7 @@
                 statusEl.style.display = 'inline';
                 statusEl.style.color = 'var(--accent-red)';
                 statusEl.textContent = t('settingsSaveError');
+                showToast(t('settingsSaveError'), 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-save"></i> ' + t('settingsSave');
@@ -4372,6 +5625,7 @@
                 statusEl.style.display = 'inline';
                 statusEl.style.color = 'var(--accent-green)';
                 statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + t('settingsApiSaved');
+                showToast(t('settingsApiSaved').replace(/<[^>]*>/g, ''), 'success');
                 setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
 
                 // Refresh settings display

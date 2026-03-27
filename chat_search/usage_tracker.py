@@ -21,16 +21,14 @@ COST_TABLE = {
     ("gemini", "gemini-1.5-flash"): (0.000075, 0.0003),
     # OpenAI
     ("openai", "gpt-4o-mini"): (0.00015, 0.0006),
-    ("openai", "gpt-4.1-nano"): (0.00015, 0.0006),
     ("openai", "gpt-4o"): (0.0025, 0.01),
-    ("openai", "gpt-4.1"): (0.002, 0.008),
     # Anthropic
     ("anthropic", "claude-3-5-haiku"): (0.001, 0.005),
     ("anthropic", "claude-3-5-sonnet"): (0.003, 0.015),
     ("anthropic", "claude-3-haiku"): (0.00025, 0.00125),
     ("anthropic", "claude-3-sonnet"): (0.003, 0.015),
     ("anthropic", "claude-sonnet"): (0.003, 0.015),
-    ("anthropic", "claude-opus"): (0.015, 0.075),
+    ("anthropic", "claude-opus-4"): (0.015, 0.075),
 }
 
 # Flat per-item costs for vision
@@ -163,26 +161,8 @@ def log_event(event: dict, project_root: str):
         _write_log(path, entries)
 
 
-def get_usage_report(project_root: str, chat_name: str = None, user: str = None) -> dict:
-    """
-    Return a usage summary and recent log entries.
-    Filter by chat_name and/or user if provided.
-    """
-    path = _log_path(project_root)
-
-    with _lock:
-        all_entries = _read_log(path)
-
-    entries = all_entries
-    if chat_name:
-        entries = [e for e in entries if e.get("chat_name") == chat_name]
-    if user:
-        entries = [e for e in entries if e.get("user") == user]
-
-    # Collect unique users for filter dropdown
-    all_users = sorted(set(e.get("user") or "unknown" for e in all_entries if e.get("user")))
-
-    # Build summary
+def _build_summary(entries: list) -> dict:
+    """Build a usage summary from a list of log entries."""
     total_cost = 0.0
     by_model_map = {}  # (provider, model) -> aggregates
     by_type_map = {}   # type -> {count, cost}
@@ -243,24 +223,73 @@ def get_usage_report(project_root: str, chat_name: str = None, user: str = None)
     for bt in by_type_map.values():
         bt["cost"] = round(bt["cost"], 6)
 
+    return {
+        "total_cost": total_cost,
+        "by_model": by_model_list,
+        "by_type": by_type_map,
+        "media_stats": {
+            "images_processed": images_processed,
+            "videos_processed": videos_processed,
+            "total_video_duration_sec": round(total_video_dur, 1),
+            "audios_transcribed": audios_transcribed,
+            "total_audio_duration_sec": round(total_audio_dur, 1),
+            "pdfs_extracted": pdfs_extracted,
+            "pdfs_pages_total": pdfs_pages_total,
+        },
+    }
+
+
+def get_usage_report(project_root: str, chat_name=None, user: str = None) -> dict:
+    """
+    Return a usage summary and recent log entries.
+
+    chat_name can be a single string, a list of strings, or None (all chats).
+    Filter by user if provided.
+    """
+    path = _log_path(project_root)
+
+    with _lock:
+        all_entries = _read_log(path)
+
+    # Normalize chat_name to a set for filtering
+    chat_names = None
+    if chat_name:
+        if isinstance(chat_name, str):
+            chat_names = {chat_name}
+        else:
+            chat_names = set(chat_name)
+
+    entries = all_entries
+    if chat_names:
+        entries = [e for e in entries if e.get("chat_name") in chat_names]
+    if user:
+        entries = [e for e in entries if e.get("user") == user]
+
+    # Collect unique users for filter dropdown
+    all_users = sorted(set(e.get("user") or "unknown" for e in all_entries if e.get("user")))
+
+    # Build aggregate summary
+    summary = _build_summary(entries)
+
+    # Build per-chat breakdown when multiple chats requested
+    per_chat = {}
+    if chat_names and len(chat_names) > 1:
+        chat_entries = {}
+        for e in entries:
+            cn = e.get("chat_name") or "unknown"
+            chat_entries.setdefault(cn, []).append(e)
+        for cn, ce in chat_entries.items():
+            per_chat[cn] = _build_summary(ce)
+    elif chat_names and len(chat_names) == 1:
+        cn = next(iter(chat_names))
+        per_chat[cn] = summary
+
     # Recent log (newest first)
     recent = list(reversed(entries[-RECENT_LOG_LIMIT:]))
 
     return {
         "users": all_users,
-        "summary": {
-            "total_cost": total_cost,
-            "by_model": by_model_list,
-            "by_type": by_type_map,
-            "media_stats": {
-                "images_processed": images_processed,
-                "videos_processed": videos_processed,
-                "total_video_duration_sec": round(total_video_dur, 1),
-                "audios_transcribed": audios_transcribed,
-                "total_audio_duration_sec": round(total_audio_dur, 1),
-                "pdfs_extracted": pdfs_extracted,
-                "pdfs_pages_total": pdfs_pages_total,
-            },
-        },
+        "summary": summary,
+        "per_chat": per_chat,
         "log": recent,
     }

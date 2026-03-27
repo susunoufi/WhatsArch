@@ -36,15 +36,18 @@ def build_index_incremental(db_path: str, messages: list) -> bool:
                 db_desc = c.fetchone()[0]
                 c.execute("SELECT COUNT(*) FROM messages WHERE pdf_text != '' AND pdf_text IS NOT NULL")
                 db_pdf = c.fetchone()[0]
+                c.execute("SELECT COUNT(*) FROM messages WHERE video_transcription != '' AND video_transcription IS NOT NULL")
+                db_vtrans = c.fetchone()[0]
 
                 new_trans = sum(1 for m in messages if m.get("transcription"))
                 new_desc = sum(1 for m in messages if m.get("visual_description"))
                 new_pdf = sum(1 for m in messages if m.get("pdf_text"))
+                new_vtrans = sum(1 for m in messages if m.get("video_transcription"))
 
-                if db_trans == new_trans and db_desc == new_desc and db_pdf == new_pdf:
+                if db_trans == new_trans and db_desc == new_desc and db_pdf == new_pdf and db_vtrans == new_vtrans:
                     print(f"  Index up to date ({existing_count} messages)")
                     return True  # No changes
-                print(f"  Enrichment changed (trans: {db_trans}->{new_trans}, desc: {db_desc}->{new_desc}, pdf: {db_pdf}->{new_pdf}), rebuilding...")
+                print(f"  Enrichment changed (trans: {db_trans}->{new_trans}, desc: {db_desc}->{new_desc}, pdf: {db_pdf}->{new_pdf}, vtrans: {db_vtrans}->{new_vtrans}), rebuilding...")
                 return False  # Force full rebuild
             return False  # Fewer messages = something changed, full rebuild
 
@@ -284,7 +287,17 @@ def search(db_path: str, query: str, sender: str = "", date_from: str = "", date
         use_fts = len(query) >= 3
 
         if use_fts:
+            import re as _re
             safe_query = query.replace('"', '""')
+            # Strip FTS5 special operators/characters to prevent syntax errors
+            safe_query = _re.sub(r'\b(NOT|OR|AND|NEAR)\b', '', safe_query)
+            safe_query = safe_query.replace('*', '').replace('^', '')
+            safe_query = safe_query.strip()
+            if not safe_query or len(safe_query) < 3:
+                # After stripping, query is too short for FTS5 trigram; fall back to LIKE
+                use_fts = False
+
+        if use_fts:
             fts_match = f'"{safe_query}"'
 
             count_sql = f"""
@@ -757,7 +770,7 @@ def semantic_search_chunks(db_path: str, queries, top_k: int = 30) -> list:
                 idx = int(sorted_indices[qi][rank_ptr[qi]])
                 rank_ptr[qi] += 1
                 score = float(all_similarities[qi][idx])
-                if score <= 0.15:
+                if score <= 0.05:
                     break
                 chunk_id = idx + 1
                 if chunk_id not in seen:
@@ -813,7 +826,16 @@ def search_chunks(db_path: str, query: str, page: int = 1, per_page: int = 50) -
         use_fts = len(query) >= 3
 
         if use_fts:
+            import re as _re
             safe_query = query.replace('"', '""')
+            # Strip FTS5 special operators/characters to prevent syntax errors
+            safe_query = _re.sub(r'\b(NOT|OR|AND|NEAR)\b', '', safe_query)
+            safe_query = safe_query.replace('*', '').replace('^', '')
+            safe_query = safe_query.strip()
+            if not safe_query or len(safe_query) < 3:
+                use_fts = False
+
+        if use_fts:
             fts_match = f'"{safe_query}"'
 
             c.execute(

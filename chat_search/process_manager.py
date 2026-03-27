@@ -540,6 +540,10 @@ def _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
     chunks = segment_into_chunks(messages, chat_type=chat_type)
     build_chunks(chunks, db_path)
 
+    # Invalidate ai_chat caches so new chunks are picked up
+    from . import ai_chat
+    ai_chat.invalidate_caches(chat_name)
+
     callback("Done", 5, 5)
 
 
@@ -578,13 +582,21 @@ def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=N
 
         _check_cancel(cancel_event)
         callback("Parsing messages...", 1, 5)
+
+        # Load sender aliases from settings
+        from . import config as _cfg
+        _project_root = os.path.dirname(os.path.dirname(data_dir))
+        _settings = _cfg.load_settings(_project_root)
+        _chat_name_for_aliases = os.path.basename(os.path.dirname(data_dir))
+        sender_aliases = _settings.get("sender_aliases", {}).get(_chat_name_for_aliases, {})
+
         platform = detect_platform(chat_dir)
         if platform == "telegram":
             chat_file = os.path.join(chat_dir, "result.json")
-            messages = parse_telegram(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
+            messages = parse_telegram(chat_file, transcriptions, descriptions, video_trans, pdf_texts, sender_aliases=sender_aliases)
         else:
             chat_file = os.path.join(chat_dir, "_chat.txt")
-            messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts)
+            messages = parse_chat(chat_file, transcriptions, descriptions, video_trans, pdf_texts, sender_aliases=sender_aliases)
 
         _check_cancel(cancel_event)
         callback("Detecting chat type...", 2, 5)
@@ -600,6 +612,10 @@ def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=N
         callback("Building chunks...", 3, 5)
         chunks = segment_into_chunks(messages, chat_type=chat_type)
         build_chunks(chunks, db_path)
+
+        # Invalidate ai_chat caches so new chunks are picked up
+        from . import ai_chat
+        ai_chat.invalidate_caches(chat_name)
 
     _check_cancel(cancel_event)
     callback("Building chunk embeddings...", 0, len(chunks))

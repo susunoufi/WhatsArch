@@ -149,20 +149,37 @@ def process_chat(
 
     if not skip_vision:
         from chat_search.vision import process_images, process_videos, process_pdfs, load_cache as load_vision_cache
+        from chat_search import config as _cfg
 
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        if api_key:
-            print(f"  [{chat_name}] Processing images...")
-            visual_descriptions = process_images(chat_dir, desc_cache_path, api_key)
+        _settings = _cfg.load_settings(os.path.dirname(os.path.abspath(__file__)))
+        _vision_provider = _settings.get("vision_provider", "gemini")
+        _vision_model = _settings.get("vision_model")
+        _video_provider = _settings.get("video_provider", "gemini")
+        _video_model = _settings.get("video_model")
+        _ollama_url = _settings.get("ollama_base_url")
+        _api_keys = _cfg.get_api_keys()
 
-            print(f"  [{chat_name}] Processing videos...")
+        _key_map = {"anthropic": "anthropic_key", "openai": "openai_key", "gemini": "gemini_key"}
+        _vision_api_key = _api_keys.get(_key_map.get(_vision_provider, ""), "")
+        _video_api_key = _api_keys.get(_key_map.get(_video_provider, ""), "")
+
+        if _vision_api_key or _vision_provider == "ollama":
+            print(f"  [{chat_name}] Processing images ({_vision_provider})...")
+            visual_descriptions = process_images(
+                chat_dir, desc_cache_path, provider=_vision_provider, model=_vision_model,
+                api_key=_vision_api_key, ollama_url=_ollama_url,
+            )
+
+            print(f"  [{chat_name}] Processing videos ({_video_provider})...")
             vid_descs, video_transcriptions = process_videos(
                 chat_dir, desc_cache_path, video_trans_cache_path,
-                api_key, model_size=model_size,
+                provider=_video_provider, model=_video_model,
+                api_key=_video_api_key, ollama_url=_ollama_url,
+                model_size=model_size,
             )
             visual_descriptions.update(vid_descs)
         else:
-            print(f"  [{chat_name}] Skipping image/video vision (no ANTHROPIC_API_KEY)")
+            print(f"  [{chat_name}] Skipping image/video vision (no API key for {_vision_provider})")
             visual_descriptions = load_vision_cache(desc_cache_path)
             video_transcriptions = load_vision_cache(video_trans_cache_path)
 

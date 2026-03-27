@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsArch - Local Mode Flow Prototype</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: rgba(255,255,255,0.04);
+            --bg-tertiary: rgba(255,255,255,0.06);
+            --bg-hover: rgba(255,255,255,0.08);
+            --bg-card: rgba(255,255,255,0.06);
+            --text-primary: #e4e8f0;
+            --text-secondary: #8892a4;
+            --text-muted: #5a6478;
+            --accent-green: #0D9488;
+            --accent-green-dark: #0F766E;
+            --accent-blue: #6366F1;
+            --accent-blue-dark: #4F46E5;
+            --accent-amber: #F59E0B;
+            --accent-red: #EF4444;
+            --border-color: rgba(255,255,255,0.08);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ============ EXPLANATION PANEL ============ */
+        .explain-panel {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 340px;
+            height: 100vh;
+            background: #111827;
+            border-right: 1px solid var(--border-color);
+            padding: 24px 20px;
+            overflow-y: auto;
+            z-index: 1000;
+            direction: rtl;
+        }
+        .explain-panel h2 {
+            font-size: 1.1em;
+            color: var(--accent-green);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .explain-panel .step-explain {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .explain-panel .step-explain.active {
+            display: block;
+        }
+        .explain-panel .step-explain h3 {
+            font-size: 0.95em;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+        .explain-panel .step-explain p {
+            font-size: 0.82em;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        .explain-panel .step-explain .tech-detail {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.78em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            direction: ltr;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+        }
+        .explain-panel .architecture-note {
+            background: rgba(13, 148, 136, 0.1);
+            border: 1px solid rgba(13, 148, 136, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.8em;
+            color: #4db6ac;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+
+        /* Step indicator in explain panel */
+        .step-indicator {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .step-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .step-dot.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #fff;
+        }
+        .step-dot.done {
+            background: rgba(13, 148, 136, 0.2);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        /* ============ MAIN CONTENT ============ */
+        .main-content {
+            margin-right: 340px;
+            min-height: 100vh;
+        }
+
+        /* ============ STEP SCREENS ============ */
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============ TOP NAV (mimics WhatsArch) ============ */
+        .top-nav {
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            height: 56px;
+            gap: 8px;
+        }
+        .nav-tab {
+            padding: 16px 20px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-tab.active {
+            color: var(--accent-green);
+            border-bottom-color: var(--accent-green);
+        }
+
+        /* ============ SHARED CARD STYLE ============ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin: 24px;
+        }
+        .card-dashed {
+            border: 2px dashed var(--border-color);
+        }
+
+        /* ============ BUTTONS ============ */
+        .btn {
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.88em;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            color: #fff;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-teal {
+            background: #4db6ac;
+            color: #fff;
+        }
+        .btn-teal:hover { background: #3d9e94; }
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-sm { padding: 8px 16px; font-size: 0.82em; }
+        .btn-lg { padding: 14px 28px; font-size: 1em; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ============ MODE TOGGLE ============ */
+        .mode-toggle {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius);
+            padding: 4px;
+            border: 1px solid var(--border-color);
+            width: fit-content;
+            margin: 0 auto 24px;
+        }
+        .mode-toggle-btn {
+            padding: 10px 28px;
+            border-radius: 8px;
+            font-size: 0.88em;
+            font-family: 'Heebo', sans-serif;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .mode-toggle-btn.active {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+        }
+
+        /* ============ INSTALLER STEPS ============ */
+        .install-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .install-step .step-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+        .install-step .step-info { flex: 1; }
+        .install-step .step-info h4 { font-size: 0.9em; margin-bottom: 2px; }
+        .install-step .step-info p { font-size: 0.78em; color: var(--text-muted); }
+        .install-step .step-status {
+            font-size: 0.82em;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .status-pending { background: var(--bg-tertiary); color: var(--text-muted); }
+        .status-running { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .status-done { background: rgba(13, 148, 136, 0.15); color: #4db6ac; }
+        .status-skip { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        /* Progress bar */
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        /* Spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+
+        /* ============ MANAGEMENT TAB SIMULATION ============ */
+        .upload-zone {
+            text-align: center;
+            padding: 20px;
+        }
+        .upload-zone .icon { font-size: 2.2em; margin-bottom: 10px; }
+        .upload-zone h3 { font-size: 1em; margin-bottom: 6px; }
+        .upload-zone p { font-size: 0.82em; color: var(--text-secondary); }
+
+        .upload-options {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .upload-option {
+            flex: 1;
+            min-width: 220px;
+            max-width: 320px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .upload-option .opt-icon { font-size: 1.3em; margin-bottom: 8px; }
+        .upload-option .opt-title { font-size: 0.88em; font-weight: 600; margin-bottom: 4px; }
+        .upload-option .opt-desc { font-size: 0.75em; color: var(--text-muted); margin-bottom: 12px; }
+
+        /* Chat card in management */
+        .chat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin: 16px 24px;
+        }
+        .chat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .chat-card-name {
+            font-size: 0.95em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .badge-local {
+            font-size: 0.7em;
+            background: #4db6ac;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+        .badge-ready {
+            font-size: 0.78em;
+            color: #4db6ac;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Processing rows */
+        .proc-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .proc-row:last-child { border-bottom: none; }
+        .proc-icon { width: 28px; text-align: center; color: var(--text-muted); }
+        .proc-label { flex: 1; font-size: 0.85em; }
+        .proc-count { font-size: 0.78em; color: var(--text-muted); }
+        .proc-bar { width: 100px; }
+
+        /* Action buttons row */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        /* ============ FOLDER PICKER SIMULATION ============ */
+        .folder-picker-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .folder-picker-overlay.show { display: flex; }
+        .folder-picker-dialog {
+            background: #1e293b;
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            width: 500px;
+            max-width: 90vw;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .folder-picker-dialog h3 { margin-bottom: 8px; }
+        .folder-picker-dialog p { font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px; }
+        .folder-tree {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: right;
+            font-size: 0.82em;
+            margin-bottom: 20px;
+            direction: ltr;
+            text-align: left;
+        }
+        .folder-tree div { padding: 4px 0; cursor: pointer; }
+        .folder-tree div:hover { color: var(--accent-green); }
+        .folder-tree .selected { color: var(--accent-green); font-weight: 600; }
+
+        /* ============ PROCESSING SIMULATION ============ */
+        .process-sim {
+            margin-top: 20px;
+        }
+        .process-log {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78em;
+            direction: ltr;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+        }
+        .process-log .log-line { padding: 2px 0; }
+        .process-log .log-success { color: #4db6ac; }
+        .process-log .log-info { color: #818cf8; }
+        .process-log .log-warn { color: #f59e0b; }
+
+        /* ============ SCREEN 0 - LANDING (what user sees first) ============ */
+        .landing-hero {
+            text-align: center;
+            padding: 60px 24px 40px;
+        }
+        .landing-hero h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .landing-hero p {
+            font-size: 1em;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 900px) {
+            .explain-panel { display: none; }
+            .main-content { margin-right: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== EXPLANATION PANEL (LEFT SIDE) ==================== -->
+<div class="explain-panel">
+    <h2><i class="fas fa-lightbulb"></i> הסבר התהליך</h2>
+
+    <div class="step-indicator" id="stepIndicator">
+        <div class="step-dot active" onclick="goToStep(0)">0</div>
+        <div class="step-dot" onclick="goToStep(1)">1</div>
+        <div class="step-dot" onclick="goToStep(2)">2</div>
+        <div class="step-dot" onclick="goToStep(3)">3</div>
+        <div class="step-dot" onclick="goToStep(4)">4</div>
+        <div class="step-dot" onclick="goToStep(5)">5</div>
+        <div class="step-dot" onclick="goToStep(6)">6</div>
+        <div class="step-dot" onclick="goToStep(7)">7</div>
+    </div>
+
+    <!-- Step 0 -->
+    <div class="step-explain active" data-step="0">
+        <h3>שלב 0 — נקודת ההתחלה</h3>
+        <p>המשתמש נכנס לאתר WhatsArch (באינטרנט, על Railway). הוא רואה את מסך הניהול עם אופציית העלאה לענן.</p>
+        <p>במחשב, האתר מנסה לגלות ברקע אם יש Agent מותקן:</p>
+        <div class="tech-detail">
+            // בכל טעינת דף<br>
+            fetch('http://localhost:11470/status')<br>
+            &nbsp;&nbsp;.then(r => r.json())<br>
+            &nbsp;&nbsp;.then(d => agentAvailable = true)<br>
+            &nbsp;&nbsp;.catch(() => agentAvailable = false)
+        </div>
+        <p>אם אין Agent — מוצגת אופציה להתקנה.<br>בטלפון — רק ענן (Agent לא רלוונטי).</p>
+        <div class="architecture-note">
+            <strong>ארכיטקטורה:</strong> הממשק תמיד באתר. ה-Agent רץ על המחשב של המשתמש ברקע — כמו Spotify או Discord.
+        </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step-explain" data-step="1">
+        <h3>שלב 1 — Toggle מקומי / ענן</h3>
+        <p>כשה-Agent מזוהה, מופיע Toggle בראש מסך הניהול. המשתמש בוחר את מצב העבודה.</p>
+        <p><strong>מקומי:</strong> הכל רץ על המחשב. קבצים לא עוזבים את הדיסק. בלי הגבלת גודל.</p>
+        <p><strong>ענן:</strong> מעלים ZIP לשרת. עיבוד ב-Railway. API חיצוני לתמלול ו-AI.</p>
+        <div class="tech-detail">
+            // Agent מזוהה?<br>
+            if (agentAvailable) {<br>
+            &nbsp;&nbsp;showModeToggle(); // מציג toggle<br>
+            } else {<br>
+            &nbsp;&nbsp;showCloudOnly(); // רק ענן<br>
+            }
+        </div>
+        <div class="architecture-note">
+            <strong>בטלפון:</strong> ה-Toggle לא מופיע. תמיד ענן. אין דרך להריץ Agent על טלפון.
+        </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step-explain" data-step="2">
+        <h3>שלב 2 — לחיצה על "התקן Agent"</h3>
+        <p>אם ה-Agent לא מותקן, המשתמש לוחץ על כפתור ההתקנה. יורד קובץ EXE קטן.</p>
+        <p>ה-EXE מריץ installer שמתקין:</p>
+        <p><strong>1.</strong> Python (אם אין)<br>
+        <strong>2.</strong> ffmpeg (חילוץ אודיו/וידאו)<br>
+        <strong>3.</strong> Ollama (אופציונלי — AI מקומי)<br>
+        <strong>4.</strong> Dependencies (faster-whisper, Flask...)<br>
+        <strong>5.</strong> מוריד מודל Whisper (~500MB)</p>
+        <div class="tech-detail">
+            // ה-installer הוא Flask app זמני<br>
+            // נפתח בדפדפן של המשתמש<br>
+            // localhost:11471 (פורט זמני)<br>
+            // מראה UI יפה עם סטטוס לכל שלב
+        </div>
+        <div class="architecture-note">
+            <strong>אחרי התקנה:</strong> ה-Agent נרשם כשירות Windows ועולה אוטומטית עם הפעלת המחשב. המשתמש לא צריך לעשות שום דבר.
+        </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step-explain" data-step="3">
+        <h3>שלב 3 — Agent רץ ברקע</h3>
+        <p>ה-Agent עולה ב-<code>localhost:11470</code> כשירות רקע שקט. המשתמש לא רואה כלום — בדיוק כמו Spotify שרץ ברקע.</p>
+        <p>האתר מזהה את ה-Agent ומציג את ה-Toggle.</p>
+        <div class="tech-detail">
+            # Windows Task Scheduler<br>
+            # מריץ את agent.py בכל התחברות<br>
+            schtasks /create /tn "WhatsArch Agent"<br>
+            &nbsp;&nbsp;/tr "pythonw agent.py"<br>
+            &nbsp;&nbsp;/sc onlogon /rl highest
+        </div>
+        <p>ה-Agent חושף API endpoints שהאתר קורא להם ישירות מהדפדפן (CORS מוגדר).</p>
+        <div class="architecture-note">
+            <strong>שקיפות:</strong> האתר שולח בקשות ל-<code>localhost:11470</code> כשצריך עיבוד מקומי, ול-Railway כשצריך ענן. המשתמש לא מודע לזה.
+        </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step-explain" data-step="4">
+        <h3>שלב 4 — בחירת תיקיית צ'אט</h3>
+        <p>המשתמש לוחץ "פתח תיקיית צ'אט" באתר. נפתח חלון בחירת תיקייה של Windows (native dialog).</p>
+        <p>הוא בוחר את התיקייה שייצא מוואטסאפ.</p>
+        <div class="tech-detail">
+            // האתר שולח בקשה ל-Agent:<br>
+            POST localhost:11470/browse/folder<br>
+            <br>
+            // Agent פותח native file picker:<br>
+            tkinter.filedialog.askdirectory()<br>
+            <br>
+            // מחזיר:<br>
+            { "path": "C:\\Users\\me\\WhatsApp" }<br>
+            <br>
+            // Agent יוצר symlink (לא מעתיק!):<br>
+            POST localhost:11470/upload/local<br>
+            { "path": "C:\\Users\\me\\WhatsApp" }
+        </div>
+        <div class="architecture-note">
+            <strong>Symlink:</strong> במקום להעתיק GB של מדיה, ה-Agent יוצר קיצור דרך לתיקייה המקורית. אפס כפילויות.
+        </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step-explain" data-step="5">
+        <h3>שלב 5 — עיבוד מקומי</h3>
+        <p>הצ'אט מופיע בניהול עם תג "מקומי". המשתמש לוחץ על כפתורי העיבוד.</p>
+        <p>כל העיבוד רץ על המחשב דרך ה-Agent:</p>
+        <p><strong>תמלול:</strong> faster-whisper (מקומי, חינם)<br>
+        <strong>תמונות:</strong> Ollama vision או API (לבחירה)<br>
+        <strong>אינדוקס:</strong> SQLite FTS5 מקומי<br>
+        <strong>Embeddings:</strong> multilingual-e5-large מקומי</p>
+        <div class="tech-detail">
+            // האתר מזהה שזה צ'אט מקומי:<br>
+            if (agentChats.has(chatName)) {<br>
+            &nbsp;&nbsp;base = 'http://localhost:11470';<br>
+            } else {<br>
+            &nbsp;&nbsp;base = ''; // Railway<br>
+            }<br>
+            <br>
+            // כל הקריאות הולכות ל-Agent:<br>
+            POST ${base}/api/process/start<br>
+            GET  ${base}/api/process/status
+        </div>
+        <div class="architecture-note">
+            <strong>ניתוב חכם:</strong> האתר יודע אילו צ'אטים מקומיים ואילו בענן, ומנתב אוטומטית לשרת הנכון.
+        </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step-explain" data-step="6">
+        <h3>שלב 6 — חיפוש ושימוש</h3>
+        <p>אחרי העיבוד — הצ'אט מוכן. אפשר לחפש, לשאול AI, לצפות בגלריה, אנליטיקס — הכל עובד.</p>
+        <p>כל הנתונים נשארים על המחשב. שום דבר לא נשלח לענן.</p>
+        <div class="tech-detail">
+            // חיפוש בצ'אט מקומי:<br>
+            GET localhost:11470/api/search?<br>
+            &nbsp;&nbsp;chat=MyChat&q=hello<br>
+            <br>
+            // AI chat מקומי (Ollama):<br>
+            POST localhost:11470/api/ai/chat/stream<br>
+            &nbsp;&nbsp;{ chat: "MyChat", question: "..." }
+        </div>
+        <div class="architecture-note">
+            <strong>פרטיות מלאה:</strong> במצב מקומי + Ollama, אפס נתונים יוצאים מהמחשב. חיפוש, AI, הכל local.
+        </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step-explain" data-step="7">
+        <h3>שלב 7 — מצב היברידי</h3>
+        <p>המשתמש יכול לעבוד בשני המצבים במקביל!</p>
+        <p>צ'אטים מקומיים + צ'אטים בענן — באותו ממשק. עם תגיות ברורות מי איפה.</p>
+        <p><strong>דוגמה:</strong><br>
+        "אמא" — <span style="color:#4db6ac;">מקומי</span> (עיבוד על המחשב)<br>
+        "קבוצת עבודה" — <span style="color:#818cf8;">ענן</span> (הועלה ZIP ל-Railway)</p>
+        <div class="architecture-note">
+            <strong>סיכום הארכיטקטורה:</strong><br>
+            <span style="color:#fff;">האתר</span> = ממשק (UI בלבד)<br>
+            <span style="color:#4db6ac;">Agent</span> = מנוע מקומי (ברקע)<br>
+            <span style="color:#818cf8;">Railway</span> = מנוע ענן<br><br>
+            האתר מנתב בקשות למנוע הנכון לפי מיקום הצ'אט.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MAIN CONTENT AREA ==================== -->
+<div class="main-content">
+
+    <!-- SCREEN 0: Management tab - no agent (current state) -->
+    <div class="screen active" id="screen0">
+        <div class="top-nav">
+            <div class="nav-tab"><i class="fas fa-search"></i> חיפוש</div>
+            <div class="nav-tab active"><i class="fas fa-cogs"></i> ניהול</div>
+            <div class="nav-tab"><i class="fas fa-sliders-h"></i> הגדרות</div>
+            <div class="nav-tab"><i class="fas fa-images"></i> גלריה</div>
+        </div>
+
+        <div class="card card-dashed" style="margin: 24px; text-align: center;">
+            <div style="font-size: 2.2em; margin-bottom: 10px;"><i class="fas fa-cloud-upload-alt"></i></div>
+            <h3 style="margin-bottom: 6px;">העלאה לענן</h3>
+            <p style="font-size: 0.82em; color: var(--text-secondary); margin-bottom: 20px;">העלה קובץ ZIP (עד 100MB) או הדבק קישור לקבצים גדולים</p>
+            <div class="upload-options">
+                <div class="upload-option">
+                    <div class="opt-icon"><i class="fas fa-link"></i></div>
+                    <div class="opt-title">הדבק קישור</div>
+                    <div class="opt-desc">Google Drive / Dropbox / OneDrive</div>
+                    <input type="text" placeholder="קישור Google Drive / Dropbox / OneDrive" dir="ltr" style="width:100%; padding:8px; font-size:0.82em; background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:8px; color:var(--text-primary); margin-bottom:8px;">
+                    <button class="btn btn-secondary btn-sm" style="width:100%;"><i class="fas fa-download"></i> הורד ועבד</button>
+                </div>
+                <div class="upload-option">
+                    <div class="opt-icon"><i class="fas fa-folder-open"></i></div>
+                    <div class="opt-title">בחר קובץ ZIP</div>
+                    <div class="opt-desc">ZIP &bull; max 200MB</div>
+                    <button class="btn btn-primary btn-sm" style="width:100%;"><i class="fas fa-file-archive"></i> בחר קובץ ZIP</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent not detected card -->
+        <div class="card" style="margin: 0 24px; border: 2px dashed #4db6ac; text-align: center;">
+            <div style="font-size: 2em; margin-bottom: 8px; color: #4db6ac; opacity:0.5;"><i class="fas fa-desktop"></i></div>
+            <h3 style="font-size: 1em; margin-bottom: 6px;">עיבוד מקומי</h3>
+            <p style="font-size: 0.82em; color: var(--text-secondary); margin-bottom: 16px;">רוצה לעבד צ'אטים על המחשב שלך? ללא הגבלת גודל, פרטיות מלאה.</p>
+            <button class="btn btn-teal" onclick="goToStep(2)"><i class="fas fa-download"></i> התקן כלים מקומיים</button>
+            <p style="font-size: 0.72em; color: var(--text-muted); margin-top: 8px;">התקנה חד-פעמית. ~1GB. דורש Windows 10+</p>
+        </div>
+
+        <div style="text-align:center; padding: 40px; color: var(--text-muted); font-size: 0.88em;">
+            לא נמצאו שיחות
+        </div>
+
+        <div style="text-align: center; margin-top: 12px;">
+            <button class="btn btn-primary btn-lg" onclick="goToStep(1)">
+                <i class="fas fa-arrow-left"></i> הבא: ה-Agent מותקן, מה רואים?
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 1: Management tab WITH agent detected (toggle visible) -->
+    <div class="screen" id="screen1">
+        <div class="top-nav">
+            <div class="nav-tab"><i class="fas fa-search"></i> חיפוש</div>
+            <div class="nav-tab active"><i class="fas fa-cogs"></i> ניהול</div>
+            <div class="nav-tab"><i class="fas fa-sliders-h"></i> הגדרות</div>
+            <div class="nav-tab"><i class="fas fa-images"></i> גלריה</div>
+        </div>
+
+        <div class="card card-dashed" style="margin: 24px;">
+            <!-- Mode Toggle -->
+            <div class="mode-toggle" id="modeToggle">
+                <button class="mode-toggle-btn" onclick="setMode('cloud')" id="modeCloud">
+                    <i class="fas fa-cloud"></i> ענן
+                </button>
+                <button class="mode-toggle-btn active" onclick="setMode('local')" id="modeLocal">
+                    <i class="fas fa-desktop"></i> מקומי
+                </button>
+            </div>
+
+            <!-- Cloud content (hidden by default) -->
+            <div id="cloudContent" style="display:none;">
+                <div class="upload-zone">
+                    <div class="icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <h3>העלאה לענן</h3>
+                    <p>העלה קובץ ZIP (עד 200MB) או הדבק קישור</p>
+                </div>
+                <div class="upload-options">
+                    <div class="upload-option">
+                        <div class="opt-icon"><i class="fas fa-link"></i></div>
+                        <div class="opt-title">הדבק קישור</div>
+                        <div class="opt-desc">Google Drive / Dropbox / OneDrive</div>
+                        <input type="text" placeholder="קישור..." dir="ltr" style="width:100%; padding:8px; font-size:0.82em; background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:8px; color:var(--text-primary); margin-bottom:8px;">
+                        <button class="btn btn-secondary btn-sm" style="width:100%;"><i class="fas fa-download"></i> הורד ועבד</button>
+                    </div>
+                    <div class="upload-option">
+                        <div class="opt-icon"><i class="fas fa-file-archive"></i></div>
+                        <div class="opt-title">בחר קובץ ZIP</div>
+                        <div class="opt-desc">ZIP &bull; max 200MB</div>
+                        <button class="btn btn-primary btn-sm" style="width:100%;"><i class="fas fa-file-archive"></i> בחר קובץ ZIP</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local content (shown by default) -->
+            <div id="localContent">
+                <div class="upload-zone">
+                    <div class="icon" style="color: #4db6ac;"><i class="fas fa-desktop"></i></div>
+                    <h3>עיבוד מקומי</h3>
+                    <p>בחר תיקיית צ'אט מהמחשב. ללא הגבלת גודל — הכל רץ אצלך.</p>
+                </div>
+                <div style="text-align:center; max-width:380px; margin:20px auto 0;">
+                    <button class="btn btn-teal btn-lg" onclick="goToStep(4)" style="width:100%;">
+                        <i class="fas fa-folder-open"></i> פתח תיקיית צ'אט
+                    </button>
+                    <p style="font-size:0.75em; color:var(--text-muted); margin-top:8px;">
+                        בחר את התיקייה שייצאת מוואטסאפ או טלגרם
+                    </p>
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                        <button class="btn btn-secondary btn-sm" onclick="goToStep(4)" style="width:100%;">
+                            <i class="fas fa-file-archive"></i> או בחר קובץ ZIP
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Agent status badge -->
+                <div style="text-align:center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                    <span style="font-size: 0.78em; color: #4db6ac;">
+                        <i class="fas fa-circle" style="font-size:0.5em; vertical-align:middle;"></i>
+                        Agent פעיל &bull; faster-whisper &bull; Ollama
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:center; padding: 20px; color: var(--text-muted); font-size: 0.88em;">
+            לא נמצאו שיחות
+        </div>
+
+        <div style="text-align: center; margin-top: 12px;">
+            <button class="btn btn-ghost" onclick="goToStep(0)" style="margin-left:8px;">
+                <i class="fas fa-arrow-right"></i> הקודם
+            </button>
+            <button class="btn btn-primary btn-lg" onclick="goToStep(2)">
+                <i class="fas fa-arrow-left"></i> הבא: תהליך ההתקנה
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: Installation flow -->
+    <div class="screen" id="screen2">
+        <div style="max-width: 600px; margin: 0 auto; padding: 32px 24px;">
+            <div style="text-align:center; margin-bottom: 32px;">
+                <div style="font-size: 2.5em; margin-bottom: 12px;">
+                    <i class="fas fa-tools" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                </div>
+                <h2 style="margin-bottom: 8px;">התקנת כלים מקומיים</h2>
+                <p style="color: var(--text-secondary); font-size: 0.88em;">התקנה חד-פעמית. אחרי זה הכל עובד אוטומטית.</p>
+            </div>
+
+            <div id="installSteps">
+                <div class="install-step">
+                    <div class="step-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;"><i class="fas fa-code"></i></div>
+                    <div class="step-info">
+                        <h4>Python 3.11</h4>
+                        <p>שפת התכנות שמריצה את העיבוד</p>
+                    </div>
+                    <span class="step-status status-done"><i class="fas fa-check"></i> מותקן</span>
+                </div>
+
+                <div class="install-step">
+                    <div class="step-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;"><i class="fas fa-film"></i></div>
+                    <div class="step-info">
+                        <h4>ffmpeg</h4>
+                        <p>חילוץ אודיו מוידאו</p>
+                    </div>
+                    <span class="step-status status-running"><i class="fas fa-spinner spinner"></i> מתקין...</span>
+                </div>
+
+                <div class="install-step">
+                    <div class="step-icon" style="background: rgba(13, 148, 136, 0.15); color: #0D9488;"><i class="fas fa-brain"></i></div>
+                    <div class="step-info">
+                        <h4>Ollama</h4>
+                        <p>AI מקומי — Vision + RAG (אופציונלי)</p>
+                    </div>
+                    <span class="step-status status-pending">ממתין</span>
+                </div>
+
+                <div class="install-step">
+                    <div class="step-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;"><i class="fas fa-microphone"></i></div>
+                    <div class="step-info">
+                        <h4>Whisper Model</h4>
+                        <p>תמלול הודעות קוליות (~500MB)</p>
+                    </div>
+                    <span class="step-status status-pending">ממתין</span>
+                </div>
+
+                <div class="install-step">
+                    <div class="step-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;"><i class="fas fa-cube"></i></div>
+                    <div class="step-info">
+                        <h4>WhatsArch Agent</h4>
+                        <p>שירות רקע שמבצע את העיבוד</p>
+                    </div>
+                    <span class="step-status status-pending">ממתין</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.82em; color:var(--text-muted); margin-bottom: 6px;">
+                    <span>מתקין ffmpeg...</span>
+                    <span>35%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="fill" style="width: 35%;"></div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 32px;">
+                <button class="btn btn-ghost" onclick="goToStep(1)" style="margin-left:8px;">
+                    <i class="fas fa-arrow-right"></i> הקודם
+                </button>
+                <button class="btn btn-primary btn-lg" onclick="goToStep(3)">
+                    <i class="fas fa-arrow-left"></i> הבא: התקנה הסתיימה
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: Agent running in background -->
+    <div class="screen" id="screen3">
+        <div style="max-width: 600px; margin: 0 auto; padding: 32px 24px; text-align:center;">
+            <div style="font-size: 3em; margin-bottom: 16px; color: #4db6ac;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 style="margin-bottom: 8px;">ההתקנה הושלמה!</h2>
+            <p style="color: var(--text-secondary); font-size: 0.95em; margin-bottom: 32px;">
+                WhatsArch Agent רץ ברקע. חזור לאתר — תראה את אופציית העיבוד המקומי.
+            </p>
+
+            <div style="background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; text-align: right; border: 1px solid var(--border-color);">
+                <h3 style="font-size: 0.95em; margin-bottom: 16px;"><i class="fas fa-info-circle" style="color: #818cf8;"></i> מה קרה עכשיו?</h3>
+
+                <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(13,148,136,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#4db6ac; font-size:0.82em;">1</div>
+                    <div>
+                        <div style="font-size:0.88em; font-weight:600;">Agent רץ כשירות רקע</div>
+                        <div style="font-size:0.78em; color:var(--text-muted);">עולה אוטומטית עם הפעלת Windows. לא צריך לעשות כלום.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(13,148,136,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#4db6ac; font-size:0.82em;">2</div>
+                    <div>
+                        <div style="font-size:0.88em; font-weight:600;">האתר מזהה אוטומטית</div>
+                        <div style="font-size:0.78em; color:var(--text-muted);">בפעם הבאה שנכנסים לאתר, כפתור "עיבוד מקומי" יופיע.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(13,148,136,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#4db6ac; font-size:0.82em;">3</div>
+                    <div>
+                        <div style="font-size:0.88em; font-weight:600;">הקבצים נשארים אצלך</div>
+                        <div style="font-size:0.78em; color:var(--text-muted);">שום דבר לא מועלה לענן. חיפוש, AI, תמלול — הכל מקומי.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulated system tray -->
+            <div style="margin-top: 24px; background: #1a1a2e; border-radius: 8px; padding: 12px 16px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--border-color);">
+                <img src="https://via.placeholder.com/20/0D9488/ffffff?text=W" style="width:20px; height:20px; border-radius:4px;">
+                <span style="font-size: 0.82em; color: var(--text-secondary);">WhatsArch Agent</span>
+                <span style="font-size: 0.7em; color: #4db6ac;"><i class="fas fa-circle" style="font-size:0.5em;"></i> פעיל</span>
+            </div>
+
+            <div style="text-align: center; margin-top: 32px;">
+                <button class="btn btn-ghost" onclick="goToStep(2)" style="margin-left:8px;">
+                    <i class="fas fa-arrow-right"></i> הקודם
+                </button>
+                <button class="btn btn-primary btn-lg" onclick="goToStep(4)">
+                    <i class="fas fa-arrow-left"></i> הבא: בחירת תיקייה
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 4: Folder picker simulation -->
+    <div class="screen" id="screen4">
+        <div class="top-nav">
+            <div class="nav-tab"><i class="fas fa-search"></i> חיפוש</div>
+            <div class="nav-tab active"><i class="fas fa-cogs"></i> ניהול</div>
+            <div class="nav-tab"><i class="fas fa-sliders-h"></i> הגדרות</div>
+            <div class="nav-tab"><i class="fas fa-images"></i> גלריה</div>
+        </div>
+
+        <div class="card card-dashed" style="margin: 24px;">
+            <div class="mode-toggle">
+                <button class="mode-toggle-btn"><i class="fas fa-cloud"></i> ענן</button>
+                <button class="mode-toggle-btn active"><i class="fas fa-desktop"></i> מקומי</button>
+            </div>
+            <div class="upload-zone">
+                <div class="icon" style="color: #4db6ac;"><i class="fas fa-desktop"></i></div>
+                <h3>עיבוד מקומי</h3>
+                <p>בחר תיקיית צ'אט מהמחשב</p>
+            </div>
+            <div style="text-align:center; margin-top:16px;">
+                <button class="btn btn-teal btn-lg" onclick="showFolderPicker()" style="width:320px;">
+                    <i class="fas fa-folder-open"></i> פתח תיקיית צ'אט
+                </button>
+            </div>
+            <div style="text-align:center; margin-top: 16px;">
+                <span style="font-size: 0.78em; color: #4db6ac;">
+                    <i class="fas fa-circle" style="font-size:0.5em; vertical-align:middle;"></i>
+                    Agent פעיל
+                </span>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 12px;">
+            <button class="btn btn-ghost" onclick="goToStep(3)" style="margin-left:8px;">
+                <i class="fas fa-arrow-right"></i> הקודם
+            </button>
+            <button class="btn btn-primary btn-lg" onclick="goToStep(5)">
+                <i class="fas fa-arrow-left"></i> הבא: תוצאת בחירה
+            </button>
+        </div>
+    </div>
+
+    <!-- Folder picker overlay -->
+    <div class="folder-picker-overlay" id="folderPicker">
+        <div class="folder-picker-dialog">
+            <h3><i class="fas fa-folder-open" style="color: #f59e0b;"></i> בחירת תיקייה</h3>
+            <p>זה חלון Windows אמיתי (native dialog) — כאן זו סימולציה</p>
+            <div class="folder-tree">
+                <div>&nbsp;&nbsp;<i class="fas fa-laptop" style="color:#818cf8;"></i> This PC</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-folder" style="color:#f59e0b;"></i> Documents</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-folder" style="color:#f59e0b;"></i> Downloads</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-folder" style="color:#f59e0b;"></i> WhatsApp Export</div>
+                <div class="selected">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-folder-open" style="color:#4db6ac;"></i> WhatsApp Chat - אמא</div>
+                <div style="padding-right: 60px; color: var(--text-muted);">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_chat.txt</div>
+                <div style="padding-right: 60px; color: var(--text-muted);">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IMG-20240115.jpg</div>
+                <div style="padding-right: 60px; color: var(--text-muted);">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AUD-20240120.opus</div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:center;">
+                <button class="btn btn-ghost" onclick="hideFolderPicker()">ביטול</button>
+                <button class="btn btn-primary" onclick="hideFolderPicker(); goToStep(5);">
+                    <i class="fas fa-check"></i> בחר תיקייה זו
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 5: Chat loaded + processing -->
+    <div class="screen" id="screen5">
+        <div class="top-nav">
+            <div class="nav-tab"><i class="fas fa-search"></i> חיפוש</div>
+            <div class="nav-tab active"><i class="fas fa-cogs"></i> ניהול</div>
+            <div class="nav-tab"><i class="fas fa-sliders-h"></i> הגדרות</div>
+            <div class="nav-tab"><i class="fas fa-images"></i> גלריה</div>
+        </div>
+
+        <div class="card card-dashed" style="margin: 24px;">
+            <div class="mode-toggle">
+                <button class="mode-toggle-btn"><i class="fas fa-cloud"></i> ענן</button>
+                <button class="mode-toggle-btn active"><i class="fas fa-desktop"></i> מקומי</button>
+            </div>
+            <div class="upload-zone">
+                <div class="icon" style="color: #4db6ac;"><i class="fas fa-desktop"></i></div>
+                <h3>עיבוד מקומי</h3>
+            </div>
+            <div style="text-align:center; margin-top:8px;">
+                <button class="btn btn-teal" style="width:320px;"><i class="fas fa-folder-open"></i> פתח תיקיית צ'אט</button>
+            </div>
+        </div>
+
+        <!-- Loaded chat card -->
+        <div class="chat-card">
+            <div class="chat-card-header">
+                <div class="chat-card-name">
+                    <span class="badge-local"><i class="fas fa-desktop"></i> מקומי</span>
+                    <i class="fab fa-whatsapp" style="color: #25d366;"></i>
+                    WhatsApp Chat - אמא
+                </div>
+                <span class="badge-ready" style="color: var(--accent-amber);">
+                    <i class="fas fa-exclamation-triangle"></i> לא מעובד
+                </span>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <div class="proc-row">
+                    <div class="proc-icon"><i class="fas fa-microphone"></i></div>
+                    <div class="proc-label">תמלול הודעות קוליות</div>
+                    <div class="proc-count">0 / 47 קבצים</div>
+                </div>
+                <div class="proc-row">
+                    <div class="proc-icon"><i class="fas fa-image"></i></div>
+                    <div class="proc-label">תיאור תמונות</div>
+                    <div class="proc-count">0 / 156 קבצים</div>
+                </div>
+                <div class="proc-row">
+                    <div class="proc-icon"><i class="fas fa-video"></i></div>
+                    <div class="proc-label">תיאור וידאו</div>
+                    <div class="proc-count">0 / 23 קבצים</div>
+                </div>
+                <div class="proc-row">
+                    <div class="proc-icon"><i class="fas fa-database"></i></div>
+                    <div class="proc-label">אינדקס חיפוש</div>
+                    <div class="proc-count">לא נבנה</div>
+                </div>
+            </div>
+
+            <div class="action-btns">
+                <button class="btn btn-teal btn-sm" onclick="goToStep(6)"><i class="fas fa-microphone"></i> תמלל</button>
+                <button class="btn btn-secondary btn-sm"><i class="fas fa-image"></i> תאר תמונות</button>
+                <button class="btn btn-secondary btn-sm"><i class="fas fa-video"></i> תאר וידאו</button>
+                <button class="btn btn-secondary btn-sm"><i class="fas fa-database"></i> בנה אינדקס</button>
+                <button class="btn btn-primary btn-sm" onclick="goToStep(6)"><i class="fas fa-play"></i> עבד הכל</button>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <button class="btn btn-ghost" onclick="goToStep(4)" style="margin-left:8px;">
+                <i class="fas fa-arrow-right"></i> הקודם
+            </button>
+            <button class="btn btn-primary btn-lg" onclick="goToStep(6)">
+                <i class="fas fa-arrow-left"></i> הבא: עיבוד פעיל
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 6: Processing in progress + done -->
+    <div class="screen" id="screen6">
+        <div class="top-nav">
+            <div class="nav-tab"><i class="fas fa-search"></i> חיפוש</div>
+            <div class="nav-tab active"><i class="fas fa-cogs"></i> ניהול</div>
+            <div class="nav-tab"><i class="fas fa-sliders-h"></i> הגדרות</div>
+            <div class="nav-tab"><i class="fas fa-images"></i> גלריה</div>
+        </div>
+
+        <div class="chat-card" style="margin: 24px;">
+            <div class="chat-card-header">
+                <div class="chat-card-name">
+                    <span class="badge-local"><i class="fas fa-desktop"></i> מקומי</span>
+                    <i class="fab fa-whatsapp" style="color: #25d366;"></i>
+                    WhatsApp Chat - אמא
+                </div>
+                <span class="badge-ready">
+                    <i class="fas fa-check-circle"></i> מוכן (12,450 הודעות)
+                </span>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <div class="proc-row">
+                    <div class="proc-icon" style="color:#4db6ac;"><i class="fas fa-check"></i></div>
+                    <div class="proc-label">תמלול הודעות קוליות</div>
+                    <div class="proc-count" style="color:#4db6ac;">47 / 47</div>
+                    <div class="proc-bar">
+                        <div class="progress-bar"><div class="fill" style="width:100%;"></div></div>
+                    </div>
+                </div>
+                <div class="proc-row">
+                    <div class="proc-icon" style="color:#4db6ac;"><i class="fas fa-check"></i></div>
+                    <div class="proc-label">תיאור תמונות</div>
+                    <div class="proc-count" style="color:#4db6ac;">156 / 156</div>
+                    <div class="proc-bar">
+                        <div class="progress-bar"><div class="fill" style="width:100%;"></div></div>
+                    </div>
+                </div>
+                <div class="proc-row">
+                    <div class="proc-icon" style="color:#4db6ac;"><i class="fas fa-check"></i></div>
+                    <div class="proc-label">תיאור וידאו</div>
+                    <div class="proc-count" style="color:#4db6ac;">23 / 23</div>
+                    <div class="proc-bar">
+                        <div class="progress-bar"><div class="fill" style="width:100%;"></div></div>
+                    </div>
+                </div>
+                <div class="proc-row">
+                    <div class="proc-icon" style="color:#4db6ac;"><i class="fas fa-check"></i></div>
+                    <div class="proc-label">אינדקס חיפוש</div>
+                    <div class="proc-count" style="color:#4db6ac;">12,450 הודעות</div>
+                    <div class="proc-bar">
+                        <div class="progress-bar"><div class="fill" style="width:100%;"></div></div>
+                    </div>
+                </div>
+                <div class="proc-row">
+                    <div class="proc-icon" style="color:#4db6ac;"><i class="fas fa-check"></i></div>
+                    <div class="proc-label">Embeddings</div>
+                    <div class="proc-count" style="color:#4db6ac;">324 chunks</div>
+                    <div class="proc-bar">
+                        <div class="progress-bar"><div class="fill" style="width:100%;"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align:center; padding: 16px; background: rgba(13,148,136,0.08); border-radius: var(--radius); border: 1px solid rgba(13,148,136,0.2);">
+                <i class="fas fa-check-circle" style="color:#4db6ac; font-size:1.5em; margin-bottom:8px;"></i>
+                <div style="font-size:0.95em; font-weight:600; margin-bottom:4px;">הצ'אט מוכן לחיפוש!</div>
+                <div style="font-size:0.82em; color:var(--text-secondary);">12,450 הודעות &bull; 47 קוליות &bull; 156 תמונות &bull; 23 וידאו</div>
+                <button class="btn btn-primary" style="margin-top:12px;" onclick="goToStep(7)">
+                    <i class="fas fa-search"></i> עבור לחיפוש
+                </button>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <button class="btn btn-ghost" onclick="goToStep(5)" style="margin-left:8px;">
+                <i class="fas fa-arrow-right"></i> הקודם
+            </button>
+            <button class="btn btn-primary btn-lg" onclick="goToStep(7)">
+                <i class="fas fa-arrow-left"></i> הבא: מצב היברידי
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 7: Hybrid mode - local + cloud chats together -->
+    <div class="screen" id="screen7">
+        <div class="top-nav">
+            <div class="nav-tab"><i class="fas fa-search"></i> חיפוש</div>
+            <div class="nav-tab active"><i class="fas fa-cogs"></i> ניהול</div>
+            <div class="nav-tab"><i class="fas fa-sliders-h"></i> הגדרות</div>
+            <div class="nav-tab"><i class="fas fa-images"></i> גלריה</div>
+        </div>
+
+        <div class="card card-dashed" style="margin: 24px;">
+            <div class="mode-toggle">
+                <button class="mode-toggle-btn" onclick="setMode7('cloud')" id="mode7Cloud">
+                    <i class="fas fa-cloud"></i> ענן
+                </button>
+                <button class="mode-toggle-btn" onclick="setMode7('local')" id="mode7Local">
+                    <i class="fas fa-desktop"></i> מקומי
+                </button>
+                <button class="mode-toggle-btn active" onclick="setMode7('both')" id="mode7Both">
+                    <i class="fas fa-layer-group"></i> הכל
+                </button>
+            </div>
+            <div style="text-align:center;">
+                <button class="btn btn-teal btn-sm"><i class="fas fa-folder-open"></i> פתח תיקייה מקומית</button>
+                <button class="btn btn-secondary btn-sm" style="margin-right:8px;"><i class="fas fa-cloud-upload-alt"></i> העלה ZIP לענן</button>
+            </div>
+        </div>
+
+        <!-- Local chat -->
+        <div class="chat-card" style="margin: 0 24px 12px;">
+            <div class="chat-card-header">
+                <div class="chat-card-name">
+                    <span class="badge-local"><i class="fas fa-desktop"></i> מקומי</span>
+                    <i class="fab fa-whatsapp" style="color: #25d366;"></i>
+                    WhatsApp Chat - אמא
+                </div>
+                <span class="badge-ready">
+                    <i class="fas fa-check-circle"></i> 12,450 הודעות
+                </span>
+            </div>
+            <div style="font-size:0.78em; color:var(--text-muted);">
+                <i class="fas fa-hdd"></i> מאוחסן על המחשב &bull; עיבוד מקומי &bull; Whisper + Ollama
+            </div>
+        </div>
+
+        <!-- Cloud chat -->
+        <div class="chat-card" style="margin: 0 24px 12px;">
+            <div class="chat-card-header">
+                <div class="chat-card-name">
+                    <span style="font-size:0.7em;background:#818cf8;color:#fff;padding:2px 10px;border-radius:12px;"><i class="fas fa-cloud"></i> ענן</span>
+                    <i class="fab fa-whatsapp" style="color: #25d366;"></i>
+                    קבוצת עבודה
+                </div>
+                <span class="badge-ready">
+                    <i class="fas fa-check-circle"></i> 8,230 הודעות
+                </span>
+            </div>
+            <div style="font-size:0.78em; color:var(--text-muted);">
+                <i class="fas fa-cloud"></i> מאוחסן ב-Railway &bull; עיבוד בענן &bull; Gemini Flash
+            </div>
+        </div>
+
+        <!-- Telegram local chat -->
+        <div class="chat-card" style="margin: 0 24px 12px;">
+            <div class="chat-card-header">
+                <div class="chat-card-name">
+                    <span class="badge-local"><i class="fas fa-desktop"></i> מקומי</span>
+                    <i class="fab fa-telegram" style="color: #229ED9;"></i>
+                    Telegram - משפחה
+                </div>
+                <span class="badge-ready">
+                    <i class="fas fa-check-circle"></i> 3,100 הודעות
+                </span>
+            </div>
+            <div style="font-size:0.78em; color:var(--text-muted);">
+                <i class="fas fa-hdd"></i> מאוחסן על המחשב &bull; עיבוד מקומי &bull; Whisper + Gemini API
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 32px; padding: 24px;">
+            <button class="btn btn-ghost" onclick="goToStep(6)" style="margin-left:8px;">
+                <i class="fas fa-arrow-right"></i> הקודם
+            </button>
+            <button class="btn btn-ghost" onclick="goToStep(0)">
+                <i class="fas fa-redo"></i> חזור להתחלה
+            </button>
+        </div>
+
+        <!-- Summary -->
+        <div class="card" style="margin: 0 24px 32px; background: linear-gradient(135deg, rgba(13,148,136,0.1), rgba(99,102,241,0.1)); border-color: rgba(13,148,136,0.3);">
+            <h3 style="font-size:1em; margin-bottom:16px; text-align:center;">סיכום הארכיטקטורה</h3>
+            <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; text-align:center;">
+                <div style="flex:1; min-width:150px;">
+                    <div style="font-size:1.5em; margin-bottom:6px;"><i class="fas fa-globe" style="color:#818cf8;"></i></div>
+                    <div style="font-size:0.88em; font-weight:600;">האתר</div>
+                    <div style="font-size:0.75em; color:var(--text-muted);">ממשק בלבד<br>Railway</div>
+                </div>
+                <div style="font-size:1.5em; color:var(--text-muted); align-self:center;"><i class="fas fa-arrows-alt-h"></i></div>
+                <div style="flex:1; min-width:150px;">
+                    <div style="font-size:1.5em; margin-bottom:6px;"><i class="fas fa-desktop" style="color:#4db6ac;"></i></div>
+                    <div style="font-size:0.88em; font-weight:600;">Agent</div>
+                    <div style="font-size:0.75em; color:var(--text-muted);">מנוע מקומי<br>המחשב שלך</div>
+                </div>
+                <div style="font-size:1.5em; color:var(--text-muted); align-self:center;"><i class="fas fa-arrows-alt-h"></i></div>
+                <div style="flex:1; min-width:150px;">
+                    <div style="font-size:1.5em; margin-bottom:6px;"><i class="fas fa-cloud" style="color:#818cf8;"></i></div>
+                    <div style="font-size:0.88em; font-weight:600;">Railway</div>
+                    <div style="font-size:0.75em; color:var(--text-muted);">מנוע ענן<br>API providers</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- end main-content -->
+
+<script>
+    let currentStep = 0;
+    const totalSteps = 8;
+
+    function goToStep(step) {
+        // Hide all screens
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.step-explain').forEach(s => s.classList.remove('active'));
+
+        // Show target
+        document.getElementById('screen' + step).classList.add('active');
+        document.querySelector(`.step-explain[data-step="${step}"]`).classList.add('active');
+
+        // Update dots
+        document.querySelectorAll('.step-dot').forEach((dot, i) => {
+            dot.classList.remove('active', 'done');
+            if (i === step) dot.classList.add('active');
+            else if (i < step) dot.classList.add('done');
+        });
+
+        currentStep = step;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setMode(mode) {
+        document.getElementById('modeCloud').classList.toggle('active', mode === 'cloud');
+        document.getElementById('modeLocal').classList.toggle('active', mode === 'local');
+        document.getElementById('cloudContent').style.display = mode === 'cloud' ? 'block' : 'none';
+        document.getElementById('localContent').style.display = mode === 'local' ? 'block' : 'none';
+    }
+
+    function setMode7(mode) {
+        document.getElementById('mode7Cloud').classList.toggle('active', mode === 'cloud');
+        document.getElementById('mode7Local').classList.toggle('active', mode === 'local');
+        document.getElementById('mode7Both').classList.toggle('active', mode === 'both');
+    }
+
+    function showFolderPicker() {
+        document.getElementById('folderPicker').classList.add('show');
+    }
+
+    function hideFolderPicker() {
+        document.getElementById('folderPicker').classList.remove('show');
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' && currentStep < totalSteps - 1) goToStep(currentStep + 1);
+        if (e.key === 'ArrowRight' && currentStep > 0) goToStep(currentStep - 1);
+    });
+</script>
+
+</body>
+</html>

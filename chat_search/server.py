@@ -323,6 +323,7 @@ def create_app(chats_dir: str) -> Flask:
     @app.route("/auth/callback")
     def auth_callback():
         """OAuth callback - handles both PKCE (code in query) and implicit (token in hash)."""
+        import json as _json
         code = request.args.get("code")
         if code:
             # PKCE flow: exchange code for session server-side
@@ -331,17 +332,22 @@ def create_app(chats_dir: str) -> Flask:
                 try:
                     result = sb.auth.exchange_code_for_session({"auth_code": code})
                     if result.session:
-                        # Return page that stores tokens and redirects
+                        # Safely encode tokens into JavaScript using json.dumps to prevent XSS
+                        access_token = _json.dumps(result.session.access_token)
+                        refresh_token = _json.dumps(result.session.refresh_token)
+                        user_email = _json.dumps(result.user.email)
                         return f"""<!DOCTYPE html><html><head><title>WhatsArch</title></head><body>
                         <script>
-                        localStorage.setItem('auth_token', '{result.session.access_token}');
-                        localStorage.setItem('refresh_token', '{result.session.refresh_token}');
-                        localStorage.setItem('user_email', '{result.user.email}');
+                        localStorage.setItem('auth_token', {access_token});
+                        localStorage.setItem('refresh_token', {refresh_token});
+                        localStorage.setItem('user_email', {user_email});
                         window.location.href = '/app';
                         </script></body></html>"""
                 except Exception as e:
+                    error_msg = _json.dumps(str(e))
                     return f"""<!DOCTYPE html><html><body>
-                    <p>Authentication error: {str(e)}</p>
+                    <p>Authentication error: <span id="err"></span></p>
+                    <script>document.getElementById('err').textContent = {error_msg};</script>
                     <a href="/login">Try again</a></body></html>"""
 
         # Implicit flow: token in URL hash
@@ -402,7 +408,10 @@ def create_app(chats_dir: str) -> Flask:
         date_from = request.args.get("from", "").strip()
         date_to = request.args.get("to", "").strip()
         search_type = request.args.get("type", "all").strip()
-        page = int(request.args.get("page", 1))
+        try:
+            page = int(request.args.get("page", 1))
+        except (ValueError, TypeError):
+            page = 1
 
         all_results = []
 
@@ -452,7 +461,10 @@ def create_app(chats_dir: str) -> Flask:
         date_from = request.args.get("from", "").strip()
         date_to = request.args.get("to", "").strip()
         search_type = request.args.get("type", "all").strip()
-        page = int(request.args.get("page", 1))
+        try:
+            page = int(request.args.get("page", 1))
+        except (ValueError, TypeError):
+            page = 1
 
         if not q or q == "*":
             # Browse mode: show samples from each enriched category
@@ -479,8 +491,14 @@ def create_app(chats_dir: str) -> Flask:
 
         _, db_path = get_chat_paths(chat_name)
 
-        before = int(request.args.get("before", 5))
-        after = int(request.args.get("after", 5))
+        try:
+            before = int(request.args.get("before", 5))
+        except (ValueError, TypeError):
+            before = 5
+        try:
+            after = int(request.args.get("after", 5))
+        except (ValueError, TypeError):
+            after = 5
         messages = indexer.get_context(db_path, message_id, before, after)
         return jsonify({"messages": messages, "focus_id": message_id})
 
@@ -729,7 +747,10 @@ def create_app(chats_dir: str) -> Flask:
         """List all media files for a chat with metadata."""
         chat_name = request.args.get("chat", "").strip()
         media_type_filter = request.args.get("type", "all").strip()  # all, image, video
-        page = int(request.args.get("page", 1))
+        try:
+            page = int(request.args.get("page", 1))
+        except (ValueError, TypeError):
+            page = 1
         per_page = 50
 
         if not chat_name:
@@ -866,10 +887,22 @@ def create_app(chats_dir: str) -> Flask:
 
     @app.route("/api/usage")
     def api_usage():
-        """Get usage analytics: costs, token usage, processing log."""
+        """Get usage analytics: costs, token usage, processing log.
+
+        Query params:
+            chat - single chat name or comma-separated list of chat names
+            user - filter by user email
+        """
         from . import usage_tracker
-        chat_name = request.args.get("chat", "").strip() or None
+        chat_param = request.args.get("chat", "").strip()
         user = request.args.get("user", "").strip() or None
+
+        # Support comma-separated chat names for multi-chat queries
+        chat_name = None
+        if chat_param:
+            parts = [p.strip() for p in chat_param.split(",") if p.strip()]
+            chat_name = parts if len(parts) > 1 else (parts[0] if parts else None)
+
         return jsonify(usage_tracker.get_usage_report(
             os.path.dirname(chats_dir), chat_name=chat_name, user=user
         ))
@@ -1008,6 +1041,7 @@ def create_app(chats_dir: str) -> Flask:
     # ------------------------------------------------------------------
 
     @app.route("/api/settings")
+    @require_auth
     def api_settings():
         """Get current settings including API key status and model preferences."""
         project_root = os.path.dirname(chats_dir)
@@ -1026,6 +1060,7 @@ def create_app(chats_dir: str) -> Flask:
         })
 
     @app.route("/api/settings", methods=["POST"])
+    @require_auth
     def api_settings_update():
         """Update settings and/or API keys."""
         data = request.get_json()
@@ -1242,6 +1277,7 @@ def create_app(chats_dir: str) -> Flask:
         })
 
     @app.route("/api/aliases")
+    @require_auth
     def api_aliases():
         """Get sender aliases for a chat."""
         chat_name = request.args.get("chat", "").strip()
@@ -1260,6 +1296,7 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify({"chat": chat_name, "senders": senders, "aliases": aliases})
 
     @app.route("/api/aliases", methods=["POST"])
+    @require_auth
     def api_aliases_update():
         """Update sender aliases for a chat. Applied on next index rebuild."""
         data = request.get_json()
@@ -1581,5 +1618,17 @@ def create_app(chats_dir: str) -> Flask:
             request.files["file"] = request.files["shared-file"]
             return api_upload()
         return jsonify({"error": "No file received"}), 400
+
+    # ------------------------------------------------------------------
+    # Security headers
+    # ------------------------------------------------------------------
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
     return app

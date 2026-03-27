@@ -18,8 +18,14 @@ def load_cache(cache_path: str) -> dict:
 
 def save_cache(cache_path: str, cache: dict):
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    # Filter out error entries before persisting — they should be retried
+    filtered = {
+        k: v for k, v in cache.items()
+        if not (isinstance(v, str) and v.startswith("[transcription error:"))
+        and not (isinstance(v, dict) and isinstance(v.get("text"), str) and v["text"].startswith("[transcription error:"))
+    }
     with open(cache_path, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+        json.dump(filtered, f, ensure_ascii=False, indent=2)
 
 
 # ---------------------------------------------------------------------------
