@@ -2302,6 +2302,7 @@
                 mgmtPdfExtract: 'חילוץ PDF',
                 mgmtIndex: 'עדכון חיפוש',
                 mgmtEmbeddings: 'הפעלת חיפוש חכם',
+                mgmtDeleteChat: 'מחק צ\'אט',
                 mgmtSearchEngine: 'מנוע חיפוש',
                 mgmtSmartSearch: 'חיפוש חכם (AI)',
                 mgmtIndexed: 'מאונדקס',
@@ -2535,6 +2536,7 @@
                 mgmtPdfExtract: 'PDF Extraction',
                 mgmtIndex: 'Update Search',
                 mgmtEmbeddings: 'Enable Smart Search',
+                mgmtDeleteChat: 'Delete Chat',
                 mgmtSearchEngine: 'Search Engine',
                 mgmtSmartSearch: 'Smart Search (AI)',
                 mgmtIndexed: 'Indexed',
@@ -4184,6 +4186,11 @@
                     </div>
                     <div id="${cardId}-live-status"></div>
                 </div>
+                <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;">
+                    <button class="btn btn-secondary btn-sm" style="color:var(--accent-red);border-color:var(--accent-red);font-size:0.8em;" onclick="deleteChat('${escapeHtml(chatName)}')">
+                        <i class="fas fa-trash-alt"></i> ${t('mgmtDeleteChat')}
+                    </button>
+                </div>
             </div>`;
         }
 
@@ -4354,6 +4361,32 @@
                 }
             } catch (err) {
                 showToast(t('mgmtErrorStop'), 'error');
+            }
+        }
+
+        async function deleteChat(chatName) {
+            const he = currentLang === 'he';
+            if (!confirm(he ? `למחוק את "${chatName}" וכל הנתונים שלו?` : `Delete "${chatName}" and all its data?`)) return;
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                const token = localStorage.getItem('auth_token');
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                const res = await fetch('/api/chats/' + encodeURIComponent(chatName), {
+                    method: 'DELETE',
+                    headers
+                });
+
+                if (res.ok) {
+                    showToast(he ? `"${chatName}" נמחק` : `"${chatName}" deleted`, 'success');
+                    loadManagement();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    showToast(data.error || 'Delete failed', 'error');
+                }
+            } catch (err) {
+                showToast('Delete failed', 'error');
             }
         }
 

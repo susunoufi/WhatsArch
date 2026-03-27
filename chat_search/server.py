@@ -372,6 +372,38 @@ def create_app(chats_dir: str) -> Flask:
         }
         </script></body></html>"""
 
+    @app.route("/api/chats/<chat_name>", methods=["DELETE"])
+    @require_auth
+    def api_delete_chat(chat_name):
+        """Delete a chat and all its data."""
+        import shutil
+        chat_name = chat_name.strip()
+        if not chat_name:
+            abort(400, "Missing chat name")
+
+        chat_dir = os.path.join(chats_dir, chat_name)
+        if not os.path.isdir(chat_dir):
+            abort(404, f"Chat '{chat_name}' not found")
+
+        # Stop any running processing
+        from . import process_manager
+        process_manager.stop_processing(chat_name)
+
+        # Delete from filesystem
+        shutil.rmtree(chat_dir, ignore_errors=True)
+
+        # Delete from Supabase if web mode
+        user = getattr(request, "user", None)
+        if user and _is_web_mode():
+            sb = _get_supabase_client()
+            if sb:
+                try:
+                    sb.table("user_chats").delete().eq("chat_name", chat_name).eq("user_id", user["id"]).execute()
+                except Exception:
+                    pass
+
+        return jsonify({"status": "deleted", "chat": chat_name})
+
     @app.route("/api/chats")
     def api_chats():
         """List all available chats with their status (WhatsApp + Telegram)."""
