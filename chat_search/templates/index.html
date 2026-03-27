@@ -5247,9 +5247,12 @@
         async function autoSaveSettings() {
             try {
                 const body = { ...settingsData };
+                const headers = { 'Content-Type': 'application/json' };
+                const token = localStorage.getItem('auth_token');
+                if (token) headers['Authorization'] = 'Bearer ' + token;
                 const res = await fetch('/api/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify(body)
                 });
                 if (res.ok) {
@@ -5540,9 +5543,12 @@
                 if (oKey) body.openai_key = oKey;
                 if (gKey) body.gemini_key = gKey;
 
+                const saveHeaders = { 'Content-Type': 'application/json' };
+                const saveToken = localStorage.getItem('auth_token');
+                if (saveToken) saveHeaders['Authorization'] = 'Bearer ' + saveToken;
                 const res = await fetch('/api/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: saveHeaders,
                     body: JSON.stringify(body)
                 });
                 if (!res.ok) throw new Error('Save failed');
@@ -5597,9 +5603,12 @@
                 if (gKey) body.gemini_key = gKey;
 
                 // Save to cloud server
+                const apiKeyHeaders = { 'Content-Type': 'application/json' };
+                const apiKeyToken = localStorage.getItem('auth_token');
+                if (apiKeyToken) apiKeyHeaders['Authorization'] = 'Bearer ' + apiKeyToken;
                 const cloudRes = await fetch('/api/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: apiKeyHeaders,
                     body: JSON.stringify(body)
                 });
 
