@@ -4894,8 +4894,12 @@
         async function loadSettings() {
             try {
                 // Load settings, hardware, and models in parallel
+                const authHeaders = {};
+                const authToken = localStorage.getItem('auth_token');
+                if (authToken) authHeaders['Authorization'] = 'Bearer ' + authToken;
+
                 const [settingsRes, hwRes, modelsRes, chatsRes] = await Promise.all([
-                    fetch('/api/settings'),
+                    fetch('/api/settings', { headers: authHeaders }),
                     fetch('/api/hardware'),
                     fetch('/api/models'),
                     fetch('/api/chats'),
@@ -4926,6 +4930,9 @@
                 if (chatsRes.ok) {
                     const chats = await chatsRes.json();
                     chatNames = chats.filter(c => c.ready).map(c => c.name);
+                    console.log('[Settings] Ready chats for cost:', chatNames);
+                } else {
+                    console.error('[Settings] /api/chats failed:', chatsRes.status);
                 }
 
                 // Build multi-select chat checkboxes
