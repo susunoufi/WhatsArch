@@ -2250,6 +2250,12 @@
                 <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsTranscriptionDesc">תמלול הודעות קוליות לטקסט — ניתן לבחור מודל מקומי (חינם) או שירות ענן.</p>
                 <div class="model-grid" id="models-transcription"></div>
                 <div class="cost-calc" id="cost-transcription"></div>
+
+                <div class="section-divider"></div>
+
+                <div class="section-title"><i class="fas fa-brain"></i> <span data-i18n="settingsEmbeddings">חיפוש חכם (Embeddings)</span></div>
+                <p style="font-size:0.82em;color:var(--text-secondary);margin-bottom:10px;" data-i18n="settingsEmbeddingsDesc">בניית אינדקס סמנטי לחיפוש חכם. ענן מהיר מאוד, מקומי חינם אבל איטי.</p>
+                <div class="model-grid" id="models-embeddings"></div>
             </div>
 
             <!-- Cost Dashboard -->
@@ -2698,6 +2704,8 @@
                 installToolsDesc: 'התקן את הכלים המקומיים כדי לעבד צ\'אטים על המחשב שלך — תמלול הקלטות, תיאור תמונות וחיפוש חכם.',
                 installToolsBtn: 'הורד והתקן',
                 settingsDataDir: 'תיקיית נתונים',
+                settingsEmbeddings: 'חיפוש חכם (Embeddings)',
+                settingsEmbeddingsDesc: 'בניית אינדקס סמנטי לחיפוש חכם. ענן מהיר מאוד, מקומי חינם אבל איטי.',
                 checkUpdates: 'בדוק עדכונים',
                 checking: 'בודק...',
             },
@@ -2955,6 +2963,8 @@
                 installToolsDesc: 'Install local tools to process chats on your computer — voice transcription, image descriptions and smart search.',
                 installToolsBtn: 'Download & Install',
                 settingsDataDir: 'Data Directory',
+                settingsEmbeddings: 'Smart Search (Embeddings)',
+                settingsEmbeddingsDesc: 'Build semantic index for smart search. Cloud is very fast, local is free but slow.',
                 checkUpdates: 'Check for updates',
                 checking: 'Checking...',
             }
@@ -5506,6 +5516,7 @@
                     renderModelCards('video', modelsData.video || []);
                     renderModelCards('rag', modelsData.rag || []);
                     renderModelCards('transcription', modelsData.transcription || []);
+                    renderModelCards('embeddings', modelsData.embeddings || []);
                 }
 
                 // Build cost chat selector and load media counts per chat
@@ -5695,6 +5706,7 @@
             renderModelCards('video', modelsData.video || []);
             renderModelCards('rag', modelsData.rag || []);
             renderModelCards('transcription', modelsData.transcription || []);
+            renderModelCards('embeddings', modelsData.embeddings || []);
             updateCostCalculators();
             updateCostDashboard();
 
