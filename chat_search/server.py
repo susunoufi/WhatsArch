@@ -96,7 +96,7 @@ def create_app(chats_dir: str) -> Flask:
     def get_user_plan(user_email: str) -> dict:
         """Get the full plan assigned to a user."""
         if user_email == ADMIN_EMAIL:
-            return {"mode": "both", "cloud_preset": "premium", "local_vision": "proxy", "local_rag": "proxy"}
+            return {"tier": "unlimited", "mode": "both", "cloud_preset": "premium", "local_vision": "proxy", "local_rag": "proxy"}
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
         user_plans = settings.get("user_plans", {})
@@ -106,26 +106,42 @@ def create_app(chats_dir: str) -> Flask:
         """Legacy helper: returns cloud_preset string for enforce_user_preset()."""
         return get_user_plan(user_email).get("cloud_preset", "budget")
 
-    def enforce_user_preset():
-        """In web mode, override settings with the user's assigned preset."""
+    def get_user_api_keys(user_email: str) -> dict:
+        """Get API keys that a specific user has set (stored per-user)."""
+        project_root = os.path.dirname(chats_dir)
+        settings = config.load_settings(project_root)
+        return settings.get("user_api_keys", {}).get(user_email, {})
+
+    def get_allowed_providers_for_user(user) -> set:
+        """Get allowed providers for current user (tier + own keys)."""
+        if not user:
+            return {"local", "ollama", "gemini", "openai", "anthropic"}  # Local mode = no restrictions
+        plan = get_user_plan(user["email"])
+        user_keys = get_user_api_keys(user["email"])
+        return config.get_allowed_providers(user["email"], plan, user_keys)
+
+    def enforce_user_tier():
+        """In web mode, verify the user's selected provider is allowed by their tier.
+        If not allowed, fall back to the best allowed provider."""
         if not _is_web_mode():
             return  # Local mode - no restriction
         user = get_current_user()
         if not user:
             return
-        preset_key = get_user_preset(user["email"])
-        preset = config.PRESETS.get(preset_key)
-        if not preset:
-            return
-        # Override the provider/model settings for this request
+        allowed = get_allowed_providers_for_user(user)
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
-        settings["vision_provider"] = preset["vision_provider"]
-        settings["vision_model"] = preset["vision_model"]
-        settings["video_provider"] = preset["video_provider"]
-        settings["video_model"] = preset["video_model"]
-        settings["rag_provider"] = preset["rag_provider"]
-        settings["rag_model"] = preset["rag_model"]
+        # Check each provider setting and fall back if not allowed
+        for key in ("vision_provider", "video_provider", "rag_provider", "transcription_provider"):
+            provider = settings.get(key, "")
+            if provider and provider not in allowed and provider != "local":
+                # Fall back: prefer gemini > openai > local
+                if "gemini" in allowed:
+                    settings[key] = "gemini"
+                elif "openai" in allowed:
+                    settings[key] = "openai"
+                else:
+                    settings[key] = "local"
 
     def get_user_chats(user) -> set:
         """Get the set of chat names owned by this user (from Supabase).
@@ -629,7 +645,7 @@ def create_app(chats_dir: str) -> Flask:
     @require_auth
     def api_ai_chat():
         """AI chat endpoint - RAG pipeline."""
-        enforce_user_preset()
+        enforce_user_tier()
         data = request.get_json()
         if not data:
             abort(400, "Missing JSON body")
@@ -658,7 +674,7 @@ def create_app(chats_dir: str) -> Flask:
     @require_auth
     def api_ai_chat_stream():
         """Streaming AI chat endpoint using Server-Sent Events."""
-        enforce_user_preset()
+        enforce_user_tier()
         data = request.get_json()
         if not data:
             abort(400, "Missing JSON body")
@@ -1281,8 +1297,11 @@ def create_app(chats_dir: str) -> Flask:
 
     @app.route("/api/models")
     def api_models():
-        """Get available model options for each task."""
-        return jsonify(config.PROVIDER_MODELS)
+        """Get available model options for each task, with lock status per user."""
+        user = get_current_user()
+        allowed = get_allowed_providers_for_user(user)
+        filtered = config.filter_models_by_tier(config.PROVIDER_MODELS, allowed)
+        return jsonify(filtered)
 
     @app.route("/api/presets")
     def api_presets():
@@ -1353,12 +1372,16 @@ def create_app(chats_dir: str) -> Flask:
                 email = u.email or ""
                 user_meta = u.user_metadata or {}
                 plan = config.normalize_user_plan(user_plans.get(email))
+                tier = plan.get("tier", "free")
+                tier_info = config.TIERS.get(tier, config.TIERS["free"])
                 users.append({
                     "id": u.id,
                     "email": email,
                     "display_name": user_meta.get("display_name", email.split("@")[0]),
                     "plan": plan,
-                    "preset": plan["cloud_preset"],  # backward compat
+                    "tier": tier,
+                    "tier_name_he": tier_info["name_he"],
+                    "tier_name_en": tier_info["name_en"],
                     "is_admin": email == ADMIN_EMAIL,
                     "created_at": str(u.created_at) if u.created_at else "",
                     "last_sign_in": str(u.last_sign_in_at) if u.last_sign_in_at else "",
@@ -1380,22 +1403,13 @@ def create_app(chats_dir: str) -> Flask:
             abort(400, "Missing email")
 
         # Validate provided fields
+        tier = data.get("tier", "").strip()
         mode = data.get("mode", "").strip()
-        cloud_preset = data.get("cloud_preset", "").strip()
-        local_vision = data.get("local_vision", "").strip()
-        local_rag = data.get("local_rag", "").strip()
-        # Backward compat: accept "preset" as cloud_preset
-        if not cloud_preset and data.get("preset"):
-            cloud_preset = data.get("preset", "").strip()
 
+        if tier and tier not in config.VALID_TIERS:
+            abort(400, f"Invalid tier: {tier}. Valid: {', '.join(config.VALID_TIERS)}")
         if mode and mode not in config.VALID_MODES:
             abort(400, f"Invalid mode: {mode}")
-        if cloud_preset and cloud_preset not in config.VALID_CLOUD_PRESETS:
-            abort(400, f"Invalid cloud_preset: {cloud_preset}")
-        if local_vision and local_vision not in config.VALID_LOCAL_OPTIONS:
-            abort(400, f"Invalid local_vision: {local_vision}")
-        if local_rag and local_rag not in config.VALID_LOCAL_OPTIONS:
-            abort(400, f"Invalid local_rag: {local_rag}")
 
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
@@ -1404,14 +1418,10 @@ def create_app(chats_dir: str) -> Flask:
 
         # Load existing plan, then update only provided fields
         existing = config.normalize_user_plan(settings["user_plans"].get(email))
+        if tier:
+            existing["tier"] = tier
         if mode:
             existing["mode"] = mode
-        if cloud_preset:
-            existing["cloud_preset"] = cloud_preset
-        if local_vision:
-            existing["local_vision"] = local_vision
-        if local_rag:
-            existing["local_rag"] = local_rag
 
         settings["user_plans"][email] = existing
         config.save_settings(project_root, settings)
@@ -1441,20 +1451,27 @@ def create_app(chats_dir: str) -> Flask:
     @app.route("/api/user/plan")
     @require_auth
     def api_user_plan():
-        """Get the current user's assigned plan."""
+        """Get the current user's assigned plan with tier info."""
         user = request.user
         plan = get_user_plan(user["email"])
-        preset = config.PRESETS.get(plan["cloud_preset"], {})
+        tier = plan.get("tier", "free")
+        tier_info = config.TIERS.get(tier, config.TIERS["free"])
+        allowed = get_allowed_providers_for_user(user)
+        user_keys = get_user_api_keys(user["email"])
         return jsonify({
-            "mode": plan["mode"],
-            "cloud_preset": plan["cloud_preset"],
-            "local_vision": plan["local_vision"],
-            "local_rag": plan["local_rag"],
-            "preset": plan["cloud_preset"],  # backward compat
-            "name_he": preset.get("name_he", ""),
-            "name_en": preset.get("name_en", ""),
-            "icon": preset.get("icon", ""),
+            "tier": tier,
+            "tier_name_he": tier_info["name_he"],
+            "tier_name_en": tier_info["name_en"],
+            "tier_description_he": tier_info["description_he"],
+            "tier_description_en": tier_info["description_en"],
+            "allowed_providers": sorted(allowed),
+            "has_own_keys": {
+                "gemini": bool(user_keys.get("gemini_key")),
+                "openai": bool(user_keys.get("openai_key")),
+                "anthropic": bool(user_keys.get("anthropic_key")),
+            },
             "is_admin": user["email"] == ADMIN_EMAIL,
+            "mode": plan.get("mode", "cloud"),
         })
 
     @app.route("/api/aliases")
@@ -1520,7 +1537,7 @@ def create_app(chats_dir: str) -> Flask:
         language = data.get("language", "he")
 
         # Use admin's configured settings (enforce user preset)
-        enforce_user_preset()
+        enforce_user_tier()
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
         provider = settings.get("vision_provider", "gemini")
@@ -1560,7 +1577,7 @@ def create_app(chats_dir: str) -> Flask:
         history = data.get("history", [])
 
         # Use admin's configured settings (enforce user preset)
-        enforce_user_preset()
+        enforce_user_tier()
         project_root = os.path.dirname(chats_dir)
 
         try:

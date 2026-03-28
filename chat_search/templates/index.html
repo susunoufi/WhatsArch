@@ -4287,38 +4287,27 @@
                 }
 
                 const he = currentLang === 'he';
-                const modeOpts = [
-                    { v: 'cloud', t: he ? 'ענן' : 'Cloud' },
-                    { v: 'local', t: he ? 'מקומי' : 'Local' },
-                    { v: 'both',  t: he ? 'שניהם' : 'Both' },
-                ];
-                const presetOpts = [
-                    { v: 'budget',   t: he ? 'חסכוני' : 'Budget' },
-                    { v: 'balanced', t: he ? 'מאוזן' : 'Balanced' },
-                    { v: 'premium',  t: he ? 'פרימיום' : 'Premium' },
-                ];
-                const localOpts = [
-                    { v: 'proxy',   t: he ? 'פרוקסי (מנהל)' : 'Proxy (admin)' },
-                    { v: 'own_key', t: he ? 'מפתח עצמי' : 'Own key' },
-                    { v: 'ollama',  t: 'Ollama' },
+                const tierOpts = [
+                    { v: 'free', t: he ? 'חינם (מקומי בלבד)' : 'Free (local only)' },
+                    { v: 'basic', t: he ? 'בסיסי (+ Gemini)' : 'Basic (+ Gemini)' },
+                    { v: 'pro', t: he ? 'פרו (+ OpenAI)' : 'Pro (+ OpenAI)' },
+                    { v: 'unlimited', t: he ? 'ללא הגבלה (הכל)' : 'Unlimited (all)' },
                 ];
 
-                function mkSelect(email, field, opts, current, disabled) {
-                    if (disabled) return '<span style="color:var(--text-muted);">—</span>';
-                    let h = '<select onchange="updateUserPlan(\'' + escapeHtml(email) + '\',\'' + field + '\',this.value)" style="padding:4px 6px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:0.82em;">';
-                    opts.forEach(o => { h += '<option value="' + o.v + '"' + (current === o.v ? ' selected' : '') + '>' + o.t + '</option>'; });
+                function mkTierSelect(email, current, disabled) {
+                    if (disabled) return `<span style="color:var(--accent-green);font-weight:600;">${he ? 'ללא הגבלה' : 'Unlimited'}</span>`;
+                    let h = `<select onchange="updateUserPlan('${escapeHtml(email)}','tier',this.value)" style="padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.85em;font-family:inherit;">`;
+                    tierOpts.forEach(o => { h += `<option value="${o.v}"${current === o.v ? ' selected' : ''}>${o.t}</option>`; });
                     h += '</select>';
                     return h;
                 }
 
-                let html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.82em;">';
+                let html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.85em;">';
                 html += '<thead><tr style="border-bottom:2px solid var(--border-color);text-align:start;">';
-                html += '<th style="padding:8px 6px;">' + (he ? 'משתמש' : 'User') + '</th>';
-                html += '<th style="padding:8px 6px;">' + (he ? 'מצב' : 'Mode') + '</th>';
-                html += '<th style="padding:8px 6px;">' + (he ? 'חבילת ענן' : 'Cloud') + '</th>';
-                html += '<th style="padding:8px 6px;">' + (he ? 'Vision מקומי' : 'Local Vision') + '</th>';
-                html += '<th style="padding:8px 6px;">' + (he ? 'RAG מקומי' : 'Local RAG') + '</th>';
-                html += '<th style="padding:8px 6px;">' + (he ? 'כניסה' : 'Login') + '</th>';
+                html += `<th style="padding:10px 8px;">${he ? 'משתמש' : 'User'}</th>`;
+                html += `<th style="padding:10px 8px;">${he ? 'רמת הרשאה' : 'Tier'}</th>`;
+                html += `<th style="padding:10px 8px;">${he ? 'ספקים מותרים' : 'Allowed Providers'}</th>`;
+                html += `<th style="padding:10px 8px;">${he ? 'כניסה אחרונה' : 'Last Login'}</th>`;
                 html += '</tr></thead><tbody>';
 
                 data.users.forEach(u => {
@@ -4330,27 +4319,21 @@
                     // User
                     html += '<td style="padding:8px 6px;">';
                     html += '<div style="font-weight:600;">' + escapeHtml(u.display_name || '') + '</div>';
-                    html += '<div style="font-size:0.82em;color:var(--text-muted);">' + escapeHtml(u.email) + '</div>';
-                    if (u.is_admin) html += '<span style="font-size:0.7em;background:var(--accent-amber);color:#fff;padding:1px 6px;border-radius:4px;">Admin</span>';
+                    html += `<div style="font-size:0.82em;color:var(--text-muted);">${escapeHtml(u.email)}</div>`;
+                    if (u.is_admin) html += '<span style="font-size:0.7em;background:var(--accent-green);color:#0f172a;padding:2px 8px;border-radius:4px;font-weight:700;">Admin</span>';
                     html += '</td>';
-                    // Mode
-                    html += '<td style="padding:8px 6px;">';
-                    html += u.is_admin ? '<span style="color:var(--accent-amber);">' + (he ? 'שניהם' : 'Both') + '</span>' : mkSelect(u.email, 'mode', modeOpts, plan.mode, false);
+                    // Tier
+                    html += '<td style="padding:10px 8px;">';
+                    html += mkTierSelect(u.email, u.tier || 'free', u.is_admin);
                     html += '</td>';
-                    // Cloud preset
-                    html += '<td style="padding:8px 6px;">';
-                    html += u.is_admin ? '<span style="color:var(--accent-amber);">' + (he ? 'פרימיום' : 'Premium') + '</span>' : mkSelect(u.email, 'cloud_preset', presetOpts, plan.cloud_preset, isLocal);
-                    html += '</td>';
-                    // Local Vision
-                    html += '<td style="padding:8px 6px;">';
-                    html += u.is_admin ? '—' : mkSelect(u.email, 'local_vision', localOpts, plan.local_vision, isCloud);
-                    html += '</td>';
-                    // Local RAG
-                    html += '<td style="padding:8px 6px;">';
-                    html += u.is_admin ? '—' : mkSelect(u.email, 'local_rag', localOpts, plan.local_rag, isCloud);
+                    // Allowed providers
+                    const tierInfo = { free: ['Local'], basic: ['Local', 'Gemini'], pro: ['Local', 'Gemini', 'OpenAI'], unlimited: ['Local', 'Gemini', 'OpenAI', 'Anthropic'] };
+                    const providers = u.is_admin ? ['All'] : (tierInfo[u.tier] || ['Local']);
+                    html += '<td style="padding:10px 8px;">';
+                    html += providers.map(p => `<span style="display:inline-block;padding:2px 8px;margin:2px;background:rgba(255,255,255,0.06);border-radius:4px;font-size:0.8em;">${p}</span>`).join('');
                     html += '</td>';
                     // Last login
-                    html += '<td style="padding:8px 6px;font-size:0.8em;color:var(--text-muted);">';
+                    html += '<td style="padding:10px 8px;font-size:0.82em;color:var(--text-muted);">';
                     html += u.last_sign_in ? u.last_sign_in.slice(0, 10) : '—';
                     html += '</td>';
                     html += '</tr>';
@@ -5703,9 +5686,12 @@
                     }
                 }
 
+                const isLocked = m.locked === true;
+                const lockHtml = isLocked ? `<div style="margin-top:6px;font-size:0.75em;color:var(--accent-amber);"><i class="fas fa-lock"></i> ${he ? 'צריך אישור אדמין או API key משלך' : 'Needs admin approval or your own API key'}</div>` : '';
+
                 html += `
-                <div class="model-card ${isSelected ? 'selected' : ''}" data-provider="${m.provider}" data-model="${m.model}" onclick="selectModel('${task}', '${m.provider}', '${m.model}', this)">
-                    <div class="check-mark"><i class="fas fa-check"></i></div>
+                <div class="model-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}" data-provider="${m.provider}" data-model="${m.model}" onclick="${isLocked ? '' : `selectModel('${task}', '${m.provider}', '${m.model}', this)`}" style="${isLocked ? 'opacity:0.5;cursor:not-allowed;' : ''}">
+                    <div class="check-mark"><i class="fas ${isLocked ? 'fa-lock' : 'fa-check'}"></i></div>
                     <div class="card-top">
                         <div class="provider-dot ${m.provider}">${m.provider[0].toUpperCase()}</div>
                         <div>
@@ -5719,6 +5705,7 @@
                         <div><span class="detail-label">${t('settingsSpeed')}</span> <span class="detail-value" style="${speedClass}">${speedText}</span></div>
                         <div><span class="detail-label">${t('settingsHebrew')}</span> <span style="color:var(--accent-amber);font-size:0.8em;">${stars}</span></div>
                     </div>
+                    ${lockHtml}
                 </div>`;
             });
 

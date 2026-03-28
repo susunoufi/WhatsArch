@@ -30,17 +30,52 @@ DEFAULT_SETTINGS = {
     "user_plans": {},      # {"user@email.com": {mode, cloud_preset, local_vision, local_rag}}
 }
 
-# Per-user plan structure
+# Per-user tier system
+# Tiers control which AI providers a user can access with the SYSTEM's API keys.
+# If a user provides their OWN API key for a provider, they get unlimited access
+# to that provider regardless of tier.
+TIERS = {
+    "free": {
+        "name_he": "חינם", "name_en": "Free",
+        "allowed_providers": ["local", "ollama"],  # Only local processing
+        "description_he": "עיבוד מקומי בלבד (Whisper, Ollama)",
+        "description_en": "Local processing only (Whisper, Ollama)",
+    },
+    "basic": {
+        "name_he": "בסיסי", "name_en": "Basic",
+        "allowed_providers": ["local", "ollama", "gemini"],  # + Gemini (cheapest cloud)
+        "description_he": "מקומי + Gemini Flash (הכי זול)",
+        "description_en": "Local + Gemini Flash (cheapest)",
+    },
+    "pro": {
+        "name_he": "פרו", "name_en": "Pro",
+        "allowed_providers": ["local", "ollama", "gemini", "openai"],  # + OpenAI
+        "description_he": "מקומי + Gemini + OpenAI",
+        "description_en": "Local + Gemini + OpenAI",
+    },
+    "unlimited": {
+        "name_he": "ללא הגבלה", "name_en": "Unlimited",
+        "allowed_providers": ["local", "ollama", "gemini", "openai", "anthropic"],  # Everything
+        "description_he": "גישה לכל הספקים",
+        "description_en": "Access to all providers",
+    },
+}
+
+VALID_TIERS = tuple(TIERS.keys())
+
 DEFAULT_USER_PLAN = {
+    "tier": "free",            # "free" | "basic" | "pro" | "unlimited"
     "mode": "cloud",           # "cloud" | "local" | "both"
-    "cloud_preset": "budget",  # "budget" | "balanced" | "premium"
-    "local_vision": "proxy",   # "proxy" | "own_key" | "ollama"
-    "local_rag": "proxy",      # "proxy" | "own_key" | "ollama"
+    "cloud_preset": "budget",  # legacy compat
+    "local_vision": "proxy",
+    "local_rag": "proxy",
 }
 
 VALID_MODES = ("cloud", "local", "both")
 VALID_CLOUD_PRESETS = ("budget", "balanced", "premium")
 VALID_LOCAL_OPTIONS = ("proxy", "own_key", "ollama")
+
+ADMIN_EMAIL = "susunoufi@gmail.com"
 
 
 def normalize_user_plan(plan_value) -> dict:
@@ -48,8 +83,13 @@ def normalize_user_plan(plan_value) -> dict:
     if plan_value is None:
         return dict(DEFAULT_USER_PLAN)
     if isinstance(plan_value, str):
-        # Legacy: "budget" -> full dict
+        # Legacy: tier name or preset name
+        if plan_value in VALID_TIERS:
+            result = dict(DEFAULT_USER_PLAN)
+            result["tier"] = plan_value
+            return result
         return {
+            "tier": "free",
             "mode": "local" if plan_value == "local" else "cloud",
             "cloud_preset": plan_value if plan_value in VALID_CLOUD_PRESETS else "budget",
             "local_vision": "ollama" if plan_value == "local" else "proxy",
@@ -58,8 +98,48 @@ def normalize_user_plan(plan_value) -> dict:
     if isinstance(plan_value, dict):
         result = dict(DEFAULT_USER_PLAN)
         result.update(plan_value)
+        if result.get("tier") not in VALID_TIERS:
+            result["tier"] = "free"
         return result
     return dict(DEFAULT_USER_PLAN)
+
+
+def get_allowed_providers(user_email: str, user_plan: dict, user_api_keys: dict = None) -> set:
+    """Get the set of AI providers this user is allowed to use.
+
+    Admin gets everything. Other users get their tier's providers
+    PLUS any provider they have their own API key for.
+    """
+    if user_email == ADMIN_EMAIL:
+        return {"local", "ollama", "gemini", "openai", "anthropic"}
+
+    tier = user_plan.get("tier", "free")
+    tier_info = TIERS.get(tier, TIERS["free"])
+    allowed = set(tier_info["allowed_providers"])
+
+    # User's own API keys unlock those providers regardless of tier
+    if user_api_keys:
+        if user_api_keys.get("gemini_key"):
+            allowed.add("gemini")
+        if user_api_keys.get("openai_key"):
+            allowed.add("openai")
+        if user_api_keys.get("anthropic_key"):
+            allowed.add("anthropic")
+
+    return allowed
+
+
+def filter_models_by_tier(provider_models: dict, allowed_providers: set) -> dict:
+    """Filter PROVIDER_MODELS to mark which models are allowed/locked for a user."""
+    result = {}
+    for task, models in provider_models.items():
+        filtered = []
+        for m in models:
+            model_copy = dict(m)
+            model_copy["locked"] = m["provider"] not in allowed_providers
+            filtered.append(model_copy)
+        result[task] = filtered
+    return result
 
 PRESETS = {
     "budget": {
