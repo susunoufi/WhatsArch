@@ -4875,7 +4875,9 @@
                     fetch(base + '/api/stats?chat=' + encodeURIComponent(chatName)).catch(() => ({ ok: false })),
                 ]);
                 const aliases = aliasRes.ok ? (await aliasRes.json()).aliases || {} : {};
-                const senders = statsRes.ok ? Object.keys((await statsRes.json()).senders || {}) : [];
+                const allSenders = statsRes.ok ? Object.keys((await statsRes.json()).senders || {}) : [];
+                // Filter out group name and system senders
+                const senders = allSenders.filter(s => s !== chatName && s !== 'You' && !s.includes('added') && !s.includes('changed'));
 
                 if (senders.length === 0) {
                     container.innerHTML = `<div style="color:var(--text-muted);font-size:0.85em;">${he ? 'אין שולחים (הרץ עדכון חיפוש קודם)' : 'No senders (run index first)'}</div>`;
@@ -4905,6 +4907,7 @@
         }
 
         async function saveAliases(chatName, cardId) {
+            const he = currentLang === 'he';
             const container = document.getElementById(cardId + '-aliases');
             if (!container) return;
             const inputs = container.querySelectorAll('input[data-sender]');
