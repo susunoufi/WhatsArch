@@ -2971,6 +2971,7 @@
         };
 
         let currentLang = localStorage.getItem('whatsarch_lang') || 'he';
+        let he = currentLang === 'he';  // Global shorthand, updated on language toggle
 
         function t(key) {
             return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || key;
@@ -2978,6 +2979,7 @@
 
         function toggleLanguage() {
             currentLang = currentLang === 'he' ? 'en' : 'he';
+            he = currentLang === 'he';  // Update global
             localStorage.setItem('whatsarch_lang', currentLang);
             applyLanguage();
             // Update sidebar language label
