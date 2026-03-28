@@ -23,6 +23,7 @@ DEFAULT_SETTINGS = {
     "rag_model": "gemini-2.5-flash",
     "transcription_provider": "local",   # "local" | "gemini" | "openai"
     "transcription_model": "base",       # Whisper model for local: "tiny" | "base" | "small" | "medium"
+    "embeddings_provider": "local",      # "local" | "openai" | "gemini"
     "ollama_base_url": "http://localhost:11434",
     "ollama_vision_model": "llama3.2-vision",
     "ollama_rag_model": "qwen2.5:14b",
@@ -250,6 +251,11 @@ def recommend_preset(image_count: int, video_count: int, hardware: dict = None) 
 # │ Ollama (local)        │ free           │                │              │
 # └───────────────────────┴────────────────┴────────────────┴──────────────┘
 PROVIDER_MODELS = {
+    "embeddings": [
+        {"provider": "local", "model": "e5-large", "display": "E5-Large (local)", "cost_per_1k": 0, "speed": "slow", "quality": 5, "badge": "free"},
+        {"provider": "gemini", "model": "text-embedding-004", "display": "Gemini Embeddings", "cost_per_1k": 0.0001, "speed": "fast", "quality": 4, "badge": "recommended"},
+        {"provider": "openai", "model": "text-embedding-3-small", "display": "OpenAI Embeddings", "cost_per_1k": 0.02, "speed": "fast", "quality": 5},
+    ],
     "transcription": [
         {"provider": "local", "model": "base", "display": "Whisper (local)", "cost_per_minute": 0, "speed": "medium", "quality": 4, "badge": "free"},
         {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_minute": 0.0004, "speed": "fast", "quality": 5, "badge": "recommended"},

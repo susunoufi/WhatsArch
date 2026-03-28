@@ -707,14 +707,12 @@ def load_chunks_from_db(db_path: str) -> list:
     return [_ChunkStub(row[0], row[1]) for row in rows]
 
 
-def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progress_callback=None):
+def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progress_callback=None,
+                           provider: str = "local", api_key: str = None):
     """Build semantic embeddings for conversation chunks.
 
-    Uses E5-large with "passage: " prefix. Saves as chat_chunk_embeddings.npy.
-    Row index i corresponds to chunk id i+1 (1-indexed).
-    Encodes in batches with cancel support between each batch.
-    Supports resume: saves incrementally after each batch, and on restart
-    loads the partial file and continues from where it left off.
+    Providers: "local" (E5-large), "openai" (text-embedding-3-small), "gemini" (text-embedding-004).
+    Saves as chat_chunk_embeddings.npy.
     """
     import numpy as np
 
@@ -743,50 +741,95 @@ def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progre
         except Exception:
             print("  Corrupted embeddings file, rebuilding...")
 
-    texts = [f"passage: {chunk.combined_text}" for chunk in chunks]
+    texts = [chunk.combined_text for chunk in chunks]
 
-    model = _get_embedding_model()
+    # Choose provider
+    if provider == "openai" and api_key:
+        print(f"  Using OpenAI embeddings (text-embedding-3-small) for {total} chunks...")
+        combined = _embed_openai(texts, api_key, start_idx, total, cancel_event, progress_callback)
+    elif provider == "gemini" and api_key:
+        print(f"  Using Gemini embeddings (text-embedding-004) for {total} chunks...")
+        combined = _embed_gemini(texts, api_key, start_idx, total, cancel_event, progress_callback)
+    else:
+        # Local E5-large
+        prefixed = [f"passage: {t}" for t in texts]
+        model = _get_embedding_model()
+        batch_size = 32
+        remaining = total - start_idx
+        num_batches = (remaining + batch_size - 1) // batch_size
+        print(f"  Encoding {remaining} chunks ({num_batches} batches) with {EMBEDDING_MODEL_NAME} (local)..." +
+              (f" (resuming from {start_idx})" if start_idx > 0 else ""))
 
-    batch_size = 32
-    remaining = total - start_idx
-    num_batches = (remaining + batch_size - 1) // batch_size
-    print(f"  Encoding {remaining} chunks ({num_batches} batches) with {EMBEDDING_MODEL_NAME}..." +
-          (f" (resuming from {start_idx})" if start_idx > 0 else ""))
+        all_emb = [existing_embeddings] if existing_embeddings is not None else []
+        if progress_callback and start_idx > 0:
+            progress_callback("embeddings", start_idx, total)
 
-    all_embeddings = [existing_embeddings] if existing_embeddings is not None else []
+        for i in range(start_idx, total, batch_size):
+            if cancel_event and cancel_event.is_set():
+                raise EmbeddingCancelled()
+            batch = prefixed[i:i + batch_size]
+            batch_emb = model.encode(batch, batch_size=batch_size, show_progress_bar=False, normalize_embeddings=True)
+            all_emb.append(batch_emb)
+            combined = np.vstack(all_emb)
+            np.save(embeddings_path, combined)
+            done = min(i + batch_size, total)
+            print(f"  Batch {(i - start_idx) // batch_size + 1}/{num_batches} ({done}/{total})")
+            if progress_callback:
+                progress_callback("embeddings", done, total)
 
-    if progress_callback and start_idx > 0:
-        progress_callback("embeddings", start_idx, total)
+        combined = np.vstack(all_emb) if all_emb else np.array([])
 
+    # Prepend existing if resuming with cloud provider
+    if existing_embeddings is not None and provider != "local":
+        combined = np.vstack([existing_embeddings, combined])
+
+    np.save(embeddings_path, combined)
+    cache_key = os.path.normcase(os.path.abspath(db_path))
+    _chunk_embedding_cache.pop(cache_key, None)
+    # Store which provider was used so queries use the same one
+    save_chat_metadata(db_path, {"embeddings_provider": provider})
+    print(f"  Saved chunk embeddings ({combined.shape}) to {embeddings_path} [provider={provider}]")
+
+
+def _embed_openai(texts, api_key, start_idx, total, cancel_event=None, progress_callback=None):
+    """Embed texts using OpenAI text-embedding-3-small API."""
+    import numpy as np
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key)
+    batch_size = 100  # OpenAI supports up to 2048 per call
+    all_emb = []
     for i in range(start_idx, total, batch_size):
         if cancel_event and cancel_event.is_set():
-            print("  Embedding cancelled by user.")
             raise EmbeddingCancelled()
-
         batch = texts[i:i + batch_size]
-        batch_emb = model.encode(
-            batch,
-            batch_size=batch_size,
-            show_progress_bar=False,
-            normalize_embeddings=True,
-        )
-        all_embeddings.append(batch_emb)
-
-        # Incremental save after each batch for resume support
-        combined = np.vstack(all_embeddings)
-        # Save directly (avoid os.replace which can fail with Hebrew paths on Windows)
-        np.save(embeddings_path, combined)
-        cache_key = os.path.normcase(os.path.abspath(db_path))
-        _chunk_embedding_cache.pop(cache_key, None)
-
-        done_chunks = min(i + batch_size, total)
-        batch_num = (i - start_idx) // batch_size + 1
-        print(f"  Batch {batch_num}/{num_batches} ({done_chunks}/{total} chunks)")
+        resp = client.embeddings.create(model="text-embedding-3-small", input=batch)
+        batch_emb = [d.embedding for d in resp.data]
+        all_emb.extend(batch_emb)
+        done = min(i + batch_size, total)
+        print(f"  OpenAI: {done}/{total}")
         if progress_callback:
-            progress_callback("embeddings", done_chunks, total)
+            progress_callback("embeddings", done, total)
+    return np.array(all_emb, dtype=np.float32)
 
-    print(f"  Saved chunk embeddings ({combined.shape}) to {embeddings_path}")
-    _chunk_embedding_cache.pop(db_path, None)
+
+def _embed_gemini(texts, api_key, start_idx, total, cancel_event=None, progress_callback=None):
+    """Embed texts using Gemini text-embedding-004 API."""
+    import numpy as np
+    from google import genai
+    client = genai.Client(api_key=api_key)
+    batch_size = 50  # Gemini batch limit
+    all_emb = []
+    for i in range(start_idx, total, batch_size):
+        if cancel_event and cancel_event.is_set():
+            raise EmbeddingCancelled()
+        batch = texts[i:i + batch_size]
+        resp = client.models.embed_content(model="text-embedding-004", contents=batch)
+        all_emb.extend(resp.embeddings)
+        done = min(i + batch_size, total)
+        print(f"  Gemini: {done}/{total}")
+        if progress_callback:
+            progress_callback("embeddings", done, total)
+    return np.array([[v for v in e.values] for e in all_emb], dtype=np.float32)
 
 
 class EmbeddingCancelled(Exception):
@@ -810,8 +853,8 @@ def _get_chunk_embeddings(db_path: str):
 def semantic_search_chunks(db_path: str, queries, top_k: int = 30) -> list:
     """Find chunks semantically similar to the query or queries.
 
-    Uses E5-large with "query: " prefix. Same round-robin merge algorithm
-    Round-robin merge algorithm on chunk embeddings.
+    Automatically detects which embedding provider was used for chunks
+    and uses the same provider for query encoding.
 
     Returns list of (chunk_id, similarity_score) tuples sorted by
     similarity descending. chunk_id is 1-indexed.
@@ -822,14 +865,55 @@ def semantic_search_chunks(db_path: str, queries, top_k: int = 30) -> list:
     if embeddings is None:
         return []
 
-    model = _get_embedding_model()
-
     if isinstance(queries, str):
         queries = [queries]
 
-    # E5-large requires "query: " prefix
-    prefixed_queries = [f"query: {q}" for q in queries]
-    query_embeddings = model.encode(prefixed_queries, normalize_embeddings=True)
+    # Detect embedding provider from metadata or dimensions
+    meta = get_chat_metadata(db_path)
+    emb_provider = meta.get("embeddings_provider", "")
+    emb_dim = embeddings.shape[1] if len(embeddings.shape) > 1 else 0
+
+    # Auto-detect from dimensions if metadata missing
+    if not emb_provider:
+        if emb_dim == 1024:
+            emb_provider = "local"
+        elif emb_dim == 1536:
+            emb_provider = "openai"
+        elif emb_dim == 768:
+            emb_provider = "gemini"
+        else:
+            emb_provider = "local"
+
+    # Encode queries with the SAME provider
+    if emb_provider == "openai":
+        try:
+            from openai import OpenAI
+            api_key = os.environ.get("OPENAI_API_KEY", "")
+            if api_key:
+                client = OpenAI(api_key=api_key)
+                resp = client.embeddings.create(model="text-embedding-3-small", input=queries)
+                query_embeddings = np.array([d.embedding for d in resp.data], dtype=np.float32)
+            else:
+                return []  # Can't search without API key
+        except Exception:
+            return []
+    elif emb_provider == "gemini":
+        try:
+            from google import genai
+            api_key = os.environ.get("GOOGLE_API_KEY", "")
+            if api_key:
+                client = genai.Client(api_key=api_key)
+                resp = client.models.embed_content(model="text-embedding-004", contents=queries)
+                query_embeddings = np.array([[v for v in e.values] for e in resp.embeddings], dtype=np.float32)
+            else:
+                return []
+        except Exception:
+            return []
+    else:
+        # Local E5-large
+        model = _get_embedding_model()
+        prefixed_queries = [f"query: {q}" for q in queries]
+        query_embeddings = model.encode(prefixed_queries, normalize_embeddings=True)
 
     all_similarities = query_embeddings @ embeddings.T
 

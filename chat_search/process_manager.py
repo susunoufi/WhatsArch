@@ -507,8 +507,16 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
             _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event)
 
         elif task == "embeddings":
-            _update_task_meta(chat_name, provider="sentence-transformers", model="multilingual-e5-large", engine="local")
-            _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event)
+            from . import config
+            project_root = os.path.dirname(chats_dir)
+            settings = config.load_settings(project_root)
+            emb_provider = settings.get("embeddings_provider", "local")
+            emb_api_key = _get_api_key_for_provider(emb_provider) if emb_provider != "local" else None
+            engine = "local" if emb_provider == "local" else "cloud"
+            model_name = {"local": "E5-large", "openai": "text-embedding-3-small", "gemini": "text-embedding-004"}.get(emb_provider, emb_provider)
+            _update_task_meta(chat_name, provider=emb_provider, model=model_name, engine=engine)
+            _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event,
+                                emb_provider=emb_provider, emb_api_key=emb_api_key)
 
         # Check if we were cancelled (for tasks that break from loop instead of raising)
         if cancel_event and cancel_event.is_set():
@@ -655,7 +663,8 @@ def _run_index_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
     callback("Done", 5, 5)
 
 
-def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=None):
+def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=None,
+                         emb_provider="local", emb_api_key=None):
     """Run the chunk embeddings generation pipeline.
 
     If chunks already exist in the DB, reuses them to allow resume of partial
@@ -727,7 +736,8 @@ def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=N
 
     _check_cancel(cancel_event)
     callback("Building chunk embeddings...", 0, len(chunks))
-    build_chunk_embeddings(chunks, db_path, cancel_event=cancel_event, progress_callback=callback)
+    build_chunk_embeddings(chunks, db_path, cancel_event=cancel_event, progress_callback=callback,
+                           provider=emb_provider, api_key=emb_api_key)
 
     callback("Done", len(chunks), len(chunks))
 
