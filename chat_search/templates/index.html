@@ -2954,19 +2954,36 @@
         // --- Agent toggle ---
         let agentEnabled = true;
         function toggleAgent() {
-            agentEnabled = !agentEnabled;
             const toggle = document.getElementById('agentToggle');
             const dot = document.getElementById('agentDot');
-            if (agentEnabled) {
-                toggle.classList.add('active');
-                dot.className = 'agent-dot online';
-                detectAgent().then(() => { loadChats(); });
-            } else {
+            const label = document.getElementById('agentLabel');
+
+            if (agentAvailable) {
+                // Shut down the agent
+                fetch(AGENT_URL + '/shutdown', { method: 'POST' }).catch(() => {});
                 toggle.classList.remove('active');
                 dot.className = 'agent-dot offline';
+                if (label) label.textContent = 'Agent (off)';
                 agentAvailable = false;
                 agentChats = new Set();
                 loadChats();
+                showToast(he ? 'Agent כובה' : 'Agent stopped', 'info');
+            } else {
+                // Try to connect (user needs to start agent manually)
+                toggle.classList.add('active');
+                dot.className = 'agent-dot online';
+                if (label) label.textContent = 'Agent';
+                detectAgent().then(() => {
+                    if (agentAvailable) {
+                        loadChats();
+                        showToast(he ? 'Agent מחובר' : 'Agent connected', 'success');
+                    } else {
+                        toggle.classList.remove('active');
+                        dot.className = 'agent-dot offline';
+                        if (label) label.textContent = 'Agent (off)';
+                        showToast(he ? 'Agent לא נמצא. הפעל אותו ונסה שוב.' : 'Agent not found. Start it and try again.', 'error');
+                    }
+                });
             }
         }
 
