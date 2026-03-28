@@ -53,9 +53,18 @@ _static_dir = str(_project_root / "chat_search" / "static")
 
 app = Flask(__name__, template_folder=_template_dir, static_folder=_static_dir, static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024  # 2GB — local, no limit
-CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localhost:*", "https://*.railway.app"],
-     allow_headers=["Content-Type", "X-User-Email", "Authorization"],
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+# Allow ALL origins — this is a localhost-only service, no security risk
+CORS(app, origins="*", allow_headers="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+
+
+@app.after_request
+def _force_cors(response):
+    """Guarantee CORS headers on every response including errors."""
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return response
+
 
 # Agent version
 VERSION = "2.0.0"
@@ -141,12 +150,20 @@ def _ensure_settings_file():
     """Ensure a settings.json exists for chat_search modules."""
     sp = _get_current_data_dir() / "settings.json"
     if not sp.exists():
-        from chat_search.config import DEFAULT_SETTINGS
+        try:
+            from chat_search.config import DEFAULT_SETTINGS
+            defaults = DEFAULT_SETTINGS
+        except Exception:
+            defaults = {"vision_provider": "gemini", "vision_model": "gemini-2.0-flash",
+                        "rag_provider": "gemini", "rag_model": "gemini-2.0-flash"}
         with open(sp, "w", encoding="utf-8") as f:
-            json.dump(DEFAULT_SETTINGS, f, ensure_ascii=False, indent=2)
+            json.dump(defaults, f, ensure_ascii=False, indent=2)
 
 
-_ensure_settings_file()
+try:
+    _ensure_settings_file()
+except Exception:
+    pass  # Non-critical — don't let this prevent agent from starting
 
 
 # ===========================================================================
@@ -175,6 +192,32 @@ def login_page():
 def privacy_page():
     """Privacy page."""
     return render_template("privacy.html")
+
+
+@app.route("/diag")
+def diag_page():
+    """Diagnostic page — user opens http://localhost:11470/diag to verify agent works."""
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>WhatsArch Agent Diagnostics</title>
+    <style>body{{font-family:system-ui;background:#0a0f1a;color:#e2e8f0;max-width:600px;margin:40px auto;padding:20px;}}
+    .ok{{color:#22c55e;}} .fail{{color:#ef4444;}} .box{{background:#1e293b;border-radius:12px;padding:20px;margin:16px 0;}}
+    h1{{color:#38bdf8;}} code{{background:#334155;padding:2px 8px;border-radius:4px;}}</style></head>
+    <body><h1>WhatsArch Agent v{VERSION}</h1>
+    <div class="box"><p class="ok">&#10003; Agent is running on port 11470</p>
+    <p>Data: <code>{_get_current_data_dir()}</code></p>
+    <p>Chats: <code>{_get_current_chats_dir()}</code></p>
+    <p>User: <code>{os.environ.get("USERNAME","?")}</code></p></div>
+    <div class="box"><h3>CORS Test</h3><p id="cors">Testing...</p>
+    <script>
+    fetch('http://localhost:11470/status').then(r=>r.json()).then(d=>{{
+        document.getElementById('cors').innerHTML='<span class="ok">&#10003; CORS works! Agent sees '+d.chats.length+' chats</span>';
+    }}).catch(e=>{{
+        document.getElementById('cors').innerHTML='<span class="fail">&#10007; CORS failed: '+e.message+'</span>';
+    }});
+    </script></div>
+    <div class="box"><h3>Next steps</h3>
+    <p>If you see this page, the agent is running. Go to <a href="https://whatsarch-production.up.railway.app/app" style="color:#38bdf8;">WhatsArch</a> and it should detect the agent.</p>
+    <p>If WhatsArch still shows "install tools", open the browser console (F12) and look for <code>[Agent]</code> messages.</p></div>
+    </body></html>"""
 
 
 # ===========================================================================

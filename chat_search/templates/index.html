@@ -2186,9 +2186,12 @@
                     <a href="/download/setup" class="btn" style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;font-weight:700;text-decoration:none;padding:10px 24px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;">
                         <i class="fas fa-download"></i> <span data-i18n="installToolsBtn">הורד והתקן</span>
                     </a>
-                    <button onclick="detectAgent().then(loadChats)" class="btn" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:10px 24px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;">
+                    <button onclick="detectAgent().then(()=>{loadChats();loadSettings();})" class="btn" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:10px 24px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;">
                         <i class="fas fa-sync-alt"></i> <span data-i18n="retryAgent">כבר התקנתי — בדוק שוב</span>
                     </button>
+                    <div style="font-size:0.78em;color:var(--text-muted);margin-top:12px;max-width:400px;margin-left:auto;margin-right:auto;" data-i18n="diagHint">
+                        כבר התקנת? בדוק שה-Agent רץ: פתח <a href="http://localhost:11470/diag" target="_blank" style="color:var(--accent-blue);">localhost:11470/diag</a> בדפדפן
+                    </div>
                 </div>
             </div>
 
@@ -2707,6 +2710,7 @@
                 installToolsDesc: 'התקן את הכלים המקומיים כדי לעבד צ\'אטים על המחשב שלך — תמלול הקלטות, תיאור תמונות וחיפוש חכם.',
                 installToolsBtn: 'הורד והתקן',
                 retryAgent: 'כבר התקנתי — בדוק שוב',
+                diagHint: 'כבר התקנת? בדוק שה-Agent רץ: פתח <a href="http://localhost:11470/diag" target="_blank" style="color:var(--accent-blue);">localhost:11470/diag</a> בדפדפן',
                 settingsDataDir: 'תיקיית נתונים',
                 settingsEmbeddings: 'חיפוש חכם (Embeddings)',
                 settingsEmbeddingsDesc: 'בניית אינדקס סמנטי לחיפוש חכם. ענן מהיר מאוד, מקומי חינם אבל איטי.',
@@ -2967,6 +2971,7 @@
                 installToolsDesc: 'Install local tools to process chats on your computer — voice transcription, image descriptions and smart search.',
                 installToolsBtn: 'Download & Install',
                 retryAgent: 'Already installed — check again',
+                diagHint: 'Already installed? Check if Agent is running: open <a href="http://localhost:11470/diag" target="_blank" style="color:var(--accent-blue);">localhost:11470/diag</a> in your browser',
                 settingsDataDir: 'Data Directory',
                 settingsEmbeddings: 'Smart Search (Embeddings)',
                 settingsEmbeddingsDesc: 'Build semantic index for smart search. Cloud is very fast, local is free but slow.',
