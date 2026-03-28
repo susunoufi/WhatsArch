@@ -69,7 +69,7 @@ SETTINGS_PATH = DATA_DIR / "settings.json"
 _old_chats = _ROOT_DIR / "chats"
 if _old_chats.exists() and _old_chats != CHATS_DIR:
     for d in _old_chats.iterdir():
-        if d.is_dir() and (d / "_chat.txt").exists() or (d / "result.json").exists():
+        if d.is_dir() and ((d / "_chat.txt").exists() or (d / "result.json").exists()):
             dest = CHATS_DIR / d.name
             if not dest.exists():
                 try:
