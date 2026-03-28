@@ -61,11 +61,28 @@ CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localh
 VERSION = "2.0.0"
 
 # ---------------------------------------------------------------------------
-# Data directory — fixed at C:\WhatsArch (simple, one location for everything)
+# Data directory — try C:\WhatsArch first, fall back to ~/Documents/WhatsArch
+# (C:\ root often requires admin on other users' machines)
 # ---------------------------------------------------------------------------
-DATA_DIR = Path("C:/WhatsArch")
+def _init_data_dir() -> Path:
+    """Pick a writable data directory."""
+    for candidate in [Path("C:/WhatsArch"), Path.home() / "Documents" / "WhatsArch"]:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            # Verify we can actually write
+            test_file = candidate / ".write_test"
+            test_file.write_text("ok")
+            test_file.unlink()
+            return candidate
+        except (PermissionError, OSError):
+            continue
+    # Last resort
+    fallback = Path.home() / "WhatsArch"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return fallback
+
+DATA_DIR = _init_data_dir()
 CHATS_DIR = DATA_DIR / "chats"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 CHATS_DIR.mkdir(parents=True, exist_ok=True)
 SETTINGS_PATH = DATA_DIR / "settings.json"
 
@@ -758,6 +775,42 @@ def api_stats():
 # ===========================================================================
 # AI Chat (RAG)
 # ===========================================================================
+
+@app.route("/api/ai/profile", methods=["POST"])
+def api_ai_profile():
+    """Generate group profile for a chat."""
+    from chat_search import ai_chat
+    data = request.get_json()
+    if not data:
+        abort(400, "Missing JSON body")
+    chat_name = data.get("chat", "").strip()
+    if not chat_name:
+        abort(400, "Missing chat")
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
+    db_path = os.path.join(chat_dir, "data", "chat.db")
+    if not os.path.exists(db_path):
+        abort(404, "Chat not indexed")
+    try:
+        profile = ai_chat.generate_group_profile(db_path, chat_name, _get_project_root())
+        return jsonify({"status": "ok", "profile": profile})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ai/profile", methods=["GET"])
+def api_ai_profile_get():
+    """Get existing group profile."""
+    chat_name = request.args.get("chat", "").strip()
+    if not chat_name:
+        return jsonify({"profile": ""})
+    from chat_search import ai_chat
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
+    db_path = os.path.join(chat_dir, "data", "chat.db")
+    if not os.path.exists(db_path):
+        return jsonify({"profile": ""})
+    profile = ai_chat.get_group_profile(db_path)
+    return jsonify({"profile": profile})
+
 
 @app.route("/api/ai/status")
 def api_ai_status():
