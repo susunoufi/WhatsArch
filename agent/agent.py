@@ -31,12 +31,10 @@ if sys.stdout is None or (hasattr(sys.stdout, 'encoding') and sys.stdout.encodin
     except Exception:
         pass
 
-# Load .env from project root or agent data dir
+# Load .env from data dir, project root, or old location
 from dotenv import load_dotenv as _load_dotenv
-_agent_data = Path.home() / "Documents" / "WhatsArch"
 _project_root = Path(__file__).resolve().parent.parent
-# Try agent data dir first, then project root
-for _env_path in [_agent_data / ".env", _project_root / ".env"]:
+for _env_path in [Path("C:/WhatsArch/.env"), _project_root / ".env", Path.home() / "Documents" / "WhatsArch" / ".env"]:
     if _env_path.exists():
         _load_dotenv(str(_env_path))
         break
