@@ -2179,6 +2179,16 @@
                 <div id="hwInfo"><div style="color:var(--text-muted);font-size:0.9em;"><i class="fas fa-spinner fa-spin"></i> טוען...</div></div>
             </div>
 
+            <!-- Data Directory -->
+            <div class="mgmt-chat-card" id="dataDirCard" style="display:none;">
+                <div class="mgmt-chat-header">
+                    <span class="mgmt-chat-name"><i class="fas fa-folder-open" style="color:var(--accent-green);"></i> <span data-i18n="settingsDataDir">תיקיית נתונים</span></span>
+                </div>
+                <div id="dataDirInfo" style="padding:4px 0;">
+                    <div style="color:var(--text-muted);font-size:0.85em;"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+
             <!-- Preset Packages -->
             <div class="mgmt-chat-card">
                 <div class="mgmt-chat-header">
@@ -3112,7 +3122,7 @@
             try {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 2000);
-                const res = await fetch(AGENT_URL + '/status', { signal: controller.signal });
+                const res = await fetch(AGENT_URL + '/status', { signal: controller.signal, headers: agentHeaders() });
                 clearTimeout(timeout);
                 if (res.ok) {
                     const data = await res.json();
@@ -3142,6 +3152,14 @@
                 return AGENT_URL;
             }
             return '';  // relative = same origin (Railway)
+        }
+
+        function agentHeaders() {
+            // Headers for agent requests - include user email for per-user isolation
+            const h = { 'Content-Type': 'application/json' };
+            const email = localStorage.getItem('user_email') || '';
+            if (email) h['X-User-Email'] = email;
+            return h;
         }
 
         function mediaBase(chatName) {
@@ -5387,6 +5405,9 @@
                     renderHardware(data.hardware, data.performance);
                 }
 
+                // Load data directory info
+                loadDataDirInfo();
+
                 if (modelsRes.ok) {
                     modelsData = await modelsRes.json();
                     renderModelCards('vision', modelsData.vision || []);
@@ -5606,6 +5627,78 @@
                     el.innerHTML = '<i class="fas fa-minus-circle"></i> ' + t('settingsNotConfigured') + (f.required ? '' : ' ' + t('settingsOptional'));
                 }
             });
+        }
+
+        async function loadDataDirInfo() {
+            if (!agentAvailable) return;
+            const card = document.getElementById('dataDirCard');
+            const info = document.getElementById('dataDirInfo');
+            if (!card || !info) return;
+            card.style.display = '';
+            try {
+                const res = await fetch(AGENT_URL + '/api/user/data-dir', { headers: agentHeaders() });
+                if (!res.ok) return;
+                const d = await res.json();
+                const he = currentLang === 'he';
+                info.innerHTML = `
+                    <div style="font-size:0.85em;margin-bottom:8px;">
+                        <div style="color:var(--text-secondary);margin-bottom:4px;">${he ? 'נתיב נוכחי:' : 'Current path:'}</div>
+                        <div style="direction:ltr;text-align:left;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:8px;font-family:monospace;font-size:0.9em;word-break:break-all;">${escapeHtml(d.data_dir)}</div>
+                    </div>
+                    <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">
+                        <i class="fas fa-hdd"></i> ${d.size_mb} MB ${he ? 'בשימוש' : 'used'}
+                        ${d.custom ? `<span style="color:var(--accent-green);margin-right:8px;"><i class="fas fa-check"></i> ${he ? 'מותאם אישית' : 'custom'}</span>` : ''}
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-secondary btn-sm" onclick="changeDataDir()" style="font-size:0.82em;">
+                            <i class="fas fa-folder-open"></i> ${he ? 'שנה מיקום' : 'Change location'}
+                        </button>
+                        ${d.custom ? `<button class="btn btn-secondary btn-sm" onclick="resetDataDir()" style="font-size:0.82em;">
+                            <i class="fas fa-undo"></i> ${he ? 'חזור לברירת מחדל' : 'Reset to default'}
+                        </button>` : ''}
+                    </div>
+                `;
+            } catch (e) {
+                card.style.display = 'none';
+            }
+        }
+
+        async function changeDataDir() {
+            try {
+                // Open folder picker
+                const browseRes = await fetch(AGENT_URL + '/browse/data-dir', { method: 'POST', headers: agentHeaders() });
+                const browseData = await browseRes.json();
+                if (!browseData.path) return;
+
+                const he = currentLang === 'he';
+                if (!confirm(he ? `להעביר את הנתונים ל:\n${browseData.path}\n\nהקבצים הקיימים יועברו.` : `Move data to:\n${browseData.path}\n\nExisting files will be moved.`)) return;
+
+                const res = await fetch(AGENT_URL + '/api/user/data-dir', {
+                    method: 'POST', headers: agentHeaders(),
+                    body: JSON.stringify({ path: browseData.path })
+                });
+                if (res.ok) {
+                    showToast(he ? 'תיקייה שונתה' : 'Directory changed', 'success');
+                    loadDataDirInfo();
+                    loadChats();
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function resetDataDir() {
+            try {
+                const res = await fetch(AGENT_URL + '/api/user/data-dir', {
+                    method: 'POST', headers: agentHeaders(),
+                    body: JSON.stringify({ path: '' })
+                });
+                if (res.ok) {
+                    showToast(he ? 'חזר לברירת מחדל' : 'Reset to default', 'success');
+                    loadDataDirInfo();
+                    loadChats();
+                }
+            } catch (e) {}
         }
 
         function renderHardware(hw, perf) {

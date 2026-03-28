@@ -55,43 +55,114 @@ CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localh
 # Agent version
 VERSION = "2.0.0"
 
-# Data directory — per OS user: Documents/WhatsArch/{username}/
-_USERNAME = os.environ.get("USERNAME") or os.environ.get("USER") or "default"
-DATA_DIR = Path.home() / "Documents" / "WhatsArch" / _USERNAME
-CHATS_DIR = DATA_DIR / "chats"
-CHATS_DIR.mkdir(parents=True, exist_ok=True)
+# ---------------------------------------------------------------------------
+# Per-user data directory system
+# ---------------------------------------------------------------------------
+# Each app user (by email) gets their own data directory.
+# users.json maps email -> {data_dir, custom}.
+# Frontend sends X-User-Email header on every request.
 
-# Keep root settings accessible (backward compat: migrate if needed)
-_ROOT_DIR = Path.home() / "Documents" / "WhatsArch"
+AGENT_ROOT = Path.home() / "Documents" / "WhatsArch"
+AGENT_ROOT.mkdir(parents=True, exist_ok=True)
+USERS_CONFIG_PATH = AGENT_ROOT / "users.json"
+
+# Default fallback user for local mode (no login)
+_DEFAULT_USER = "local"
+
+
+def _load_users_config() -> dict:
+    """Load users.json mapping."""
+    if USERS_CONFIG_PATH.exists():
+        try:
+            with open(USERS_CONFIG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return {}
+
+
+def _save_users_config(config: dict):
+    """Save users.json mapping."""
+    with open(USERS_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+
+
+def _email_to_dirname(email: str) -> str:
+    """Convert email to safe directory name: susu@hotmail.com -> susu_hotmail_com"""
+    return email.replace("@", "_").replace(".", "_").replace(" ", "_").strip("_")
+
+
+def _get_user_data_dir(email: str) -> Path:
+    """Get or create the data directory for a user."""
+    if not email or email == _DEFAULT_USER:
+        email = _DEFAULT_USER
+
+    users = _load_users_config()
+    user_entry = users.get(email)
+
+    if user_entry and user_entry.get("data_dir"):
+        data_dir = Path(user_entry["data_dir"])
+    else:
+        # Create default directory
+        dirname = _email_to_dirname(email) if email != _DEFAULT_USER else "local"
+        data_dir = AGENT_ROOT / dirname
+        users[email] = {"data_dir": str(data_dir), "custom": False}
+        _save_users_config(users)
+
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "chats").mkdir(parents=True, exist_ok=True)
+    return data_dir
+
+
+def _get_current_user_email() -> str:
+    """Get the current user's email from the X-User-Email header."""
+    try:
+        return request.headers.get("X-User-Email", "").strip() or _DEFAULT_USER
+    except RuntimeError:
+        return _DEFAULT_USER
+
+
+def _get_current_data_dir() -> Path:
+    """Get the data directory for the current request's user."""
+    return _get_user_data_dir(_get_current_user_email())
+
+
+def _get_current_chats_dir() -> Path:
+    """Get the chats directory for the current request's user."""
+    return _get_current_data_dir() / "chats"
+
+
+# Backward compat: global references (used at startup, overridden per-request)
+DATA_DIR = _get_user_data_dir(_DEFAULT_USER)
+CHATS_DIR = DATA_DIR / "chats"
 SETTINGS_PATH = DATA_DIR / "settings.json"
 
-# Migrate: if old chats exist in root but not in user dir, move them
-_old_chats = _ROOT_DIR / "chats"
-if _old_chats.exists() and _old_chats != CHATS_DIR:
-    for d in _old_chats.iterdir():
-        if d.is_dir() and ((d / "_chat.txt").exists() or (d / "result.json").exists()):
-            dest = CHATS_DIR / d.name
-            if not dest.exists():
-                try:
-                    import shutil as _sh
-                    _sh.move(str(d), str(dest))
-                except Exception:
-                    pass
-    # Migrate settings
-    _old_settings = _ROOT_DIR / "settings.json"
-    if _old_settings.exists() and not SETTINGS_PATH.exists():
+# Migrate: if old chats exist in root/chats/ or root/{os_user}/chats/, move to local/
+for _migrate_dir in [AGENT_ROOT / "chats", AGENT_ROOT / (os.environ.get("USERNAME") or "x") / "chats"]:
+    if _migrate_dir.exists() and _migrate_dir != CHATS_DIR:
+        for _d in _migrate_dir.iterdir():
+            if _d.is_dir() and ((_d / "_chat.txt").exists() or (_d / "result.json").exists()):
+                _dest = CHATS_DIR / _d.name
+                if not _dest.exists():
+                    try:
+                        shutil.move(str(_d), str(_dest))
+                    except Exception:
+                        pass
+# Migrate settings
+for _old_s in [AGENT_ROOT / "settings.json", AGENT_ROOT / (os.environ.get("USERNAME") or "x") / "settings.json"]:
+    if _old_s.exists() and not SETTINGS_PATH.exists():
         try:
-            import shutil as _sh
-            _sh.copy2(str(_old_settings), str(SETTINGS_PATH))
+            shutil.copy2(str(_old_s), str(SETTINGS_PATH))
         except Exception:
             pass
 
 
 def _load_agent_settings() -> dict:
-    """Load agent-specific settings (proxy URL, user API keys, etc.)."""
-    if SETTINGS_PATH.exists():
+    """Load agent-specific settings for the current user."""
+    sp = _get_current_data_dir() / "settings.json"
+    if sp.exists():
         try:
-            with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+            with open(sp, "r", encoding="utf-8") as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError):
             pass
@@ -99,30 +170,28 @@ def _load_agent_settings() -> dict:
 
 
 def _save_agent_settings(settings: dict):
-    """Save agent settings."""
-    SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+    """Save agent settings for the current user."""
+    sp = _get_current_data_dir() / "settings.json"
+    sp.parent.mkdir(parents=True, exist_ok=True)
+    with open(sp, "w", encoding="utf-8") as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
 
 
 # ---------------------------------------------------------------------------
 # Project-root shim for chat_search modules
 # ---------------------------------------------------------------------------
-# chat_search.config.load_settings(project_root) expects settings.json at project_root.
-# For the agent, project_root is DATA_DIR (parent of chats/).
-# We ensure a settings.json exists there.
 
 def _get_project_root() -> str:
     """Return the project root for chat_search modules (parent of chats dir)."""
-    return str(DATA_DIR)
+    return str(_get_current_data_dir())
 
 
 def _ensure_settings_file():
     """Ensure a settings.json exists for chat_search modules."""
-    settings_path = DATA_DIR / "settings.json"
-    if not settings_path.exists():
+    sp = _get_current_data_dir() / "settings.json"
+    if not sp.exists():
         from chat_search.config import DEFAULT_SETTINGS
-        with open(settings_path, "w", encoding="utf-8") as f:
+        with open(sp, "w", encoding="utf-8") as f:
             json.dump(DEFAULT_SETTINGS, f, ensure_ascii=False, indent=2)
 
 
@@ -137,21 +206,114 @@ _ensure_settings_file()
 def status():
     """Health check — web app pings this to detect if agent is running."""
     chats = []
-    for d in sorted(CHATS_DIR.iterdir()):
-        if d.is_dir():
-            has_wa = (d / "_chat.txt").exists()
-            has_tg = (d / "result.json").exists()
-            if has_wa or has_tg:
-                chats.append(d.name)
+    user_chats_dir = _get_current_chats_dir()
+    if user_chats_dir.exists():
+        for d in sorted(user_chats_dir.iterdir()):
+            if d.is_dir():
+                has_wa = (d / "_chat.txt").exists()
+                has_tg = (d / "result.json").exists()
+                if has_wa or has_tg:
+                    chats.append(d.name)
     return jsonify({
         "status": "running",
         "version": VERSION,
         "platform": platform.system(),
-        "user": _USERNAME,
-        "data_dir": str(DATA_DIR),
-        "chats_dir": str(CHATS_DIR),
+        "user": _get_current_user_email(),
+        "data_dir": str(_get_current_data_dir()),
+        "chats_dir": str(_get_current_chats_dir()),
         "chats": chats,
     })
+
+
+@app.route("/api/user/data-dir", methods=["GET"])
+def api_get_data_dir():
+    """Get current user's data directory info."""
+    email = _get_current_user_email()
+    data_dir = _get_current_data_dir()
+    users = _load_users_config()
+    entry = users.get(email, {})
+    # Calculate size
+    total_bytes = 0
+    chats_path = data_dir / "chats"
+    if chats_path.exists():
+        for root, dirs, files in os.walk(str(chats_path)):
+            for f in files:
+                try:
+                    total_bytes += os.path.getsize(os.path.join(root, f))
+                except OSError:
+                    pass
+    return jsonify({
+        "email": email,
+        "data_dir": str(data_dir),
+        "custom": entry.get("custom", False),
+        "size_mb": round(total_bytes / 1024 / 1024, 1),
+        "default_dir": str(AGENT_ROOT / _email_to_dirname(email)),
+    })
+
+
+@app.route("/api/user/data-dir", methods=["POST"])
+def api_set_data_dir():
+    """Change data directory for current user. Moves existing data."""
+    email = _get_current_user_email()
+    data = request.get_json()
+    if not data or "path" not in data:
+        abort(400, "Missing path")
+
+    new_path = data["path"].strip()
+    if not new_path:
+        # Reset to default
+        new_path = str(AGENT_ROOT / _email_to_dirname(email))
+
+    new_dir = Path(new_path)
+    old_dir = _get_current_data_dir()
+
+    # Create new directory
+    new_dir.mkdir(parents=True, exist_ok=True)
+    (new_dir / "chats").mkdir(exist_ok=True)
+
+    # Move data if old dir has content and is different
+    if old_dir != new_dir and old_dir.exists():
+        # Move chats
+        old_chats = old_dir / "chats"
+        new_chats = new_dir / "chats"
+        if old_chats.exists():
+            for item in old_chats.iterdir():
+                dest = new_chats / item.name
+                if not dest.exists():
+                    try:
+                        shutil.move(str(item), str(dest))
+                    except Exception:
+                        pass
+        # Copy settings
+        old_settings = old_dir / "settings.json"
+        new_settings = new_dir / "settings.json"
+        if old_settings.exists() and not new_settings.exists():
+            shutil.copy2(str(old_settings), str(new_settings))
+
+    # Update users config
+    users = _load_users_config()
+    users[email] = {"data_dir": str(new_dir), "custom": new_path != str(AGENT_ROOT / _email_to_dirname(email))}
+    _save_users_config(users)
+
+    return jsonify({"status": "ok", "data_dir": str(new_dir)})
+
+
+@app.route("/browse/data-dir", methods=["POST"])
+def browse_data_dir():
+    """Open native folder picker for data directory."""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        folder = filedialog.askdirectory(title="Choose WhatsArch data directory")
+        root.destroy()
+        if folder:
+            return jsonify({"path": folder})
+        return jsonify({"path": ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/hardware")
@@ -218,7 +380,7 @@ def api_delete_chat(chat_name):
     chat_name = chat_name.strip()
     if not chat_name:
         abort(400, "Missing chat name")
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     if not os.path.isdir(chat_dir):
         abort(404, f"Chat '{chat_name}' not found")
     # Stop any running processing
@@ -234,7 +396,7 @@ def api_delete_chat(chat_name):
 def api_clear_processing(chat_name):
     """Delete all processed data (data/ folder) so user can re-process from scratch."""
     chat_name = chat_name.strip()
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     data_dir = os.path.join(chat_dir, "data")
     if not os.path.isdir(chat_dir):
         abort(404, f"Chat '{chat_name}' not found")
@@ -254,7 +416,7 @@ def api_clear_processing(chat_name):
 def api_open_folder(chat_name):
     """Open the chat folder in system file explorer."""
     chat_name = chat_name.strip()
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     if not os.path.isdir(chat_dir):
         abort(404, f"Chat '{chat_name}' not found")
     try:
@@ -275,7 +437,7 @@ def api_chats():
     from chat_search import indexer
 
     result = []
-    for name in sorted(os.listdir(str(CHATS_DIR))):
+    for name in sorted(os.listdir(str(_get_current_chats_dir()))):
         chat_dir = os.path.join(str(CHATS_DIR), name)
         if not os.path.isdir(chat_dir):
             continue
@@ -467,12 +629,12 @@ def api_process_start():
     if task not in valid_tasks:
         abort(400, f"Invalid task. Must be one of: {', '.join(valid_tasks)}")
 
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     if not os.path.isdir(chat_dir):
         abort(404, f"Chat '{chat_name}' not found")
 
     from chat_search import process_manager
-    started = process_manager.start_processing(chat_name, task, str(CHATS_DIR))
+    started = process_manager.start_processing(chat_name, task, str(_get_current_chats_dir()))
     if not started:
         return jsonify({"error": "Task already running for this chat"}), 409
 
@@ -517,7 +679,7 @@ def api_process_status():
     if not chat_name:
         abort(400, "Missing chat parameter")
 
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     if not os.path.isdir(chat_dir):
         abort(404, f"Chat '{chat_name}' not found")
 
@@ -532,7 +694,7 @@ def api_process_status():
 
 def _get_chat_paths(chat_name):
     """Return (chat_dir, db_path) for a given chat name, or abort 404."""
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     db_path = os.path.join(chat_dir, "data", "chat.db")
     if not os.path.isdir(chat_dir) or not os.path.exists(db_path):
         abort(404, f"Chat '{chat_name}' not found or not indexed")
@@ -590,7 +752,7 @@ def api_search_all():
     page = int(request.args.get("page", 1))
 
     all_results = []
-    for name in sorted(os.listdir(str(CHATS_DIR))):
+    for name in sorted(os.listdir(str(_get_current_chats_dir()))):
         chat_dir = os.path.join(str(CHATS_DIR), name)
         db_path = os.path.join(chat_dir, "data", "chat.db")
         if not os.path.isdir(chat_dir) or not os.path.exists(db_path):
@@ -808,7 +970,7 @@ def serve_media(chat_and_file):
     chat_name, filename = parts
     chat_name = os.path.basename(chat_name)
     filename = os.path.basename(filename)
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     if not os.path.isdir(chat_dir):
         abort(404)
     return send_from_directory(chat_dir, filename)
@@ -823,7 +985,7 @@ def api_thumbnail(chat_and_file):
     chat_name, filename = parts
     chat_name = os.path.basename(chat_name)
     filename = os.path.basename(filename)
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     if not os.path.isdir(chat_dir):
         abort(404)
 
@@ -856,7 +1018,7 @@ def api_media_list():
     if not chat_name:
         abort(400, "Missing chat parameter")
 
-    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
     if not os.path.isdir(chat_dir):
         abort(404)
 
@@ -1005,7 +1167,7 @@ def api_export():
 
     if chat_name == '__all__' or not chat_name:
         all_results = []
-        for name in sorted(os.listdir(str(CHATS_DIR))):
+        for name in sorted(os.listdir(str(_get_current_chats_dir()))):
             chat_dir_path = os.path.join(str(CHATS_DIR), name)
             db_path = os.path.join(chat_dir_path, "data", "chat.db")
             if not os.path.isdir(chat_dir_path) or not os.path.exists(db_path):
@@ -1130,7 +1292,7 @@ def api_presets():
     video_count = 0
 
     if chat_name:
-        chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+        chat_dir = os.path.join(str(_get_current_chats_dir()), chat_name)
         if os.path.isdir(chat_dir):
             try:
                 scan = process_manager.scan_chat_files(chat_dir)
