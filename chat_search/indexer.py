@@ -774,10 +774,10 @@ def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progre
 
         # Incremental save after each batch for resume support
         combined = np.vstack(all_embeddings)
-        tmp_path = embeddings_path + ".tmp"
-        np.save(tmp_path, combined)
-        os.replace(tmp_path, embeddings_path)
-        _chunk_embedding_cache.pop(db_path, None)
+        # Save directly (avoid os.replace which can fail with Hebrew paths on Windows)
+        np.save(embeddings_path, combined)
+        cache_key = os.path.normcase(os.path.abspath(db_path))
+        _chunk_embedding_cache.pop(cache_key, None)
 
         done_chunks = min(i + batch_size, total)
         batch_num = (i - start_idx) // batch_size + 1
