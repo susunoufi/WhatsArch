@@ -982,7 +982,7 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None, proje
     profile = get_group_profile(db_path)
     if profile:
         system += f"\n\n--- פרופיל הקבוצה (רקע שנוצר מניתוח מעמיק של הצ'אט) ---\n{profile}"
-    answer = llm.chat(system, user_message, max_tokens=2048)
+    answer = llm.chat(system, user_message, max_tokens=4096)
 
     # 6. Extract source citations from chunks
     sources = []
@@ -1127,7 +1127,7 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
     profile = get_group_profile(db_path)
     if profile:
         system += f"\n\n--- פרופיל הקבוצה (רקע שנוצר מניתוח מעמיק של הצ'אט) ---\n{profile}"
-    for chunk in llm.chat_stream(system, user_message, max_tokens=2048):
+    for chunk in llm.chat_stream(system, user_message, max_tokens=4096):
         yield chunk
 
     # Log RAG usage after stream completes
@@ -1162,7 +1162,7 @@ def ask_with_context(context_text: str, question: str, chat_name: str, history: 
 
     llm = _get_llm_client(project_root)
     system = get_system_prompt(chat_name, language)
-    answer = llm.chat(system, user_message, max_tokens=2048)
+    answer = llm.chat(system, user_message, max_tokens=4096)
 
     return {
         "answer": answer,
