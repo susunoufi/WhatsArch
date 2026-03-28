@@ -236,6 +236,46 @@ def get_processing_status(chat_dir: str) -> dict:
             "total": embeddings_total,
         },
         "active_task": get_active_task(chat_name),
+        "storage": _get_folder_storage(chat_dir),
+    }
+
+
+def _get_folder_storage(chat_dir: str) -> dict:
+    """Get storage info: total size, source size, processing size, path, is_link."""
+    data_dir = os.path.join(chat_dir, "data")
+    source_bytes = 0
+    data_bytes = 0
+
+    # Source files (media, chat export)
+    for f in os.listdir(chat_dir):
+        fp = os.path.join(chat_dir, f)
+        if os.path.isfile(fp):
+            source_bytes += os.path.getsize(fp)
+
+    # Processing files (data/ folder)
+    if os.path.isdir(data_dir):
+        for f in os.listdir(data_dir):
+            fp = os.path.join(data_dir, f)
+            if os.path.isfile(fp):
+                data_bytes += os.path.getsize(fp)
+
+    is_link = os.path.islink(chat_dir) or os.path.ismount(chat_dir)
+    # Windows junction detection
+    if not is_link and os.name == 'nt':
+        try:
+            import ctypes
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(chat_dir)
+            if attrs != -1 and (attrs & 0x400):  # FILE_ATTRIBUTE_REPARSE_POINT
+                is_link = True
+        except Exception:
+            pass
+
+    return {
+        "path": chat_dir,
+        "is_link": is_link,
+        "source_mb": round(source_bytes / 1024 / 1024, 1),
+        "data_mb": round(data_bytes / 1024 / 1024, 1),
+        "total_mb": round((source_bytes + data_bytes) / 1024 / 1024, 1),
     }
 
 

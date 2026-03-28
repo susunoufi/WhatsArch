@@ -4562,7 +4562,23 @@
                     </div>
                     <div id="${cardId}-live-status"></div>
                 </div>
-                <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;">
+                ${status.storage ? `
+                <div style="margin-top:12px;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;font-size:0.78em;color:var(--text-muted);">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <span><i class="fas fa-hdd"></i> ${status.storage.total_mb} MB</span>
+                        <span style="opacity:0.5;">(${he ? 'מקור' : 'source'}: ${status.storage.source_mb} MB, ${he ? 'עיבודים' : 'processed'}: ${status.storage.data_mb} MB)</span>
+                        ${status.storage.is_link ? `<span style="color:var(--accent-green);"><i class="fas fa-link"></i> ${he ? 'קיצור דרך' : 'linked'}</span>` : ''}
+                    </div>
+                    <div style="margin-top:4px;opacity:0.5;direction:ltr;text-align:left;font-size:0.9em;word-break:break-all;">${escapeHtml(status.storage.path)}</div>
+                </div>
+                ` : ''}
+                <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                    ${isLocalChat(chatName) ? `<button class="btn btn-secondary btn-sm" style="font-size:0.8em;" onclick="openChatFolder('${escapeHtml(chatName)}')">
+                        <i class="fas fa-folder-open"></i> ${he ? 'פתח תיקייה' : 'Open folder'}
+                    </button>` : ''}
+                    <button class="btn btn-secondary btn-sm" style="font-size:0.8em;" onclick="clearProcessing('${escapeHtml(chatName)}')">
+                        <i class="fas fa-eraser"></i> ${he ? 'נקה עיבודים' : 'Clear processing'}
+                    </button>
                     <button class="btn btn-secondary btn-sm" style="color:var(--accent-red);border-color:var(--accent-red);font-size:0.8em;" onclick="deleteChat('${escapeHtml(chatName)}')">
                         <i class="fas fa-trash-alt"></i> ${t('mgmtDeleteChat')}
                     </button>
@@ -4740,9 +4756,45 @@
             }
         }
 
+        async function openChatFolder(chatName) {
+            try {
+                await fetch(AGENT_URL + '/api/chats/' + encodeURIComponent(chatName) + '/open-folder', { method: 'POST' });
+            } catch (e) {
+                showToast(he ? 'לא ניתן לפתוח תיקייה' : 'Cannot open folder', 'error');
+            }
+        }
+
+        async function clearProcessing(chatName) {
+            const he = currentLang === 'he';
+            const msg = he
+                ? `לנקות את כל העיבודים של "${chatName}"?\n\nזה ימחק: תמלולים, תיאורי תמונות, אינדקס חיפוש.\nהקבצים המקוריים (הודעות, תמונות, הקלטות) לא יימחקו.\n\nתצטרך לעבד מחדש.`
+                : `Clear all processing for "${chatName}"?\n\nThis will delete: transcriptions, image descriptions, search index.\nOriginal files (messages, images, audio) will NOT be deleted.\n\nYou will need to re-process.`;
+            if (!confirm(msg)) return;
+
+            try {
+                const res = await fetch(apiBase(chatName) + '/api/chats/' + encodeURIComponent(chatName) + '/clear-processing', { method: 'POST' });
+                if (res.ok) {
+                    showToast(he ? 'העיבודים נמחקו' : 'Processing cleared', 'success');
+                    loadManagementData();
+                } else {
+                    showToast(he ? 'שגיאה בניקוי' : 'Clear failed', 'error');
+                }
+            } catch (e) {
+                showToast(he ? 'שגיאה' : 'Error', 'error');
+            }
+        }
+
         async function deleteChat(chatName) {
             const he = currentLang === 'he';
-            if (!confirm(he ? `למחוק את "${chatName}" וכל הנתונים שלו?` : `Delete "${chatName}" and all its data?`)) return;
+            const isLocal = agentAvailable && agentChats.has(chatName);
+            const msg = he
+                ? `למחוק את "${chatName}"?\n\n` +
+                  `יימחק:\n• כל העיבודים (תמלולים, תיאורים, אינדקס)\n` +
+                  (isLocal ? `• העותק בתיקיית WhatsArch\n\nהקבצים המקוריים שלך (אם בחרת תיקייה) לא יימחקו.` : `• כל הנתונים מהענן`)
+                : `Delete "${chatName}"?\n\n` +
+                  `Will delete:\n• All processing (transcriptions, descriptions, index)\n` +
+                  (isLocal ? `• Copy in WhatsArch folder\n\nYour original files (if you chose a folder) will NOT be deleted.` : `• All data from cloud`);
+            if (!confirm(msg)) return;
 
             try {
                 const headers = { 'Content-Type': 'application/json' };

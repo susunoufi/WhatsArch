@@ -206,6 +206,45 @@ def api_delete_chat(chat_name):
     shutil.rmtree(chat_dir, ignore_errors=True)
     return jsonify({"status": "deleted", "chat": chat_name})
 
+@app.route("/api/chats/<chat_name>/clear-processing", methods=["POST"])
+def api_clear_processing(chat_name):
+    """Delete all processed data (data/ folder) so user can re-process from scratch."""
+    chat_name = chat_name.strip()
+    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    data_dir = os.path.join(chat_dir, "data")
+    if not os.path.isdir(chat_dir):
+        abort(404, f"Chat '{chat_name}' not found")
+    # Stop any running processing
+    try:
+        from chat_search import process_manager
+        process_manager.stop_processing(chat_name)
+    except Exception:
+        pass
+    # Delete only the data/ folder
+    if os.path.isdir(data_dir):
+        shutil.rmtree(data_dir, ignore_errors=True)
+    return jsonify({"status": "cleared", "chat": chat_name})
+
+
+@app.route("/api/chats/<chat_name>/open-folder", methods=["POST"])
+def api_open_folder(chat_name):
+    """Open the chat folder in system file explorer."""
+    chat_name = chat_name.strip()
+    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    if not os.path.isdir(chat_dir):
+        abort(404, f"Chat '{chat_name}' not found")
+    try:
+        if platform.system() == "Windows":
+            os.startfile(chat_dir)
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", chat_dir])
+        else:
+            subprocess.Popen(["xdg-open", chat_dir])
+        return jsonify({"status": "opened"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/chats")
 def api_chats():
     """List all local chats with their status."""

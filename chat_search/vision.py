@@ -650,9 +650,7 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                     except Exception:
                         pass
                 else:
-                    # Save empty string so this file is marked as attempted
-                    # and won't be retried on next run
-                    cache[filename] = ""
+                    # Don't cache failures - allow retry on next run
                     error_count += 1
                     consecutive_errors += 1
                     if error_count == 1:
