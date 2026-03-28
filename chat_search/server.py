@@ -1659,6 +1659,12 @@ def create_app(chats_dir: str) -> Flask:
 
             extract_dir = os.path.join(temp_dir, "extracted")
             with zipfile.ZipFile(temp_zip, "r") as zf:
+                # Fix Hebrew/Unicode filenames (ZIP uses cp437 by default)
+                for info in zf.infolist():
+                    try:
+                        info.filename = info.filename.encode('cp437').decode('utf-8')
+                    except (UnicodeDecodeError, UnicodeEncodeError):
+                        pass
                 zf.extractall(extract_dir)
 
             # Find the chat content (might be in a subfolder)
@@ -1681,7 +1687,13 @@ def create_app(chats_dir: str) -> Flask:
                 if len(entries) == 1:
                     chat_name = entries[0]
                 else:
-                    chat_name = os.path.splitext(file.filename)[0]
+                    # Try to decode filename properly
+                    raw_name = file.filename or "uploaded_chat"
+                    try:
+                        raw_name = raw_name.encode('latin-1').decode('utf-8')
+                    except (UnicodeDecodeError, UnicodeEncodeError):
+                        pass
+                    chat_name = os.path.splitext(raw_name)[0]
             # Sanitize
             chat_name = "".join(c for c in chat_name if c not in '<>:"/\\|?*').strip()
             if not chat_name:
