@@ -241,9 +241,10 @@ def hardware():
     except Exception:
         pass
 
+    # Check whisper without importing (importing loads the model = slow)
     try:
-        from faster_whisper import WhisperModel
-        info["whisper_available"] = True
+        import importlib.util
+        info["whisper_available"] = importlib.util.find_spec("faster_whisper") is not None
     except Exception:
         pass
 
