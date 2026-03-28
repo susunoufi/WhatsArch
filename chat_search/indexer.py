@@ -796,24 +796,37 @@ def _embed_openai(texts, api_key, start_idx, total, cancel_event=None, progress_
     import time as _time
     from openai import OpenAI
     client = OpenAI(api_key=api_key)
-    batch_size = 100
+    batch_size = 50  # Smaller batches to avoid token limits
     all_emb = [existing_embeddings] if existing_embeddings is not None else []
     for i in range(start_idx, total, batch_size):
         if cancel_event and cancel_event.is_set():
             raise EmbeddingCancelled()
-        batch = texts[i:i + batch_size]
-        # Retry with backoff on rate limit
+        # Truncate: Hebrew with nikud can be 3-4 tokens per char, so 6000 chars = ~20K tokens max
+        batch = [t[:6000] if len(t) > 6000 else t for t in texts[i:i + batch_size]]
+        # Small delay to avoid rate limits on large chats
+        if i > start_idx:
+            _time.sleep(0.3)
+        # Retry with backoff on rate limit or token length errors
+        resp = None
         for attempt in range(5):
             try:
                 resp = client.embeddings.create(model="text-embedding-3-small", input=batch)
                 break
             except Exception as e:
-                if "rate_limit" in str(e).lower() or "429" in str(e):
-                    wait = 2 ** attempt + 1  # 2, 3, 5, 9, 17 seconds
+                err_str = str(e).lower()
+                if "rate_limit" in err_str or "429" in str(e):
+                    wait = 2 ** attempt + 1
                     print(f"  Rate limit hit, waiting {wait}s...")
                     _time.sleep(wait)
+                elif "maximum" in err_str or "token" in err_str or "length" in err_str or "invalid" in err_str:
+                    # Truncate more aggressively each retry
+                    max_chars = 4000 - (attempt * 500)
+                    batch = [t[:max_chars] if len(t) > max_chars else t for t in batch]
+                    print(f"  Token limit, truncating to {max_chars} chars, retry...")
                 else:
                     raise
+        if resp is None:
+            raise RuntimeError(f"Failed to embed batch at index {i} after 5 retries")
         batch_emb = np.array([d.embedding for d in resp.data], dtype=np.float32)
         all_emb.append(batch_emb)
         # Incremental save for resume support

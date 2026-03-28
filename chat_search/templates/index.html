@@ -4689,6 +4689,12 @@
                         ${renderActionBtn(chatName, 'index', t('mgmtIndex'), 'fa-database', runningTask)}
                         ${renderActionBtn(chatName, 'embeddings', t('mgmtEmbeddings'), 'fa-brain', runningTask)}
                     </div>
+                    <div style="margin-top:8px;">
+                        <button class="btn btn-sm" style="background:linear-gradient(135deg,#818cf8,#38bdf8);color:#0f172a;font-weight:700;font-size:0.82em;" onclick="generateProfile('${escapeHtml(chatName)}')" id="${cardId}-profile-btn">
+                            <i class="fas fa-users-cog"></i> ${he ? 'ניתוח קבוצה (AI)' : 'Analyze Group (AI)'}
+                        </button>
+                        <span id="${cardId}-profile-status" style="font-size:0.8em;color:var(--text-muted);margin-right:8px;"></span>
+                    </div>
                     <div id="${cardId}-live-status"></div>
                 </div>
                 ${status.storage ? `
@@ -4961,6 +4967,28 @@
             } catch (e) {
                 showToast('Error: ' + e.message, 'error');
             }
+        }
+
+        async function generateProfile(chatName) {
+            const btn = document.querySelector(`[onclick="generateProfile('${chatName}')"]`);
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (he ? 'מנתח...' : 'Analyzing...'); }
+            showToast(he ? 'מנתח את הקבוצה... ייקח 30-60 שניות' : 'Analyzing group... 30-60 seconds', 'info', 5000);
+            try {
+                const res = await fetch(apiBase(chatName) + '/api/ai/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat: chatName })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    showToast(data.error, 'error');
+                } else {
+                    showToast(he ? 'ניתוח קבוצה הושלם! התשובות ישתפרו.' : 'Group analysis complete! Answers will improve.', 'success', 5000);
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-users-cog"></i> ' + (he ? 'ניתוח קבוצה (AI)' : 'Analyze Group (AI)'); }
         }
 
         async function openChatFolder(chatName) {

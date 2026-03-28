@@ -54,19 +54,18 @@ HEBREW_PREFIXES = (
     "ה", "ב", "ל", "מ", "כ", "ו", "ש", "נ", "י", "ת", "א",
 )
 
-SYSTEM_PROMPT_HE = """אתה עוזר חכם שמנתח שיחות WhatsApp בעברית.
+SYSTEM_PROMPT_HE = """אתה עוזר חכם ובטוח בעצמו שמנתח שיחות WhatsApp בעברית.
 קיבלת קטעי שיחה רלוונטיים מצ'אט "{chat_name}".
 
 כללים:
 - ענה בעברית תמיד
-- ענה בקצרה ובתמציתיות
-- ציין מספרי הודעות רלוונטיים בסוגריים מרובעים, לדוגמה: [#1234]
-- אם אין מידע מספיק בקטעים שניתנו, אמור זאת בכנות
-- אל תמציא מידע שלא מופיע בקטעים
-- כשהתשובה מבוססת על תיאור תמונה או וידאו, ציין זאת
-- [תיאור חזותי] מציין תיאור של תמונה או וידאו שנשלחו בשיחה
-- [תמלול וידאו] מציין תמלול של הקול בסרטון וידאו
-- [טקסט PDF] מציין תוכן של קובץ PDF שצורף בשיחה"""
+- ענה בביטחון ובהחלטיות. אם שואלים "מי הכי X?" — תחליט ותנמק. אל תתחמק.
+- תן תשובה ישירה וברורה. אם שואלים שאלה עם תשובה אחת — תן תשובה אחת.
+- בסס את התשובה על הקטעים שקיבלת. ציין מספרי הודעות: [#1234]
+- אל תמציא מידע שלא מופיע בקטעים, אבל אתה יכול להסיק מסקנות מהם
+- אם הקטעים לא מספיקים, ענה לפי מה שיש ותוסיף שזה מבוסס על חלק מהשיחה
+- היה אנושי, עם חוש הומור. הצ'אט הזה הוא של אנשים אמיתיים.
+- כשהתשובה מבוססת על תיאור תמונה/וידאו/PDF, ציין זאת"""
 
 SYSTEM_PROMPT_EN = """You are a smart assistant that analyzes chat conversations.
 You received relevant conversation segments from chat "{chat_name}".
@@ -826,13 +825,129 @@ def _get_llm_client(project_root=None):
     return _llm_client
 
 
+PROFILE_ANALYSIS_PROMPT = """אתה מנתח שיחות קבוצתיות מומחה. קיבלת מאות קטעי שיחה מקבוצת WhatsApp בשם "{chat_name}".
+
+נתח את הקבוצה לעומק וצור פרופיל מקיף. היה ספציפי עם דוגמאות וציטוטים.
+
+**חובה לכלול:**
+
+1. **סקירת הקבוצה** (2-3 משפטים): מה סוג הקבוצה, מה האווירה, כמה פעילה
+
+2. **פרופיל כל משתתף פעיל** (3-5 משפטים לכל אחד):
+   - שם + כינוי (אם יש)
+   - אופי ותכונות בולטות
+   - על מה הוא מדבר בעיקר
+   - סגנון כתיבה (ארוך/קצר, רציני/מצחיק, אמוג'ים)
+   - משפטים/ביטויים אופייניים (ציטוט ממשי!)
+   - יחסים עם אחרים בקבוצה
+
+3. **דינמיקות קבוצתיות**:
+   - מי חבר קרוב עם מי
+   - מי רב עם מי ועל מה
+   - מי המנהיג/ים הלא-רשמיים
+   - מי הליצן של הקבוצה
+   - מי השקט שפתאום מפתיע
+
+4. **נושאים מרכזיים** (עם דוגמאות):
+   - נושאי שיחה חוזרים
+   - ויכוחים תכופים
+   - בדיחות פנימיות וביטויים קבוצתיים
+
+5. **תובנות מיוחדות**:
+   - דפוסים מעניינים שגילית
+   - שינויים לאורך זמן (אם נראים)
+   - מה מייחד את הקבוצה הזו
+
+כתוב בעברית. היה מפורט וספציפי. השתמש בציטוטים אמיתיים מהשיחה."""
+
+
+def generate_group_profile(db_path: str, chat_name: str, project_root: str = None) -> str:
+    """Generate a comprehensive group profile by sampling chunks across the chat.
+
+    Samples heavily from different time periods and participants.
+    Returns the profile text.
+    """
+    import random
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    # Get total chunks
+    c.execute("SELECT COUNT(*) FROM chunks")
+    total = c.fetchone()[0]
+    if total == 0:
+        conn.close()
+        return ""
+
+    # Sample strategy: take chunks from different parts of the chat
+    # More samples = better profile. For a big chat, take 1000 chunks.
+    sample_size = min(total, 1000)
+
+    # Stratified sampling: divide into 20 segments, take evenly from each
+    segments = 20
+    per_segment = sample_size // segments
+    sampled_ids = []
+    segment_size = total // segments
+
+    for seg in range(segments):
+        start_id = seg * segment_size + 1
+        end_id = (seg + 1) * segment_size
+        c.execute("SELECT id FROM chunks WHERE id BETWEEN ? AND ? ORDER BY RANDOM() LIMIT ?",
+                  (start_id, end_id, per_segment))
+        sampled_ids.extend([row[0] for row in c.fetchall()])
+
+    # Fetch the sampled chunks
+    placeholders = ",".join(["?"] * len(sampled_ids))
+    c.execute(f"SELECT id, combined_text, senders FROM chunks WHERE id IN ({placeholders}) ORDER BY id",
+              sampled_ids)
+    chunks = c.fetchall()
+    conn.close()
+
+    if not chunks:
+        return ""
+
+    # Format chunks for the prompt
+    chunk_texts = []
+    for chunk_id, text, senders in chunks:
+        # Truncate very long chunks
+        if len(text) > 2000:
+            text = text[:2000] + "..."
+        chunk_texts.append(f"[Chunk #{chunk_id}, Senders: {senders}]\n{text}")
+
+    # Split into batches if too large (Claude can handle ~150K tokens)
+    # 1000 chunks × ~500 chars = ~500K chars = ~170K tokens. May need to trim.
+    all_text = "\n\n---\n\n".join(chunk_texts)
+    if len(all_text) > 400000:  # ~130K tokens
+        all_text = all_text[:400000]
+
+    prompt = PROFILE_ANALYSIS_PROMPT.format(chat_name=chat_name)
+    user_message = f"הנה קטעי שיחה מהקבוצה:\n\n{all_text}"
+
+    # Use the LLM
+    llm = _get_llm_client(project_root)
+    system = prompt
+    answer = llm.chat(system, user_message, max_tokens=8000)
+
+    # Save to DB
+    metadata = {"group_profile": answer}
+    indexer.save_chat_metadata(db_path, metadata)
+
+    return answer
+
+
+def get_group_profile(db_path: str) -> str:
+    """Get the stored group profile, or empty string if not generated."""
+    meta = indexer.get_chat_metadata(db_path)
+    return meta.get("group_profile", "")
+
+
 def ask(db_path: str, question: str, chat_name: str, history: list = None, project_root: str = None, language: str = "he") -> dict:
     """Main RAG pipeline: retrieve relevant chunks, then ask LLM.
 
     Returns {answer, sources, keywords, provider, debug}.
     """
     # 1. Retrieve relevant conversation chunks
-    chunk_groups = retrieve_chunks(db_path, question, max_results=12, language=language)
+    chunk_groups = retrieve_chunks(db_path, question, max_results=200, language=language)
 
     # 2. Format for prompt
     context_text = format_chunks_for_prompt(chunk_groups, chat_name)
@@ -849,9 +964,12 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None, proje
         )
         user_message = f"היסטוריית שיחה אחרונה:\n{history_text}\n\n{user_message}"
 
-    # 5. Call LLM
+    # 5. Call LLM (with group profile if available)
     llm = _get_llm_client(project_root)
     system = get_system_prompt(chat_name, language)
+    profile = get_group_profile(db_path)
+    if profile:
+        system += f"\n\n--- פרופיל הקבוצה (רקע שנוצר מניתוח מעמיק של הצ'אט) ---\n{profile}"
     answer = llm.chat(system, user_message, max_tokens=2048)
 
     # 6. Extract source citations from chunks
@@ -923,7 +1041,7 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
     import json
 
     # 1. Retrieve relevant conversation chunks
-    chunk_groups = retrieve_chunks(db_path, question, max_results=12, language=language)
+    chunk_groups = retrieve_chunks(db_path, question, max_results=200, language=language)
 
     # 2. Format for prompt
     context_text = format_chunks_for_prompt(chunk_groups, chat_name)
@@ -992,8 +1110,11 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
         "debug": debug_info,
     }) + "\n"
 
-    # 6. Stream the answer from LLM
+    # 6. Stream the answer from LLM (with group profile if available)
     system = get_system_prompt(chat_name, language)
+    profile = get_group_profile(db_path)
+    if profile:
+        system += f"\n\n--- פרופיל הקבוצה (רקע שנוצר מניתוח מעמיק של הצ'אט) ---\n{profile}"
     for chunk in llm.chat_stream(system, user_message, max_tokens=2048):
         yield chunk
 

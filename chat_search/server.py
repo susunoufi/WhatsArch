@@ -641,6 +641,39 @@ def create_app(chats_dir: str) -> Flask:
         info["current_rag_model"] = settings.get("rag_model")
         return jsonify(info)
 
+    @app.route("/api/ai/profile", methods=["POST"])
+    @require_auth
+    def api_ai_profile():
+        """Generate group profile for a chat."""
+        enforce_user_tier()
+        data = request.get_json()
+        if not data:
+            abort(400, "Missing JSON body")
+        chat_name = data.get("chat", "").strip()
+        if not chat_name:
+            abort(400, "Missing chat")
+        chat_dir, db_path = get_chat_paths(chat_name)
+        project_root = os.path.dirname(chats_dir)
+        try:
+            profile = ai_chat.generate_group_profile(db_path, chat_name, project_root)
+            return jsonify({"status": "ok", "profile": profile})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/ai/profile", methods=["GET"])
+    @require_auth
+    def api_ai_profile_get():
+        """Get existing group profile."""
+        chat_name = request.args.get("chat", "").strip()
+        if not chat_name:
+            return jsonify({"profile": ""})
+        try:
+            chat_dir, db_path = get_chat_paths(chat_name)
+            profile = ai_chat.get_group_profile(db_path)
+            return jsonify({"profile": profile})
+        except Exception:
+            return jsonify({"profile": ""})
+
     @app.route("/api/ai/chat", methods=["POST"])
     @require_auth
     def api_ai_chat():
