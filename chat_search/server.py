@@ -1221,16 +1221,33 @@ def create_app(chats_dir: str) -> Flask:
         """Get current settings including API key status and model preferences."""
         project_root = os.path.dirname(chats_dir)
         settings = config.load_settings(project_root)
-        keys = config.get_api_keys()
+
+        # For admin or local mode: show system keys
+        # For regular users: show only their own keys
+        user = get_current_user()
+        is_admin = user and user.get("email") == ADMIN_EMAIL
+
+        if is_admin or not _is_web_mode():
+            keys = config.get_api_keys()
+        else:
+            # Regular user - show only their own keys (stored per-user)
+            user_keys = get_user_api_keys(user["email"]) if user else {}
+            keys = {
+                "anthropic_key": user_keys.get("anthropic_key", ""),
+                "openai_key": user_keys.get("openai_key", ""),
+                "gemini_key": user_keys.get("gemini_key", ""),
+            }
+
         return jsonify({
             "settings": settings,
             "api_keys": {
-                "anthropic_configured": bool(keys["anthropic_key"]),
-                "anthropic_preview": keys["anthropic_key"][:8] + "..." if len(keys["anthropic_key"]) > 8 else "",
-                "openai_configured": bool(keys["openai_key"]),
-                "openai_preview": keys["openai_key"][:8] + "..." if len(keys["openai_key"]) > 8 else "",
-                "gemini_configured": bool(keys["gemini_key"]),
-                "gemini_preview": keys["gemini_key"][:8] + "..." if len(keys["gemini_key"]) > 8 else "",
+                "anthropic_configured": bool(keys.get("anthropic_key")),
+                "anthropic_preview": keys["anthropic_key"][:8] + "..." if len(keys.get("anthropic_key", "")) > 8 else "",
+                "openai_configured": bool(keys.get("openai_key")),
+                "openai_preview": keys["openai_key"][:8] + "..." if len(keys.get("openai_key", "")) > 8 else "",
+                "gemini_configured": bool(keys.get("gemini_key")),
+                "gemini_preview": keys["gemini_key"][:8] + "..." if len(keys.get("gemini_key", "")) > 8 else "",
+                "is_system_keys": is_admin or not _is_web_mode(),
             },
         })
 
@@ -1250,7 +1267,20 @@ def create_app(chats_dir: str) -> Flask:
             if field in data:
                 key_fields[field] = data[field]
         if key_fields:
-            config.save_api_keys(project_root, key_fields)
+            user = get_current_user()
+            is_admin = user and user.get("email") == ADMIN_EMAIL
+            if is_admin or not _is_web_mode():
+                # Admin: save as system keys
+                config.save_api_keys(project_root, key_fields)
+            elif user:
+                # Regular user: save as their own personal keys
+                settings = config.load_settings(project_root)
+                if "user_api_keys" not in settings:
+                    settings["user_api_keys"] = {}
+                if user["email"] not in settings["user_api_keys"]:
+                    settings["user_api_keys"][user["email"]] = {}
+                settings["user_api_keys"][user["email"]].update(key_fields)
+                config.save_settings(project_root, settings)
 
         # Update model/provider settings
         setting_fields = {}

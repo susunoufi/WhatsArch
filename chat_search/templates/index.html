@@ -5779,12 +5779,9 @@
                     }
                 }
 
-                const isLocked = m.locked === true;
-                const lockHtml = isLocked ? `<div style="margin-top:6px;font-size:0.75em;color:var(--accent-amber);"><i class="fas fa-lock"></i> ${he ? 'צריך אישור אדמין או API key משלך' : 'Needs admin approval or your own API key'}</div>` : '';
-
                 html += `
-                <div class="model-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}" data-provider="${m.provider}" data-model="${m.model}" onclick="${isLocked ? '' : `selectModel('${task}', '${m.provider}', '${m.model}', this)`}" style="${isLocked ? 'opacity:0.5;cursor:not-allowed;' : ''}">
-                    <div class="check-mark"><i class="fas ${isLocked ? 'fa-lock' : 'fa-check'}"></i></div>
+                <div class="model-card ${isSelected ? 'selected' : ''}" data-provider="${m.provider}" data-model="${m.model}" onclick="selectModel('${task}', '${m.provider}', '${m.model}', this)">
+                    <div class="check-mark"><i class="fas fa-check"></i></div>
                     <div class="card-top">
                         <div class="provider-dot ${m.provider}">${m.provider[0].toUpperCase()}</div>
                         <div>
@@ -5798,7 +5795,6 @@
                         <div><span class="detail-label">${t('settingsSpeed')}</span> <span class="detail-value" style="${speedClass}">${speedText}</span></div>
                         <div><span class="detail-label">${t('settingsHebrew')}</span> <span style="color:var(--accent-amber);font-size:0.8em;">${stars}</span></div>
                     </div>
-                    ${lockHtml}
                 </div>`;
             });
 

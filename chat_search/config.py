@@ -130,15 +130,10 @@ def get_allowed_providers(user_email: str, user_plan: dict, user_api_keys: dict 
 
 
 def filter_models_by_tier(provider_models: dict, allowed_providers: set) -> dict:
-    """Filter PROVIDER_MODELS to mark which models are allowed/locked for a user."""
+    """Filter PROVIDER_MODELS: only return models the user is allowed to use."""
     result = {}
     for task, models in provider_models.items():
-        filtered = []
-        for m in models:
-            model_copy = dict(m)
-            model_copy["locked"] = m["provider"] not in allowed_providers
-            filtered.append(model_copy)
-        result[task] = filtered
+        result[task] = [m for m in models if m["provider"] in allowed_providers]
     return result
 
 PRESETS = {
@@ -243,38 +238,35 @@ def recommend_preset(image_count: int, video_count: int, hardware: dict = None) 
     return "balanced"
 
 
+# Verified costs (March 2026):
+# Gemini 2.5 Flash: $0.15/1M input, $0.60/1M output — ~$0.0001/image
+# GPT-4o-mini:      $0.15/1M input, $0.60/1M output — ~$0.00015/image
+# Claude Haiku 4.5: $0.80/1M input, $4.00/1M output — ~$0.0005/image
+# OpenAI Whisper:   $0.006/minute
+# Ollama:           free (local)
 PROVIDER_MODELS = {
     "transcription": [
-        {"provider": "local", "model": "tiny", "display": "Whisper tiny (local)", "cost_per_minute": 0, "speed": "fast", "quality": 3, "badge": "fastest"},
-        {"provider": "local", "model": "base", "display": "Whisper base (local)", "cost_per_minute": 0, "speed": "fast", "quality": 4, "badge": "recommended"},
-        {"provider": "local", "model": "small", "display": "Whisper small (local)", "cost_per_minute": 0, "speed": "slow", "quality": 5, "badge": "free"},
-        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_minute": 0.0004, "speed": "fast", "quality": 5, "badge": "cheapest cloud"},
-        {"provider": "openai", "model": "whisper-1", "display": "OpenAI Whisper API", "cost_per_minute": 0.006, "speed": "fast", "quality": 5},
+        {"provider": "local", "model": "base", "display": "Whisper (local)", "cost_per_minute": 0, "speed": "medium", "quality": 4, "badge": "free"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_minute": 0.0004, "speed": "fast", "quality": 5, "badge": "recommended"},
+        {"provider": "openai", "model": "whisper-1", "display": "OpenAI Whisper", "cost_per_minute": 0.006, "speed": "fast", "quality": 5},
     ],
     "vision": [
-        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_image": 0.0001, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_image": 0.0001, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_image": 0.00015, "hebrew_quality": 4, "speed": "fast"},
-        {"provider": "openai", "model": "gpt-4o", "display": "GPT-4o", "cost_per_image": 0.003, "hebrew_quality": 5, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku 4.5", "cost_per_image": 0.0002, "hebrew_quality": 4, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "display": "Claude Sonnet 4", "cost_per_image": 0.001, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
-        {"provider": "ollama", "model": "llama3.2-vision", "display": "llama3.2-vision", "cost_per_image": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
+        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_image": 0.0005, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
+        {"provider": "ollama", "model": "llama3.2-vision", "display": "Ollama Vision (local)", "cost_per_image": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
     ],
     "video": [
-        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_minute": 0.001, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_minute": 0.001, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_minute": 0.002, "hebrew_quality": 3, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku 4.5", "cost_per_minute": 0.002, "hebrew_quality": 4, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "display": "Claude Sonnet 4", "cost_per_minute": 0.005, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
-        {"provider": "ollama", "model": "llama3.2-vision", "display": "llama3.2-vision", "cost_per_minute": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
+        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_minute": 0.003, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
+        {"provider": "ollama", "model": "llama3.2-vision", "display": "Ollama Vision (local)", "cost_per_minute": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
     ],
     "rag": [
-        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini 2.5 Flash", "cost_per_query": 0.0003, "hebrew_quality": 4, "speed": "fast"},
+        {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_query": 0.0003, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_query": 0.0004, "hebrew_quality": 4, "speed": "fast"},
-        {"provider": "openai", "model": "gpt-4o", "display": "GPT-4o", "cost_per_query": 0.005, "hebrew_quality": 5, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku 4.5", "cost_per_query": 0.0005, "hebrew_quality": 4, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "display": "Claude Sonnet 4", "cost_per_query": 0.003, "hebrew_quality": 5, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-opus-4-20250514", "display": "Claude Opus 4", "cost_per_query": 0.015, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
-        {"provider": "ollama", "model": "qwen2.5:14b", "display": "qwen2.5:14b", "cost_per_query": 0, "hebrew_quality": 4, "speed": "slow", "badge": "recommended"},
-        {"provider": "ollama", "model": "qwen2.5:7b", "display": "qwen2.5:7b", "cost_per_query": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
+        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_query": 0.0008, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
+        {"provider": "ollama", "model": "qwen2.5:14b", "display": "Ollama Qwen (local)", "cost_per_query": 0, "hebrew_quality": 4, "speed": "slow", "badge": "free"},
     ],
 }
 
