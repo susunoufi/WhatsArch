@@ -227,9 +227,12 @@ def hardware():
 
     # GPU (Windows)
     try:
+        _flags = {}
+        if platform.system() == "Windows":
+            _flags["creationflags"] = subprocess.CREATE_NO_WINDOW
         result = subprocess.run(
             ["wmic", "path", "win32_VideoController", "get", "Name,AdapterRAM"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True, text=True, timeout=5, **_flags
         )
         lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip() and "Name" not in l]
         if lines:
@@ -241,7 +244,7 @@ def hardware():
     try:
         from faster_whisper import WhisperModel
         info["whisper_available"] = True
-    except ImportError:
+    except Exception:
         pass
 
     return jsonify(info)
