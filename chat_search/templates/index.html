@@ -5429,8 +5429,11 @@
 
                 if (hwRes.ok) {
                     const data = await hwRes.json();
-                    hardwareData = data;
-                    renderHardware(data.hardware, data.performance);
+                    // Agent returns flat {cpu, ram_gb...}, server returns {hardware:{...}, performance:{...}}
+                    const hw = data.hardware || data;
+                    const perf = data.performance || null;
+                    hardwareData = { hardware: hw, performance: perf };
+                    renderHardware(hw, perf);
                 } else {
                     const hwEl = document.getElementById('hwInfo');
                     if (hwEl) hwEl.innerHTML = `<div style="color:var(--text-muted);font-size:0.85em;padding:8px 0;"><i class="fas fa-info-circle"></i> ${he ? 'התקן את הכלים המקומיים כדי לזהות חומרה' : 'Install local tools to detect hardware'}</div>`;
@@ -5676,64 +5679,17 @@
                 const d = await res.json();
                 const he = currentLang === 'he';
                 info.innerHTML = `
-                    <div style="font-size:0.85em;margin-bottom:8px;">
-                        <div style="color:var(--text-secondary);margin-bottom:4px;">${he ? 'נתיב נוכחי:' : 'Current path:'}</div>
-                        <div style="direction:ltr;text-align:left;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:8px;font-family:monospace;font-size:0.9em;word-break:break-all;">${escapeHtml(d.data_dir)}</div>
+                    <div style="font-size:0.85em;margin-bottom:6px;">
+                        <span style="color:var(--text-secondary);">${he ? 'נתיב:' : 'Path:'}</span>
+                        <span style="direction:ltr;font-family:monospace;font-size:0.9em;margin-right:6px;">${escapeHtml(d.data_dir)}</span>
                     </div>
-                    <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">
+                    <div style="font-size:0.82em;color:var(--text-muted);">
                         <i class="fas fa-hdd"></i> ${d.size_mb} MB ${he ? 'בשימוש' : 'used'}
-                        ${d.custom ? `<span style="color:var(--accent-green);margin-right:8px;"><i class="fas fa-check"></i> ${he ? 'מותאם אישית' : 'custom'}</span>` : ''}
-                    </div>
-                    <div style="display:flex;gap:8px;">
-                        <button class="btn btn-secondary btn-sm" onclick="changeDataDir()" style="font-size:0.82em;">
-                            <i class="fas fa-folder-open"></i> ${he ? 'שנה מיקום' : 'Change location'}
-                        </button>
-                        ${d.custom ? `<button class="btn btn-secondary btn-sm" onclick="resetDataDir()" style="font-size:0.82em;">
-                            <i class="fas fa-undo"></i> ${he ? 'חזור לברירת מחדל' : 'Reset to default'}
-                        </button>` : ''}
                     </div>
                 `;
             } catch (e) {
                 card.style.display = 'none';
             }
-        }
-
-        async function changeDataDir() {
-            try {
-                // Open folder picker
-                const browseRes = await fetch(AGENT_URL + '/browse/data-dir', { method: 'POST', headers: agentHeaders() });
-                const browseData = await browseRes.json();
-                if (!browseData.path) return;
-
-                const he = currentLang === 'he';
-                if (!confirm(he ? `להעביר את הנתונים ל:\n${browseData.path}\n\nהקבצים הקיימים יועברו.` : `Move data to:\n${browseData.path}\n\nExisting files will be moved.`)) return;
-
-                const res = await fetch(AGENT_URL + '/api/user/data-dir', {
-                    method: 'POST', headers: agentHeaders(),
-                    body: JSON.stringify({ path: browseData.path })
-                });
-                if (res.ok) {
-                    showToast(he ? 'תיקייה שונתה' : 'Directory changed', 'success');
-                    loadDataDirInfo();
-                    loadChats();
-                }
-            } catch (e) {
-                showToast('Error: ' + e.message, 'error');
-            }
-        }
-
-        async function resetDataDir() {
-            try {
-                const res = await fetch(AGENT_URL + '/api/user/data-dir', {
-                    method: 'POST', headers: agentHeaders(),
-                    body: JSON.stringify({ path: '' })
-                });
-                if (res.ok) {
-                    showToast(he ? 'חזר לברירת מחדל' : 'Reset to default', 'success');
-                    loadDataDirInfo();
-                    loadChats();
-                }
-            } catch (e) {}
         }
 
         function renderHardware(hw, perf) {

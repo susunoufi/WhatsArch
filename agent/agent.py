@@ -56,91 +56,27 @@ CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localh
 VERSION = "2.0.0"
 
 # ---------------------------------------------------------------------------
-# Per-user data directory system
+# Data directory — fixed at C:\WhatsArch (simple, one location for everything)
 # ---------------------------------------------------------------------------
-# Each app user (by email) gets their own data directory.
-# users.json maps email -> {data_dir, custom}.
-# Frontend sends X-User-Email header on every request.
-
-AGENT_ROOT = Path.home() / "Documents" / "WhatsArch"
-AGENT_ROOT.mkdir(parents=True, exist_ok=True)
-USERS_CONFIG_PATH = AGENT_ROOT / "users.json"
-
-# Default fallback user for local mode (no login)
-_DEFAULT_USER = "local"
-
-
-def _load_users_config() -> dict:
-    """Load users.json mapping."""
-    if USERS_CONFIG_PATH.exists():
-        try:
-            with open(USERS_CONFIG_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
-    return {}
-
-
-def _save_users_config(config: dict):
-    """Save users.json mapping."""
-    with open(USERS_CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
-
-
-def _email_to_dirname(email: str) -> str:
-    """Convert email to safe directory name: susu@hotmail.com -> susu_hotmail_com"""
-    return email.replace("@", "_").replace(".", "_").replace(" ", "_").strip("_")
-
-
-def _get_user_data_dir(email: str) -> Path:
-    """Get or create the data directory for a user."""
-    if not email or email == _DEFAULT_USER:
-        email = _DEFAULT_USER
-
-    users = _load_users_config()
-    user_entry = users.get(email)
-
-    if user_entry and user_entry.get("data_dir"):
-        data_dir = Path(user_entry["data_dir"])
-    else:
-        # Create default directory
-        dirname = _email_to_dirname(email) if email != _DEFAULT_USER else "local"
-        data_dir = AGENT_ROOT / dirname
-        users[email] = {"data_dir": str(data_dir), "custom": False}
-        _save_users_config(users)
-
-    data_dir.mkdir(parents=True, exist_ok=True)
-    (data_dir / "chats").mkdir(parents=True, exist_ok=True)
-    return data_dir
-
-
-def _get_current_user_email() -> str:
-    """Get the current user's email from the X-User-Email header."""
-    try:
-        return request.headers.get("X-User-Email", "").strip() or _DEFAULT_USER
-    except RuntimeError:
-        return _DEFAULT_USER
-
-
-def _get_current_data_dir() -> Path:
-    """Get the data directory for the current request's user."""
-    return _get_user_data_dir(_get_current_user_email())
+DATA_DIR = Path("C:/WhatsArch")
+CHATS_DIR = DATA_DIR / "chats"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+CHATS_DIR.mkdir(parents=True, exist_ok=True)
+SETTINGS_PATH = DATA_DIR / "settings.json"
 
 
 def _get_current_chats_dir() -> Path:
-    """Get the chats directory for the current request's user."""
-    return _get_current_data_dir() / "chats"
+    return CHATS_DIR
 
 
-# Backward compat: global references (used at startup, overridden per-request)
-DATA_DIR = _get_user_data_dir(_DEFAULT_USER)
-CHATS_DIR = DATA_DIR / "chats"
-SETTINGS_PATH = DATA_DIR / "settings.json"
+def _get_current_data_dir() -> Path:
+    return DATA_DIR
 
-# Migrate: if old chats exist in root/chats/ or root/{os_user}/chats/, move to local/
-for _migrate_dir in [AGENT_ROOT / "chats", AGENT_ROOT / (os.environ.get("USERNAME") or "x") / "chats"]:
-    if _migrate_dir.exists() and _migrate_dir != CHATS_DIR:
-        for _d in _migrate_dir.iterdir():
+# Migrate from old locations if needed
+for _old_dir in [Path.home() / "Documents" / "WhatsArch" / "chats",
+                 Path.home() / "Documents" / "WhatsArch" / "local" / "chats"]:
+    if _old_dir.exists() and _old_dir != CHATS_DIR:
+        for _d in _old_dir.iterdir():
             if _d.is_dir() and ((_d / "_chat.txt").exists() or (_d / "result.json").exists()):
                 _dest = CHATS_DIR / _d.name
                 if not _dest.exists():
@@ -148,13 +84,6 @@ for _migrate_dir in [AGENT_ROOT / "chats", AGENT_ROOT / (os.environ.get("USERNAM
                         shutil.move(str(_d), str(_dest))
                     except Exception:
                         pass
-# Migrate settings
-for _old_s in [AGENT_ROOT / "settings.json", AGENT_ROOT / (os.environ.get("USERNAME") or "x") / "settings.json"]:
-    if _old_s.exists() and not SETTINGS_PATH.exists():
-        try:
-            shutil.copy2(str(_old_s), str(SETTINGS_PATH))
-        except Exception:
-            pass
 
 
 def _load_agent_settings() -> dict:
@@ -218,7 +147,7 @@ def status():
         "status": "running",
         "version": VERSION,
         "platform": platform.system(),
-        "user": _get_current_user_email(),
+        "user": os.environ.get("USERNAME", ""),
         "data_dir": str(_get_current_data_dir()),
         "chats_dir": str(_get_current_chats_dir()),
         "chats": chats,
@@ -227,93 +156,19 @@ def status():
 
 @app.route("/api/user/data-dir", methods=["GET"])
 def api_get_data_dir():
-    """Get current user's data directory info."""
-    email = _get_current_user_email()
-    data_dir = _get_current_data_dir()
-    users = _load_users_config()
-    entry = users.get(email, {})
-    # Calculate size
+    """Get data directory info."""
     total_bytes = 0
-    chats_path = data_dir / "chats"
-    if chats_path.exists():
-        for root, dirs, files in os.walk(str(chats_path)):
+    if CHATS_DIR.exists():
+        for root, dirs, files in os.walk(str(CHATS_DIR)):
             for f in files:
                 try:
                     total_bytes += os.path.getsize(os.path.join(root, f))
                 except OSError:
                     pass
     return jsonify({
-        "email": email,
-        "data_dir": str(data_dir),
-        "custom": entry.get("custom", False),
+        "data_dir": str(DATA_DIR),
         "size_mb": round(total_bytes / 1024 / 1024, 1),
-        "default_dir": str(AGENT_ROOT / _email_to_dirname(email)),
     })
-
-
-@app.route("/api/user/data-dir", methods=["POST"])
-def api_set_data_dir():
-    """Change data directory for current user. Moves existing data."""
-    email = _get_current_user_email()
-    data = request.get_json()
-    if not data or "path" not in data:
-        abort(400, "Missing path")
-
-    new_path = data["path"].strip()
-    if not new_path:
-        # Reset to default
-        new_path = str(AGENT_ROOT / _email_to_dirname(email))
-
-    new_dir = Path(new_path)
-    old_dir = _get_current_data_dir()
-
-    # Create new directory
-    new_dir.mkdir(parents=True, exist_ok=True)
-    (new_dir / "chats").mkdir(exist_ok=True)
-
-    # Move data if old dir has content and is different
-    if old_dir != new_dir and old_dir.exists():
-        # Move chats
-        old_chats = old_dir / "chats"
-        new_chats = new_dir / "chats"
-        if old_chats.exists():
-            for item in old_chats.iterdir():
-                dest = new_chats / item.name
-                if not dest.exists():
-                    try:
-                        shutil.move(str(item), str(dest))
-                    except Exception:
-                        pass
-        # Copy settings
-        old_settings = old_dir / "settings.json"
-        new_settings = new_dir / "settings.json"
-        if old_settings.exists() and not new_settings.exists():
-            shutil.copy2(str(old_settings), str(new_settings))
-
-    # Update users config
-    users = _load_users_config()
-    users[email] = {"data_dir": str(new_dir), "custom": new_path != str(AGENT_ROOT / _email_to_dirname(email))}
-    _save_users_config(users)
-
-    return jsonify({"status": "ok", "data_dir": str(new_dir)})
-
-
-@app.route("/browse/data-dir", methods=["POST"])
-def browse_data_dir():
-    """Open native folder picker for data directory."""
-    try:
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        folder = filedialog.askdirectory(title="Choose WhatsArch data directory")
-        root.destroy()
-        if folder:
-            return jsonify({"path": folder})
-        return jsonify({"path": ""})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/hardware")
