@@ -3503,7 +3503,7 @@
                 renderStats(statsData);
                 populateSenderFilter(statsData.senders);
             } catch (err) {
-                $statsBanner.innerHTML = '<span class="stat-chip" style="color:#e57373;"><i class="fas fa-exclamation-circle"></i> ' + t('errorLoading') + '</span>';
+                $statsBanner.innerHTML = '<span class="stat-chip" style="color:var(--text-muted);"><i class="fas fa-info-circle"></i> ' + (he ? 'הצ\'אט עדיין לא עבר אינדוקס — עבור לניהול כדי לעבד אותו' : 'Chat not indexed yet — go to Management to process it') + '</span>';
             }
         }
 
