@@ -65,7 +65,10 @@ SYSTEM_PROMPT_HE = """אתה עוזר חכם ובטוח בעצמו שמנתח ש
 - אל תמציא מידע שלא מופיע בקטעים, אבל אתה יכול להסיק מסקנות מהם
 - אם הקטעים לא מספיקים, ענה לפי מה שיש ותוסיף שזה מבוסס על חלק מהשיחה
 - היה אנושי, עם חוש הומור. הצ'אט הזה הוא של אנשים אמיתיים.
-- כשהתשובה מבוססת על תיאור תמונה/וידאו/PDF, ציין זאת"""
+- כשהתשובה מבוססת על תיאור תמונה/וידאו/PDF, ציין זאת
+- עצב את התשובה עם **כותרות**, פסקאות, שורות חדשות. שיהיה כיף לקרוא.
+- ציטוטים מהשיחה בין גרשיים וב-**bold**: **"ציטוט"**
+- כשמזכיר משתתף, השתמש בכינוי שלו (אם הוגדר). אל תשתמש בשם המקורי."""
 
 SYSTEM_PROMPT_EN = """You are a smart assistant that analyzes chat conversations.
 You received relevant conversation segments from chat "{chat_name}".
@@ -880,10 +883,21 @@ def generate_group_profile(db_path: str, chat_name: str, project_root: str = Non
         return ""
 
     llm = _get_llm_client(project_root)
-    prompt = PROFILE_ANALYSIS_PROMPT.format(chat_name=chat_name)
 
-    # Multi-pass: 5 rounds of 2000 chunks = 10,000 total (10% of large chats)
-    num_passes = 5
+    # Load sender aliases to include in prompt
+    aliases_text = ""
+    if project_root:
+        settings = config.load_settings(project_root)
+        chat_aliases = settings.get("sender_aliases", {}).get(chat_name, {})
+        if chat_aliases:
+            aliases_text = "\n\n**כינויי משתתפים (השתמש בכינויים האלה תמיד!):**\n"
+            for orig, alias in chat_aliases.items():
+                aliases_text += f"- {orig} = **{alias}**\n"
+
+    prompt = PROFILE_ANALYSIS_PROMPT.format(chat_name=chat_name) + aliases_text
+
+    # Multi-pass: 10 rounds of 2000 chunks = 20,000 total (20% of large chats)
+    num_passes = 10
     chunks_per_pass = min(total // num_passes, 2000)
     segments_per_pass = 20
     per_segment = chunks_per_pass // segments_per_pass
@@ -976,12 +990,20 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None, proje
         )
         user_message = f"היסטוריית שיחה אחרונה:\n{history_text}\n\n{user_message}"
 
-    # 5. Call LLM (with group profile if available)
+    # 5. Call LLM (with group profile + aliases if available)
     llm = _get_llm_client(project_root)
     system = get_system_prompt(chat_name, language)
+    # Inject aliases
+    if project_root:
+        _settings = config.load_settings(project_root)
+        _aliases = _settings.get("sender_aliases", {}).get(chat_name, {})
+        if _aliases:
+            system += "\n\nכינויי משתתפים (השתמש בכינויים האלה תמיד!):\n"
+            for _orig, _alias in _aliases.items():
+                system += f"- {_orig} = {_alias}\n"
     profile = get_group_profile(db_path)
     if profile:
-        system += f"\n\n--- פרופיל הקבוצה (רקע שנוצר מניתוח מעמיק של הצ'אט) ---\n{profile}"
+        system += f"\n\n--- פרופיל הקבוצה ---\n{profile}"
     answer = llm.chat(system, user_message, max_tokens=4096)
 
     # 6. Extract source citations from chunks
@@ -1122,11 +1144,18 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
         "debug": debug_info,
     }) + "\n"
 
-    # 6. Stream the answer from LLM (with group profile if available)
+    # 6. Stream the answer from LLM (with group profile + aliases if available)
     system = get_system_prompt(chat_name, language)
+    if project_root:
+        _settings = config.load_settings(project_root)
+        _aliases = _settings.get("sender_aliases", {}).get(chat_name, {})
+        if _aliases:
+            system += "\n\nכינויי משתתפים (השתמש בכינויים האלה תמיד!):\n"
+            for _orig, _alias in _aliases.items():
+                system += f"- {_orig} = {_alias}\n"
     profile = get_group_profile(db_path)
     if profile:
-        system += f"\n\n--- פרופיל הקבוצה (רקע שנוצר מניתוח מעמיק של הצ'אט) ---\n{profile}"
+        system += f"\n\n--- פרופיל הקבוצה ---\n{profile}"
     for chunk in llm.chat_stream(system, user_message, max_tokens=4096):
         yield chunk
 
