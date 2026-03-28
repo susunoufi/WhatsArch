@@ -4373,10 +4373,18 @@
                 const token = localStorage.getItem('auth_token');
                 if (token) headers['Authorization'] = 'Bearer ' + token;
 
-                const res = await fetch(apiBase(chatName) + '/api/chats/' + encodeURIComponent(chatName), {
-                    method: 'DELETE',
-                    headers
-                });
+                const base = apiBase(chatName);
+                const url = '/api/chats/' + encodeURIComponent(chatName);
+                const res = await fetch(base + url, { method: 'DELETE', headers });
+
+                // Also try deleting from the other server (silently)
+                if (base) {
+                    // Deleted from agent, also try Railway
+                    fetch(url, { method: 'DELETE', headers }).catch(() => {});
+                } else {
+                    // Deleted from Railway, also try agent
+                    if (agentAvailable) fetch(AGENT_URL + url, { method: 'DELETE', headers }).catch(() => {});
+                }
 
                 if (res.ok) {
                     showToast(he ? `"${chatName}" נמחק` : `"${chatName}" deleted`, 'success');
