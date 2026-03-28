@@ -55,13 +55,36 @@ CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localh
 # Agent version
 VERSION = "2.0.0"
 
-# Data directory
-DATA_DIR = Path.home() / "Documents" / "WhatsArch"
+# Data directory — per OS user: Documents/WhatsArch/{username}/
+_USERNAME = os.environ.get("USERNAME") or os.environ.get("USER") or "default"
+DATA_DIR = Path.home() / "Documents" / "WhatsArch" / _USERNAME
 CHATS_DIR = DATA_DIR / "chats"
 CHATS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Agent settings file
+# Keep root settings accessible (backward compat: migrate if needed)
+_ROOT_DIR = Path.home() / "Documents" / "WhatsArch"
 SETTINGS_PATH = DATA_DIR / "settings.json"
+
+# Migrate: if old chats exist in root but not in user dir, move them
+_old_chats = _ROOT_DIR / "chats"
+if _old_chats.exists() and _old_chats != CHATS_DIR:
+    for d in _old_chats.iterdir():
+        if d.is_dir() and (d / "_chat.txt").exists() or (d / "result.json").exists():
+            dest = CHATS_DIR / d.name
+            if not dest.exists():
+                try:
+                    import shutil as _sh
+                    _sh.move(str(d), str(dest))
+                except Exception:
+                    pass
+    # Migrate settings
+    _old_settings = _ROOT_DIR / "settings.json"
+    if _old_settings.exists() and not SETTINGS_PATH.exists():
+        try:
+            import shutil as _sh
+            _sh.copy2(str(_old_settings), str(SETTINGS_PATH))
+        except Exception:
+            pass
 
 
 def _load_agent_settings() -> dict:
@@ -124,6 +147,7 @@ def status():
         "status": "running",
         "version": VERSION,
         "platform": platform.system(),
+        "user": _USERNAME,
         "data_dir": str(DATA_DIR),
         "chats_dir": str(CHATS_DIR),
         "chats": chats,
