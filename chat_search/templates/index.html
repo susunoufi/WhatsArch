@@ -2186,6 +2186,9 @@
                     <a href="/download/setup" class="btn" style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;font-weight:700;text-decoration:none;padding:10px 24px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;">
                         <i class="fas fa-download"></i> <span data-i18n="installToolsBtn">הורד והתקן</span>
                     </a>
+                    <button onclick="detectAgent().then(loadChats)" class="btn" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:10px 24px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;">
+                        <i class="fas fa-sync-alt"></i> <span data-i18n="retryAgent">כבר התקנתי — בדוק שוב</span>
+                    </button>
                 </div>
             </div>
 
@@ -2703,6 +2706,7 @@
                 installToolsTitle: 'כלים מקומיים לא מותקנים',
                 installToolsDesc: 'התקן את הכלים המקומיים כדי לעבד צ\'אטים על המחשב שלך — תמלול הקלטות, תיאור תמונות וחיפוש חכם.',
                 installToolsBtn: 'הורד והתקן',
+                retryAgent: 'כבר התקנתי — בדוק שוב',
                 settingsDataDir: 'תיקיית נתונים',
                 settingsEmbeddings: 'חיפוש חכם (Embeddings)',
                 settingsEmbeddingsDesc: 'בניית אינדקס סמנטי לחיפוש חכם. ענן מהיר מאוד, מקומי חינם אבל איטי.',
@@ -2962,6 +2966,7 @@
                 installToolsTitle: 'Local tools not installed',
                 installToolsDesc: 'Install local tools to process chats on your computer — voice transcription, image descriptions and smart search.',
                 installToolsBtn: 'Download & Install',
+                retryAgent: 'Already installed — check again',
                 settingsDataDir: 'Data Directory',
                 settingsEmbeddings: 'Smart Search (Embeddings)',
                 settingsEmbeddingsDesc: 'Build semantic index for smart search. Cloud is very fast, local is free but slow.',
@@ -3195,21 +3200,27 @@
         let agentAvailable = false;
         let agentChats = new Set();  // chat names that are local (on agent)
 
-        async function detectAgent() {
-            try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 2000);
-                const res = await fetch(AGENT_URL + '/status', { signal: controller.signal, headers: agentHeaders() });
-                clearTimeout(timeout);
-                if (res.ok) {
-                    const data = await res.json();
-                    agentAvailable = true;
-                    agentChats = new Set(data.chats || []);
-                    console.log('[Agent] detected, local chats:', [...agentChats]);
+        async function detectAgent(retries = 3) {
+            for (let attempt = 0; attempt < retries; attempt++) {
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 3000);
+                    // No Content-Type header on GET — avoids CORS preflight
+                    const res = await fetch(AGENT_URL + '/status', { signal: controller.signal, mode: 'cors' });
+                    clearTimeout(timeout);
+                    if (res.ok) {
+                        const data = await res.json();
+                        agentAvailable = true;
+                        agentChats = new Set(data.chats || []);
+                        console.log('[Agent] detected, local chats:', [...agentChats]);
+                        break;
+                    }
+                } catch (err) {
+                    console.log(`[Agent] attempt ${attempt + 1}/${retries} failed:`, err.message || err);
+                    agentAvailable = false;
+                    agentChats = new Set();
+                    if (attempt < retries - 1) await new Promise(r => setTimeout(r, 2000));
                 }
-            } catch {
-                agentAvailable = false;
-                agentChats = new Set();
             }
             // Update sidebar agent row + install link
             const agentRow = document.getElementById('sidebarAgentRow');
@@ -3282,6 +3293,21 @@
             setupListeners();
             initAiChat();
             setupAiListeners();
+            // If agent not found, keep retrying in background (agent may still be starting)
+            if (!agentAvailable) {
+                let retryCount = 0;
+                const agentRetryInterval = setInterval(async () => {
+                    retryCount++;
+                    await detectAgent(1);
+                    if (agentAvailable) {
+                        clearInterval(agentRetryInterval);
+                        loadChats();
+                        loadSettings();
+                    } else if (retryCount >= 6) {
+                        clearInterval(agentRetryInterval);
+                    }
+                }, 5000);
+            }
         });
 
         function setupListeners() {

@@ -43,12 +43,19 @@ for _env_path in [Path("C:/WhatsArch/.env"), _project_root / ".env", Path.home()
 PROJECT_ROOT = _project_root
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from flask import Flask, request, jsonify, send_from_directory, abort, Response
+from flask import Flask, request, jsonify, send_from_directory, abort, Response, render_template
 from flask_cors import CORS
 
-app = Flask(__name__)
+# Templates and static files are in the chat_search directory
+_project_root = Path(__file__).resolve().parent.parent
+_template_dir = str(_project_root / "chat_search" / "templates")
+_static_dir = str(_project_root / "chat_search" / "static")
+
+app = Flask(__name__, template_folder=_template_dir, static_folder=_static_dir, static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024  # 2GB — local, no limit
-CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localhost:*", "https://*.railway.app"])
+CORS(app, origins=["https://whatsarch-production.up.railway.app", "http://localhost:*", "https://*.railway.app"],
+     allow_headers=["Content-Type", "X-User-Email", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Agent version
 VERSION = "2.0.0"
@@ -123,6 +130,34 @@ def _ensure_settings_file():
 
 
 _ensure_settings_file()
+
+
+# ===========================================================================
+# Frontend — serve the web UI locally (no need for Railway)
+# ===========================================================================
+
+@app.route("/")
+def home():
+    """Redirect to app."""
+    return render_template("index.html")
+
+
+@app.route("/app")
+def app_page():
+    """Serve the main app UI."""
+    return render_template("index.html")
+
+
+@app.route("/login")
+def login_page():
+    """Local mode doesn't need login — redirect to app."""
+    return render_template("index.html")
+
+
+@app.route("/privacy")
+def privacy_page():
+    """Privacy page."""
+    return render_template("privacy.html")
 
 
 # ===========================================================================
@@ -1325,8 +1360,22 @@ def chat_ollama():
 # ===========================================================================
 
 if __name__ == "__main__":
-    print(f"WhatsArch Local Agent v{VERSION}")
-    print(f"Data: {DATA_DIR}")
-    print(f"Chats: {CHATS_DIR}")
-    print(f"Listening on http://localhost:11470")
-    app.run(host="127.0.0.1", port=11470, debug=False)
+    # Log errors to file so pythonw.exe failures aren't silent
+    import logging
+    log_file = DATA_DIR / "agent.log"
+    logging.basicConfig(
+        filename=str(log_file),
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+    try:
+        logging.info(f"WhatsArch Local Agent v{VERSION} starting")
+        logging.info(f"Data: {DATA_DIR} | Chats: {CHATS_DIR}")
+        print(f"WhatsArch Local Agent v{VERSION}")
+        print(f"Data: {DATA_DIR}")
+        print(f"Chats: {CHATS_DIR}")
+        print(f"Listening on http://localhost:11470")
+        app.run(host="127.0.0.1", port=11470, debug=False)
+    except Exception as e:
+        logging.exception(f"Agent failed to start: {e}")
+        raise
