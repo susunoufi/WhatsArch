@@ -941,10 +941,10 @@
         .cost-calc .cost-amount { font-weight: 700; color: var(--accent-green); margin-right: auto; direction: ltr; }
 
         /* Multi-select chat dropdown */
-        .cost-chat-multiselect { position: relative; max-width: 400px; }
+        .cost-chat-multiselect { position: relative; max-width: 400px; margin-inline-start: auto; }
         .cost-chat-toggle { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; font-size: 0.88em; }
         .cost-chat-toggle:hover { border-color: var(--accent-blue); }
-        .cost-chat-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); margin-top: 4px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .cost-chat-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); margin-top: 4px; z-index: 100; box-shadow: 0 12px 32px rgba(0,0,0,0.5); backdrop-filter: none; }
         .cost-chat-checkbox { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 0.85em; cursor: pointer; }
         .cost-chat-checkbox:hover { background: rgba(255,255,255,0.06); }
         .cost-chat-checkbox input[type="checkbox"] { accent-color: var(--accent-green); }
@@ -4858,6 +4858,7 @@
         }
 
         async function toggleAliases(chatName, cardId) {
+            const he = currentLang === 'he';
             const container = document.getElementById(cardId + '-aliases');
             if (!container) return;
             if (container.style.display !== 'none') {
@@ -6145,28 +6146,30 @@
             ];
 
             el.innerHTML = `
-                <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">
-                    ${mediaCountsForSettings.images} ${t('images')}, ${mediaCountsForSettings.videos} ${t('videos')}${mediaCountsForSettings.audio ? ', ' + mediaCountsForSettings.audio + ' ' + (he ? 'הקלטות' : 'audio') : ''}
+                <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.8em;color:var(--text-muted);margin-bottom:14px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:var(--radius);">
+                    <span><i class="fas fa-camera" style="margin-inline-end:4px;"></i>${mediaCountsForSettings.images} ${t('images')}</span>
+                    <span><i class="fas fa-film" style="margin-inline-end:4px;"></i>${mediaCountsForSettings.videos} ${t('videos')}</span>
+                    ${mediaCountsForSettings.audio ? `<span><i class="fas fa-microphone" style="margin-inline-end:4px;"></i>${mediaCountsForSettings.audio} ${he ? 'הקלטות' : 'audio'}</span>` : ''}
                 </div>
-                <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.88em;">
                     <thead>
                         <tr style="border-bottom:2px solid var(--border-color);">
-                            <th style="text-align:start;padding:8px 6px;color:var(--text-muted);font-weight:600;"></th>
-                            <th style="text-align:end;padding:8px 6px;color:var(--accent-blue);font-weight:600;">${t('costEstimated')}</th>
-                            <th style="text-align:end;padding:8px 6px;color:var(--accent-amber);font-weight:600;">${t('costActual')}</th>
+                            <th style="text-align:start;padding:10px 8px;color:var(--text-muted);font-weight:600;width:50%;"></th>
+                            <th style="text-align:center;padding:10px 8px;color:var(--accent-blue);font-weight:600;width:25%;">${t('costEstimated')}</th>
+                            <th style="text-align:center;padding:10px 8px;color:var(--accent-amber);font-weight:600;width:25%;">${t('costActual')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${rows.map(r => `
-                        <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                            <td style="padding:7px 6px;"><i class="fas ${r.icon}" style="width:18px;text-align:center;color:var(--text-muted);"></i> ${r.label}</td>
-                            <td style="padding:7px 6px;text-align:end;direction:ltr;">${fmtCost(r.est)}</td>
-                            <td style="padding:7px 6px;text-align:end;direction:ltr;" class="${colorClass(r.est, r.act)}">${fmtCost(r.act)}</td>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:10px 8px;"><i class="fas ${r.icon}" style="width:20px;text-align:center;color:var(--text-muted);margin-inline-end:6px;"></i> ${r.label}</td>
+                            <td style="padding:10px 8px;text-align:center;direction:ltr;font-family:monospace;font-size:0.95em;">${fmtCost(r.est)}</td>
+                            <td style="padding:10px 8px;text-align:center;direction:ltr;font-family:monospace;font-size:0.95em;" class="${colorClass(r.est, r.act)}">${fmtCost(r.act)}</td>
                         </tr>`).join('')}
                         <tr style="border-top:2px solid var(--border-color);font-weight:700;">
-                            <td style="padding:10px 6px;">${t('settingsCostTotal')}</td>
-                            <td style="padding:10px 6px;text-align:end;direction:ltr;">${fmtCost(estTotal)}</td>
-                            <td style="padding:10px 6px;text-align:end;direction:ltr;" class="${colorClass(estTotal, actTotal)}">${fmtCost(actTotal)}</td>
+                            <td style="padding:12px 8px;">${t('settingsCostTotal')}</td>
+                            <td style="padding:12px 8px;text-align:center;direction:ltr;font-family:monospace;">${fmtCost(estTotal)}</td>
+                            <td style="padding:12px 8px;text-align:center;direction:ltr;font-family:monospace;" class="${colorClass(estTotal, actTotal)}">${fmtCost(actTotal)}</td>
                         </tr>
                     </tbody>
                 </table>
