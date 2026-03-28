@@ -77,6 +77,12 @@ echo.
 REM Launch the visual installer
 python "%INSTALLER_PY%"
 
+REM Register in Windows Add/Remove Programs
+set REGISTER_BAT=%~dp0register.bat
+if exist "%REGISTER_BAT%" (
+    call "%REGISTER_BAT%"
+)
+
 REM If we get here, the installer exited
 echo.
 echo   Installer finished. You can close this window.
