@@ -231,12 +231,12 @@ def hardware():
         if platform.system() == "Windows":
             _flags["creationflags"] = subprocess.CREATE_NO_WINDOW
         result = subprocess.run(
-            ["wmic", "path", "win32_VideoController", "get", "Name,AdapterRAM"],
+            ["wmic", "path", "win32_VideoController", "get", "Name"],
             capture_output=True, text=True, timeout=5, **_flags
         )
         lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip() and "Name" not in l]
         if lines:
-            info["gpu"] = lines[0].split("  ")[0].strip()
+            info["gpu"] = lines[0].strip()
             info["gpu_dedicated"] = "nvidia" in info["gpu"].lower() or "radeon" in info["gpu"].lower()
     except Exception:
         pass
