@@ -145,8 +145,8 @@ PRESETS = {
         "video_provider": "gemini", "video_model": "gemini-2.5-flash",
         "rag_provider": "gemini", "rag_model": "gemini-2.5-flash",
         "transcription_provider": "gemini", "transcription_model": "gemini-2.5-flash",
-        "description_he": "הכי זול — Gemini Flash לכל דבר. איכות טובה, מחיר מינימלי.",
-        "description_en": "Cheapest — Gemini Flash for everything. Good quality, minimal cost.",
+        "description_he": "הכי זול — Gemini Flash לכל דבר. ~$0.03 לצ'אט ממוצע.",
+        "description_en": "Cheapest — Gemini Flash for everything. ~$0.03 per average chat.",
     },
     "balanced": {
         "name_he": "מאוזן",
@@ -156,8 +156,8 @@ PRESETS = {
         "video_provider": "gemini", "video_model": "gemini-2.5-flash",
         "rag_provider": "openai", "rag_model": "gpt-4o-mini",
         "transcription_provider": "openai", "transcription_model": "whisper-1",
-        "description_he": "איזון מצוין — Gemini Flash לתמונות, GPT-4o-mini לשאלות. מהיר ואיכותי.",
-        "description_en": "Great balance — Gemini Flash for vision, GPT-4o-mini for Q&A. Fast and quality.",
+        "description_he": "Gemini לתמונות, GPT-4o-mini לשאלות. מהיר ומדויק.",
+        "description_en": "Gemini for images, GPT-4o-mini for Q&A. Fast and accurate.",
     },
     "premium": {
         "name_he": "פרימיום",
@@ -165,10 +165,10 @@ PRESETS = {
         "icon": "👑",
         "vision_provider": "anthropic", "vision_model": "claude-sonnet-4-20250514",
         "video_provider": "anthropic", "video_model": "claude-sonnet-4-20250514",
-        "rag_provider": "anthropic", "rag_model": "claude-opus-4-20250514",
+        "rag_provider": "anthropic", "rag_model": "claude-sonnet-4-20250514",
         "transcription_provider": "openai", "transcription_model": "whisper-1",
-        "description_he": "הכי חכם — Claude Sonnet לתמונות, Opus לשאלות. הכי מדויק בעברית.",
-        "description_en": "Smartest — Claude Sonnet for vision, Opus for Q&A. Best Hebrew accuracy.",
+        "description_he": "Claude Sonnet 4 — הכי חכם, הכי מדויק בעברית. איכות מקסימלית.",
+        "description_en": "Claude Sonnet 4 — smartest, best Hebrew accuracy. Maximum quality.",
     },
     "local": {
         "name_he": "לוקאלי",
@@ -178,8 +178,8 @@ PRESETS = {
         "video_provider": "ollama", "video_model": "llama3.2-vision",
         "rag_provider": "ollama", "rag_model": "qwen2.5:14b",
         "transcription_provider": "local", "transcription_model": "base",
-        "description_he": "חינם לגמרי — הכל רץ על המחשב. דורש Ollama + GPU מומלץ.",
-        "description_en": "Completely free — runs locally. Requires Ollama + GPU recommended.",
+        "description_he": "חינם לגמרי — הכל על המחשב שלך. דורש Ollama + GPU.",
+        "description_en": "Completely free — runs on your computer. Requires Ollama + GPU.",
     },
 }
 
@@ -238,12 +238,17 @@ def recommend_preset(image_count: int, video_count: int, hardware: dict = None) 
     return "balanced"
 
 
-# Verified costs (March 2026):
-# Gemini 2.5 Flash: $0.15/1M input, $0.60/1M output — ~$0.0001/image
-# GPT-4o-mini:      $0.15/1M input, $0.60/1M output — ~$0.00015/image
-# Claude Haiku 4.5: $0.80/1M input, $4.00/1M output — ~$0.0005/image
-# OpenAI Whisper:   $0.006/minute
-# Ollama:           free (local)
+# Verified costs (March 2026 — from official pricing pages):
+# ┌───────────────────────┬────────────────┬────────────────┬──────────────┐
+# │ Model                 │ Input $/1M tok │ Output $/1M tok│ ~Cost/image  │
+# ├───────────────────────┼────────────────┼────────────────┼──────────────┤
+# │ Gemini 2.5 Flash      │ $0.15          │ $0.60          │ ~$0.0001     │
+# │ GPT-4o-mini           │ $0.15          │ $0.60          │ ~$0.00015    │
+# │ Claude Haiku 4.5      │ $0.80          │ $4.00          │ ~$0.0005     │
+# │ Claude Sonnet 4       │ $3.00          │ $15.00         │ ~$0.002      │
+# │ OpenAI Whisper API    │ $0.006/minute  │                │              │
+# │ Ollama (local)        │ free           │                │              │
+# └───────────────────────┴────────────────┴────────────────┴──────────────┘
 PROVIDER_MODELS = {
     "transcription": [
         {"provider": "local", "model": "base", "display": "Whisper (local)", "cost_per_minute": 0, "speed": "medium", "quality": 4, "badge": "free"},
@@ -253,19 +258,22 @@ PROVIDER_MODELS = {
     "vision": [
         {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_image": 0.0001, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_image": 0.00015, "hebrew_quality": 4, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_image": 0.0005, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
+        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_image": 0.0005, "hebrew_quality": 5, "speed": "fast"},
+        {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "display": "Claude Sonnet 4", "cost_per_image": 0.002, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
         {"provider": "ollama", "model": "llama3.2-vision", "display": "Ollama Vision (local)", "cost_per_image": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
     ],
     "video": [
         {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_minute": 0.001, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_minute": 0.002, "hebrew_quality": 3, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_minute": 0.003, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
+        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_minute": 0.003, "hebrew_quality": 5, "speed": "fast"},
+        {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "display": "Claude Sonnet 4", "cost_per_minute": 0.008, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
         {"provider": "ollama", "model": "llama3.2-vision", "display": "Ollama Vision (local)", "cost_per_minute": 0, "hebrew_quality": 3, "speed": "slow", "badge": "free"},
     ],
     "rag": [
         {"provider": "gemini", "model": "gemini-2.5-flash", "display": "Gemini Flash", "cost_per_query": 0.0003, "hebrew_quality": 4, "speed": "fast", "badge": "recommended"},
         {"provider": "openai", "model": "gpt-4o-mini", "display": "GPT-4o-mini", "cost_per_query": 0.0004, "hebrew_quality": 4, "speed": "fast"},
-        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_query": 0.0008, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
+        {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "display": "Claude Haiku", "cost_per_query": 0.0008, "hebrew_quality": 5, "speed": "fast"},
+        {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "display": "Claude Sonnet 4", "cost_per_query": 0.004, "hebrew_quality": 5, "speed": "fast", "badge": "best"},
         {"provider": "ollama", "model": "qwen2.5:14b", "display": "Ollama Qwen (local)", "cost_per_query": 0, "hebrew_quality": 4, "speed": "slow", "badge": "free"},
     ],
 }

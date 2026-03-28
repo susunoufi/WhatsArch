@@ -2041,6 +2041,10 @@
                 <span id="agentLabel">Agent</span>
                 <div class="agent-toggle-switch" id="agentToggle" onclick="toggleAgent()"></div>
             </div>
+            <a href="/download/setup" id="sidebarInstallLink" class="sidebar-agent-toggle" style="text-decoration:none;color:var(--accent-green);font-size:0.82em;cursor:pointer;display:none;">
+                <i class="fas fa-download"></i>
+                <span data-i18n="installTools">התקן כלים מקומיים</span>
+            </a>
 
             <!-- Navigation -->
             <div class="sidebar-section">
@@ -2170,8 +2174,20 @@
                 </div>
             </div>
 
+            <!-- Install Tools Prompt (shown when agent not connected) -->
+            <div class="mgmt-chat-card" id="installToolsCard" style="display:none;">
+                <div style="text-align:center;padding:16px 0;">
+                    <div style="font-size:2em;margin-bottom:8px;"><i class="fas fa-desktop" style="color:var(--accent-green);"></i></div>
+                    <div style="font-size:1em;font-weight:600;margin-bottom:6px;" data-i18n="installToolsTitle">כלים מקומיים לא מותקנים</div>
+                    <div style="font-size:0.85em;color:var(--text-muted);margin-bottom:14px;max-width:400px;margin-left:auto;margin-right:auto;" data-i18n="installToolsDesc">התקן את הכלים המקומיים כדי לעבד צ'אטים על המחשב שלך — תמלול הקלטות, תיאור תמונות וחיפוש חכם.</div>
+                    <a href="/download/setup" class="btn" style="background:linear-gradient(135deg,#38bdf8,#818cf8);color:#0f172a;font-weight:700;text-decoration:none;padding:10px 24px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;">
+                        <i class="fas fa-download"></i> <span data-i18n="installToolsBtn">הורד והתקן</span>
+                    </a>
+                </div>
+            </div>
+
             <!-- Hardware Info -->
-            <div class="mgmt-chat-card">
+            <div class="mgmt-chat-card" id="hwCard">
                 <div class="mgmt-chat-header">
                     <span class="mgmt-chat-name"><i class="fas fa-microchip" style="color:var(--accent-blue);"></i> <span data-i18n="settingsHardware">זיהוי חומרה</span></span>
                     <span style="font-size:0.75em;color:var(--text-muted);" data-i18n="settingsHardwareAuto">זוהה אוטומטית</span>
@@ -2674,6 +2690,10 @@
                 helpSettingsDesc: 'בלשונית "הגדרות" ניתן לבחור ספק AI (Gemini, Claude, GPT, Ollama) ולהגדיר מפתחות API.',
                 helpGalleryTitle: 'גלריה',
                 helpGalleryDesc: 'צפה בכל התמונות והסרטונים של צ\'אט ספציפי בצורה ויזואלית.',
+                installTools: 'התקן כלים מקומיים',
+                installToolsTitle: 'כלים מקומיים לא מותקנים',
+                installToolsDesc: 'התקן את הכלים המקומיים כדי לעבד צ\'אטים על המחשב שלך — תמלול הקלטות, תיאור תמונות וחיפוש חכם.',
+                installToolsBtn: 'הורד והתקן',
             },
             en: {
                 searchPlaceholder: 'Search messages... (type * to browse samples)',
@@ -2924,6 +2944,10 @@
                 helpSettingsDesc: 'In the "Settings" tab you can choose an AI provider (Gemini, Claude, GPT, Ollama) and set API keys.',
                 helpGalleryTitle: 'Gallery',
                 helpGalleryDesc: 'View all images and videos from a specific chat in a visual gallery.',
+                installTools: 'Install local tools',
+                installToolsTitle: 'Local tools not installed',
+                installToolsDesc: 'Install local tools to process chats on your computer — voice transcription, image descriptions and smart search.',
+                installToolsBtn: 'Download & Install',
             }
         };
 
@@ -3134,15 +3158,17 @@
                 agentAvailable = false;
                 agentChats = new Set();
             }
-            // Update sidebar agent row
+            // Update sidebar agent row + install link
             const agentRow = document.getElementById('sidebarAgentRow');
             const agentDot = document.getElementById('agentDot');
             const agentToggle = document.getElementById('agentToggle');
-            if (agentRow) {
-                agentRow.style.display = '';
-                agentDot.className = agentAvailable ? 'agent-dot online' : 'agent-dot offline';
-                if (agentAvailable) agentToggle.classList.add('active');
-                else agentToggle.classList.remove('active');
+            const installLink = document.getElementById('sidebarInstallLink');
+            if (agentAvailable) {
+                if (agentRow) { agentRow.style.display = ''; agentDot.className = 'agent-dot online'; agentToggle.classList.add('active'); }
+                if (installLink) installLink.style.display = 'none';
+            } else {
+                if (agentRow) agentRow.style.display = 'none';
+                if (installLink) installLink.style.display = '';
             }
         }
 
@@ -5408,6 +5434,10 @@
                 // Load data directory info
                 loadDataDirInfo();
 
+                // Show/hide install tools card
+                const installCard = document.getElementById('installToolsCard');
+                if (installCard) installCard.style.display = agentAvailable ? 'none' : '';
+
                 if (modelsRes.ok) {
                     modelsData = await modelsRes.json();
                     renderModelCards('vision', modelsData.vision || []);
@@ -5559,7 +5589,7 @@
         const PRESET_SETTINGS = {
             budget: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'gemini', rag_model: 'gemini-2.5-flash', transcription_provider: 'gemini', transcription_model: 'gemini-2.5-flash' },
             balanced: { vision_provider: 'gemini', vision_model: 'gemini-2.5-flash', video_provider: 'gemini', video_model: 'gemini-2.5-flash', rag_provider: 'openai', rag_model: 'gpt-4o-mini', transcription_provider: 'openai', transcription_model: 'whisper-1' },
-            premium: { vision_provider: 'anthropic', vision_model: 'claude-sonnet-4-20250514', video_provider: 'anthropic', video_model: 'claude-sonnet-4-20250514', rag_provider: 'anthropic', rag_model: 'claude-opus-4-20250514', transcription_provider: 'openai', transcription_model: 'whisper-1' },
+            premium: { vision_provider: 'anthropic', vision_model: 'claude-sonnet-4-20250514', video_provider: 'anthropic', video_model: 'claude-sonnet-4-20250514', rag_provider: 'anthropic', rag_model: 'claude-sonnet-4-20250514', transcription_provider: 'openai', transcription_model: 'whisper-1' },
             local: { vision_provider: 'ollama', vision_model: 'llama3.2-vision', video_provider: 'ollama', video_model: 'llama3.2-vision', rag_provider: 'ollama', rag_model: 'qwen2.5:14b', transcription_provider: 'local', transcription_model: 'base' },
         };
 
