@@ -4373,7 +4373,7 @@
                 const token = localStorage.getItem('auth_token');
                 if (token) headers['Authorization'] = 'Bearer ' + token;
 
-                const res = await fetch('/api/chats/' + encodeURIComponent(chatName), {
+                const res = await fetch(apiBase(chatName) + '/api/chats/' + encodeURIComponent(chatName), {
                     method: 'DELETE',
                     headers
                 });

@@ -188,6 +188,24 @@ def ollama_status():
 # Chat Listing
 # ===========================================================================
 
+@app.route("/api/chats/<chat_name>", methods=["DELETE"])
+def api_delete_chat(chat_name):
+    """Delete a local chat and all its data."""
+    chat_name = chat_name.strip()
+    if not chat_name:
+        abort(400, "Missing chat name")
+    chat_dir = os.path.join(str(CHATS_DIR), chat_name)
+    if not os.path.isdir(chat_dir):
+        abort(404, f"Chat '{chat_name}' not found")
+    # Stop any running processing
+    try:
+        from chat_search import process_manager
+        process_manager.stop_processing(chat_name)
+    except Exception:
+        pass
+    shutil.rmtree(chat_dir, ignore_errors=True)
+    return jsonify({"status": "deleted", "chat": chat_name})
+
 @app.route("/api/chats")
 def api_chats():
     """List all local chats with their status."""
