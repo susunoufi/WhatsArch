@@ -3522,7 +3522,7 @@
             const toDate = formatDateHebrew(stats.date_range.to);
             const senderHtml = Object.entries(stats.senders).map(([name, count]) => {
                 const cls = senderClass(name);
-                return `<span class="sender-stat"><span class="sender-dot ${cls}"></span>${name}: <span class="stat-value">${count.toLocaleString('he-IL')}</span></span>`;
+                return `<span class="sender-stat" style="direction:ltr;display:inline-flex;align-items:center;gap:4px;"><span class="sender-dot ${cls}"></span><span>${escapeHtml(name)}</span>: <span class="stat-value">${count.toLocaleString('he-IL')}</span></span>`;
             }).join('&emsp;');
 
             const loc = currentLang === 'he' ? 'he-IL' : 'en-US';
@@ -4644,6 +4644,14 @@
                 </div>
 
                 <div class="mgmt-section">
+                    <div class="mgmt-section-title" style="cursor:pointer;" onclick="toggleAliases('${escapeHtml(chatName)}', '${cardId}')">
+                        <i class="fas fa-user-tag" style="margin-left:4px;"></i> ${he ? 'כינויי שולחים' : 'Sender Aliases'}
+                        <span style="font-size:0.8em;color:var(--text-muted);margin-right:8px;"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div id="${cardId}-aliases" style="display:none;"></div>
+                </div>
+
+                <div class="mgmt-section">
                     <div class="mgmt-section-title"><i class="fas fa-play" style="margin-left:4px;"></i> ${t('mgmtActions')}</div>
                     <div class="mgmt-actions" id="${cardId}-actions">
                         ${renderActionBtn(chatName, 'transcribe', t('mgmtTranscribe'), 'fa-microphone', runningTask)}
@@ -4846,6 +4854,80 @@
                 }
             } catch (err) {
                 showToast(t('mgmtErrorStop'), 'error');
+            }
+        }
+
+        async function toggleAliases(chatName, cardId) {
+            const container = document.getElementById(cardId + '-aliases');
+            if (!container) return;
+            if (container.style.display !== 'none') {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = '';
+            container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85em;"><i class="fas fa-spinner fa-spin"></i></div>';
+            try {
+                // Load aliases and senders
+                const base = apiBase(chatName);
+                const [aliasRes, statsRes] = await Promise.all([
+                    fetch(base + '/api/aliases?chat=' + encodeURIComponent(chatName)).catch(() => ({ ok: false })),
+                    fetch(base + '/api/stats?chat=' + encodeURIComponent(chatName)).catch(() => ({ ok: false })),
+                ]);
+                const aliases = aliasRes.ok ? (await aliasRes.json()).aliases || {} : {};
+                const senders = statsRes.ok ? Object.keys((await statsRes.json()).senders || {}) : [];
+
+                if (senders.length === 0) {
+                    container.innerHTML = `<div style="color:var(--text-muted);font-size:0.85em;">${he ? 'אין שולחים (הרץ עדכון חיפוש קודם)' : 'No senders (run index first)'}</div>`;
+                    return;
+                }
+
+                let html = `<div style="font-size:0.82em;color:var(--text-muted);margin-bottom:8px;">${he ? 'הגדר כינוי לכל שולח. ה-AI ישתמש בכינוי בתשובות.' : 'Set alias for each sender. AI will use aliases in answers.'}</div>`;
+                html += '<div style="display:flex;flex-direction:column;gap:6px;">';
+                for (const sender of senders) {
+                    const alias = aliases[sender] || '';
+                    html += `<div style="display:flex;align-items:center;gap:8px;">
+                        <span style="min-width:120px;font-size:0.85em;direction:ltr;text-align:left;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(sender)}">${escapeHtml(sender)}</span>
+                        <span style="color:var(--text-muted);">→</span>
+                        <input type="text" value="${escapeHtml(alias)}" placeholder="${he ? 'כינוי...' : 'Alias...'}"
+                            style="flex:1;padding:5px 8px;background:rgba(255,255,255,0.05);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:0.85em;font-family:inherit;"
+                            data-sender="${escapeHtml(sender)}" data-chat="${escapeHtml(chatName)}">
+                    </div>`;
+                }
+                html += '</div>';
+                html += `<button class="btn btn-secondary btn-sm" style="margin-top:8px;font-size:0.82em;" onclick="saveAliases('${escapeHtml(chatName)}', '${cardId}')">
+                    <i class="fas fa-save"></i> ${he ? 'שמור כינויים' : 'Save aliases'}
+                </button>`;
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = `<div style="color:var(--accent-red);font-size:0.85em;">Error: ${e.message}</div>`;
+            }
+        }
+
+        async function saveAliases(chatName, cardId) {
+            const container = document.getElementById(cardId + '-aliases');
+            if (!container) return;
+            const inputs = container.querySelectorAll('input[data-sender]');
+            const aliases = {};
+            inputs.forEach(inp => {
+                const val = inp.value.trim();
+                if (val) aliases[inp.dataset.sender] = val;
+            });
+            try {
+                const base = apiBase(chatName);
+                const token = localStorage.getItem('auth_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+                const res = await fetch(base + '/api/aliases', {
+                    method: 'POST', headers,
+                    body: JSON.stringify({ chat: chatName, aliases })
+                });
+                if (res.ok) {
+                    showToast(he ? 'כינויים נשמרו! הרץ עדכון חיפוש כדי להחיל.' : 'Aliases saved! Run index to apply.', 'success');
+                } else {
+                    showToast(he ? 'שגיאה בשמירה' : 'Save failed', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
             }
         }
 
