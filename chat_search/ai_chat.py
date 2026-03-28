@@ -864,75 +864,87 @@ PROFILE_ANALYSIS_PROMPT = """אתה מנתח שיחות קבוצתיות מומ�
 def generate_group_profile(db_path: str, chat_name: str, project_root: str = None) -> str:
     """Generate a comprehensive group profile by sampling chunks across the chat.
 
-    Samples heavily from different time periods and participants.
-    Returns the profile text.
+    Multi-pass analysis: samples 500 chunks per pass across 3 passes (1500 total).
+    Each pass refines the profile with new data.
+    Returns the final profile text.
     """
     import random
 
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
-    # Get total chunks
     c.execute("SELECT COUNT(*) FROM chunks")
     total = c.fetchone()[0]
     if total == 0:
         conn.close()
         return ""
 
-    # Sample strategy: take chunks from different parts of the chat
-    # More samples = better profile. For a big chat, take 1000 chunks.
-    sample_size = min(total, 1000)
+    llm = _get_llm_client(project_root)
+    prompt = PROFILE_ANALYSIS_PROMPT.format(chat_name=chat_name)
 
-    # Stratified sampling: divide into 20 segments, take evenly from each
-    segments = 20
-    per_segment = sample_size // segments
-    sampled_ids = []
-    segment_size = total // segments
+    # Multi-pass: 5 rounds of 2000 chunks = 10,000 total (10% of large chats)
+    num_passes = 5
+    chunks_per_pass = min(total // num_passes, 2000)
+    segments_per_pass = 20
+    per_segment = chunks_per_pass // segments_per_pass
+    segment_size = total // (num_passes * segments_per_pass)
 
-    for seg in range(segments):
-        start_id = seg * segment_size + 1
-        end_id = (seg + 1) * segment_size
-        c.execute("SELECT id FROM chunks WHERE id BETWEEN ? AND ? ORDER BY RANDOM() LIMIT ?",
-                  (start_id, end_id, per_segment))
-        sampled_ids.extend([row[0] for row in c.fetchall()])
+    profile = ""
+    all_used_ids = set()
 
-    # Fetch the sampled chunks
-    placeholders = ",".join(["?"] * len(sampled_ids))
-    c.execute(f"SELECT id, combined_text, senders FROM chunks WHERE id IN ({placeholders}) ORDER BY id",
-              sampled_ids)
-    chunks = c.fetchall()
+    for pass_num in range(num_passes):
+        print(f"  [Profile] Pass {pass_num + 1}/{num_passes}: sampling {chunks_per_pass} chunks...")
+
+        # Sample from this pass's portion of the chat
+        sampled_ids = []
+        for seg in range(segments_per_pass):
+            global_seg = pass_num * segments_per_pass + seg
+            start_id = global_seg * segment_size + 1
+            end_id = (global_seg + 1) * segment_size
+            c.execute("SELECT id FROM chunks WHERE id BETWEEN ? AND ? ORDER BY RANDOM() LIMIT ?",
+                      (start_id, end_id, per_segment))
+            sampled_ids.extend([row[0] for row in c.fetchall()])
+
+        # Remove duplicates
+        sampled_ids = [i for i in sampled_ids if i not in all_used_ids]
+        all_used_ids.update(sampled_ids)
+
+        if not sampled_ids:
+            continue
+
+        placeholders = ",".join(["?"] * len(sampled_ids))
+        c.execute(f"SELECT id, combined_text, senders FROM chunks WHERE id IN ({placeholders}) ORDER BY id",
+                  sampled_ids)
+        chunks = c.fetchall()
+
+        # Format - truncate each chunk to 600 chars
+        chunk_texts = []
+        for chunk_id, text, senders in chunks:
+            if len(text) > 600:
+                text = text[:600] + "..."
+            chunk_texts.append(f"[{senders}]\n{text}")
+
+        all_text = "\n---\n".join(chunk_texts)
+        if len(all_text) > 250000:
+            all_text = all_text[:250000]
+
+        if pass_num == 0:
+            user_message = f"הנה קטעי שיחה מהקבוצה (חלק {pass_num + 1} מ-{num_passes}):\n\n{all_text}"
+        else:
+            user_message = (f"הנה הפרופיל שיצרת עד כה:\n{profile}\n\n"
+                           f"--- עכשיו קיבלת קטעים נוספים (חלק {pass_num + 1} מ-{num_passes}). "
+                           f"עדכן ושפר את הפרופיל עם מידע חדש שמצאת: ---\n\n{all_text}")
+
+        profile = llm.chat(prompt, user_message, max_tokens=8000)
+        print(f"  [Profile] Pass {pass_num + 1} done: {len(profile)} chars")
+
     conn.close()
 
-    if not chunks:
-        return ""
+    # Save final profile to DB
+    indexer.save_chat_metadata(db_path, {"group_profile": profile})
+    print(f"  [Profile] Complete: {len(profile)} chars, {len(all_used_ids)} chunks analyzed in {num_passes} passes")
 
-    # Format chunks for the prompt
-    chunk_texts = []
-    for chunk_id, text, senders in chunks:
-        # Truncate very long chunks
-        if len(text) > 2000:
-            text = text[:2000] + "..."
-        chunk_texts.append(f"[Chunk #{chunk_id}, Senders: {senders}]\n{text}")
-
-    # Split into batches if too large (Claude can handle ~150K tokens)
-    # 1000 chunks × ~500 chars = ~500K chars = ~170K tokens. May need to trim.
-    all_text = "\n\n---\n\n".join(chunk_texts)
-    if len(all_text) > 400000:  # ~130K tokens
-        all_text = all_text[:400000]
-
-    prompt = PROFILE_ANALYSIS_PROMPT.format(chat_name=chat_name)
-    user_message = f"הנה קטעי שיחה מהקבוצה:\n\n{all_text}"
-
-    # Use the LLM
-    llm = _get_llm_client(project_root)
-    system = prompt
-    answer = llm.chat(system, user_message, max_tokens=8000)
-
-    # Save to DB
-    metadata = {"group_profile": answer}
-    indexer.save_chat_metadata(db_path, metadata)
-
-    return answer
+    return profile
 
 
 def get_group_profile(db_path: str) -> str:
