@@ -34,8 +34,13 @@ def create_app(chats_dir: str) -> Flask:
         return app._supabase
 
     def _is_web_mode():
-        """Check if running in web/SaaS mode (Supabase configured)."""
-        return bool(os.environ.get("SUPABASE_URL"))
+        """Check if running in web/SaaS mode (deployed on Railway with Supabase).
+        Returns False when running locally even if SUPABASE_URL is in .env."""
+        if not os.environ.get("SUPABASE_URL"):
+            return False
+        # On Railway, RAILWAY_ENVIRONMENT is always set
+        # Locally, allow override via WEB_MODE=1
+        return bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("WEB_MODE"))
 
     def get_current_user():
         """Extract and verify user from Authorization header. Returns user dict or None."""
@@ -441,11 +446,11 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify({"status": "deleted", "chat": chat_name})
 
     @app.route("/api/chats")
-    @require_auth
     def api_chats():
         """List all available chats with their status (WhatsApp + Telegram)."""
-        user = getattr(request, 'user', None)
-        allowed_chats = get_user_chats(user)
+        # Optional auth: filter by user in web mode, show all in local mode
+        user = get_current_user()
+        allowed_chats = get_user_chats(user) if user else None
         result = []
         for name in sorted(os.listdir(chats_dir)):
             if allowed_chats is not None and name not in allowed_chats:

@@ -7,11 +7,17 @@ and video thumbnail generation.
 import glob
 import json
 import os
+import platform
 import sqlite3
 import subprocess
 import shutil
 import threading
 import time
+
+# On Windows, prevent ffmpeg from opening a console window
+_SUBPROCESS_FLAGS = {}
+if platform.system() == "Windows":
+    _SUBPROCESS_FLAGS["creationflags"] = subprocess.CREATE_NO_WINDOW
 
 # ---------------------------------------------------------------------------
 # In-memory processing state (thread-safe)
@@ -728,7 +734,7 @@ def generate_video_thumbnail(video_path: str, output_path: str) -> bool:
         subprocess.run(
             ["ffmpeg", "-y", "-i", video_path,
              "-vframes", "1", "-q:v", "2", output_path],
-            capture_output=True, timeout=30,
+            capture_output=True, timeout=30, **_SUBPROCESS_FLAGS,
         )
         return os.path.exists(output_path) and os.path.getsize(output_path) > 0
     except Exception:

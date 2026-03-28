@@ -43,6 +43,15 @@ def save_cache(cache_path: str, cache: dict):
 # ffmpeg helpers
 # ---------------------------------------------------------------------------
 
+import platform as _platform
+import subprocess as _subprocess
+
+# On Windows, prevent ffmpeg from opening a console window
+_SUBPROCESS_FLAGS = {}
+if _platform.system() == "Windows":
+    _SUBPROCESS_FLAGS["creationflags"] = _subprocess.CREATE_NO_WINDOW
+
+
 def _has_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
 
@@ -53,7 +62,7 @@ def get_video_duration(video_path: str) -> float:
         result = subprocess.run(
             ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
              "-of", "csv=p=0", video_path],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, timeout=30, **_SUBPROCESS_FLAGS,
         )
         return float(result.stdout.strip())
     except Exception:
@@ -67,7 +76,7 @@ def extract_audio_from_video(video_path: str, output_dir: str) -> str | None:
         subprocess.run(
             ["ffmpeg", "-y", "-i", video_path, "-vn",
              "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", output_path],
-            capture_output=True, timeout=120,
+            capture_output=True, timeout=120, **_SUBPROCESS_FLAGS,
         )
         if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
             return output_path
@@ -99,7 +108,7 @@ def extract_key_frames(video_path: str, output_dir: str) -> list[str]:
              "-vf", f"fps=1/{interval}", "-q:v", "2",
              "-frames:v", "10",
              os.path.join(output_dir, "frame_%04d.jpg")],
-            capture_output=True, timeout=120,
+            capture_output=True, timeout=120, **_SUBPROCESS_FLAGS,
         )
     except Exception:
         return []
