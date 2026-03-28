@@ -373,7 +373,6 @@ def create_app(chats_dir: str) -> Flask:
         </script></body></html>"""
 
     @app.route("/api/chats/<chat_name>", methods=["DELETE"])
-    @require_auth
     def api_delete_chat(chat_name):
         """Delete a chat and all its data."""
         import shutil
