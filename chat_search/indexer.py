@@ -746,10 +746,12 @@ def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progre
     # Choose provider
     if provider == "openai" and api_key:
         print(f"  Using OpenAI embeddings (text-embedding-3-small) for {total} chunks...")
-        combined = _embed_openai(texts, api_key, start_idx, total, cancel_event, progress_callback)
+        combined = _embed_openai(texts, api_key, start_idx, total, cancel_event, progress_callback,
+                                 embeddings_path=embeddings_path, existing_embeddings=existing_embeddings)
     elif provider == "gemini" and api_key:
         print(f"  Using Gemini embeddings (text-embedding-004) for {total} chunks...")
-        combined = _embed_gemini(texts, api_key, start_idx, total, cancel_event, progress_callback)
+        combined = _embed_gemini(texts, api_key, start_idx, total, cancel_event, progress_callback,
+                                 embeddings_path=embeddings_path, existing_embeddings=existing_embeddings)
     else:
         # Local E5-large
         prefixed = [f"passage: {t}" for t in texts]
@@ -779,10 +781,6 @@ def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progre
 
         combined = np.vstack(all_emb) if all_emb else np.array([])
 
-    # Prepend existing if resuming with cloud provider
-    if existing_embeddings is not None and provider != "local":
-        combined = np.vstack([existing_embeddings, combined])
-
     np.save(embeddings_path, combined)
     cache_key = os.path.normcase(os.path.abspath(db_path))
     _chunk_embedding_cache.pop(cache_key, None)
@@ -791,45 +789,55 @@ def build_chunk_embeddings(chunks: list, db_path: str, cancel_event=None, progre
     print(f"  Saved chunk embeddings ({combined.shape}) to {embeddings_path} [provider={provider}]")
 
 
-def _embed_openai(texts, api_key, start_idx, total, cancel_event=None, progress_callback=None):
-    """Embed texts using OpenAI text-embedding-3-small API."""
+def _embed_openai(texts, api_key, start_idx, total, cancel_event=None, progress_callback=None,
+                   embeddings_path=None, existing_embeddings=None):
+    """Embed texts using OpenAI text-embedding-3-small API. Saves incrementally for resume."""
     import numpy as np
     from openai import OpenAI
     client = OpenAI(api_key=api_key)
-    batch_size = 100  # OpenAI supports up to 2048 per call
-    all_emb = []
+    batch_size = 100
+    all_emb = [existing_embeddings] if existing_embeddings is not None else []
     for i in range(start_idx, total, batch_size):
         if cancel_event and cancel_event.is_set():
             raise EmbeddingCancelled()
         batch = texts[i:i + batch_size]
         resp = client.embeddings.create(model="text-embedding-3-small", input=batch)
-        batch_emb = [d.embedding for d in resp.data]
-        all_emb.extend(batch_emb)
+        batch_emb = np.array([d.embedding for d in resp.data], dtype=np.float32)
+        all_emb.append(batch_emb)
+        # Incremental save for resume support
+        if embeddings_path:
+            combined = np.vstack(all_emb)
+            np.save(embeddings_path, combined)
         done = min(i + batch_size, total)
         print(f"  OpenAI: {done}/{total}")
         if progress_callback:
             progress_callback("embeddings", done, total)
-    return np.array(all_emb, dtype=np.float32)
+    return np.vstack(all_emb) if all_emb else np.array([], dtype=np.float32)
 
 
-def _embed_gemini(texts, api_key, start_idx, total, cancel_event=None, progress_callback=None):
-    """Embed texts using Gemini text-embedding-004 API."""
+def _embed_gemini(texts, api_key, start_idx, total, cancel_event=None, progress_callback=None,
+                   embeddings_path=None, existing_embeddings=None):
+    """Embed texts using Gemini text-embedding-004 API. Saves incrementally for resume."""
     import numpy as np
     from google import genai
     client = genai.Client(api_key=api_key)
-    batch_size = 50  # Gemini batch limit
-    all_emb = []
+    batch_size = 50
+    all_emb = [existing_embeddings] if existing_embeddings is not None else []
     for i in range(start_idx, total, batch_size):
         if cancel_event and cancel_event.is_set():
             raise EmbeddingCancelled()
         batch = texts[i:i + batch_size]
         resp = client.models.embed_content(model="text-embedding-004", contents=batch)
-        all_emb.extend(resp.embeddings)
+        batch_emb = np.array([[v for v in e.values] for e in resp.embeddings], dtype=np.float32)
+        all_emb.append(batch_emb)
+        if embeddings_path:
+            combined = np.vstack(all_emb)
+            np.save(embeddings_path, combined)
         done = min(i + batch_size, total)
         print(f"  Gemini: {done}/{total}")
         if progress_callback:
             progress_callback("embeddings", done, total)
-    return np.array([[v for v in e.values] for e in all_emb], dtype=np.float32)
+    return np.vstack(all_emb) if all_emb else np.array([], dtype=np.float32)
 
 
 class EmbeddingCancelled(Exception):
