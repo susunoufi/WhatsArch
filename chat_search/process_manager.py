@@ -357,6 +357,17 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
     callback = _make_progress_callback(chat_name)
     cancel_event = _cancel_events.get(chat_name)
 
+    # Detect chat language from metadata (defaults to Hebrew)
+    chat_language = "he"
+    db_path = os.path.join(data_dir, "chat.db")
+    if os.path.exists(db_path):
+        try:
+            from .indexer import get_chat_metadata
+            meta = get_chat_metadata(db_path)
+            chat_language = meta.get("language", "he")
+        except Exception:
+            pass
+
     try:
         if task == "transcribe":
             from .transcribe import transcribe_audio_files
@@ -414,7 +425,7 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
             print(f"[IMAGES] api_key={'present (' + api_key[:8] + '...)' if api_key else 'MISSING'}")
             is_local = provider in ("ollama", "proxy")
             _update_task_meta(chat_name, provider=provider, model=model or "default", engine="local" if is_local else "cloud")
-            process_images(chat_dir, cache_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, progress_callback=callback, cancel_event=cancel_event, proxy_url=proxy_url, proxy_token=proxy_token)
+            process_images(chat_dir, cache_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, progress_callback=callback, cancel_event=cancel_event, proxy_url=proxy_url, proxy_token=proxy_token, language=chat_language)
 
             # Verify save
             if os.path.exists(cache_path):
@@ -437,7 +448,7 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
             vtrans_path = os.path.join(data_dir, "video_transcriptions.json")
             is_local = provider == "ollama"
             _update_task_meta(chat_name, provider=provider, model=model or "default", engine="local" if is_local else "cloud")
-            process_videos(chat_dir, desc_path, vtrans_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, model_size=model_size, progress_callback=callback, cancel_event=cancel_event)
+            process_videos(chat_dir, desc_path, vtrans_path, provider=provider, model=model, api_key=api_key, ollama_url=ollama_url, model_size=model_size, progress_callback=callback, cancel_event=cancel_event, language=chat_language)
 
         elif task == "pdfs":
             from .vision import process_pdfs
@@ -640,15 +651,40 @@ def _run_embeddings_task(chat_name, chat_dir, data_dir, callback, cancel_event=N
 # Video thumbnail generation
 # ---------------------------------------------------------------------------
 
+_thumbnail_locks = {}
+_thumbnail_locks_lock = threading.Lock()
+
+
 def generate_video_thumbnail(video_path: str, output_path: str) -> bool:
     """Extract the first frame of a video as a JPEG thumbnail using ffmpeg.
 
     Returns True on success, False on failure.
+    Uses per-file locking to prevent concurrent ffmpeg processes for the same video.
     """
+    # Check if already generated
+    if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+        return True
+
     if not shutil.which("ffmpeg"):
         return False
 
+    # Get or create a lock for this specific output path
+    with _thumbnail_locks_lock:
+        if output_path not in _thumbnail_locks:
+            _thumbnail_locks[output_path] = threading.Lock()
+        lock = _thumbnail_locks[output_path]
+
+    # Only one ffmpeg process per thumbnail at a time
+    if not lock.acquire(blocking=False):
+        # Another thread is already generating this thumbnail - wait for it
+        lock.acquire()
+        lock.release()
+        return os.path.exists(output_path) and os.path.getsize(output_path) > 0
+
     try:
+        # Double-check after acquiring lock
+        if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            return True
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         subprocess.run(
             ["ffmpeg", "-y", "-i", video_path,
@@ -658,3 +694,8 @@ def generate_video_thumbnail(video_path: str, output_path: str) -> bool:
         return os.path.exists(output_path) and os.path.getsize(output_path) > 0
     except Exception:
         return False
+    finally:
+        lock.release()
+        # Clean up lock entry
+        with _thumbnail_locks_lock:
+            _thumbnail_locks.pop(output_path, None)

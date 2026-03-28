@@ -284,7 +284,7 @@ def _expand_keywords(keywords: list[str]) -> list[dict]:
     return expanded
 
 
-def retrieve_chunks(db_path: str, question: str, max_results: int = 12) -> list[dict]:
+def retrieve_chunks(db_path: str, question: str, max_results: int = 12, language: str = "he") -> list[dict]:
     """Retrieve relevant conversation chunks using hybrid search.
 
     Primary: Semantic vector similarity on chunk embeddings (E5-large)
@@ -299,7 +299,7 @@ def retrieve_chunks(db_path: str, question: str, max_results: int = 12) -> list[
 
     Returns list of {chunk_id, chunk_data} dicts.
     """
-    keywords = extract_keywords(question)
+    keywords = extract_keywords(question, language)
 
     scored = {}  # chunk_id -> score
     chunk_roots = {}  # chunk_id -> set of root indices
@@ -832,7 +832,7 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None, proje
     Returns {answer, sources, keywords, provider, debug}.
     """
     # 1. Retrieve relevant conversation chunks
-    chunk_groups = retrieve_chunks(db_path, question, max_results=12)
+    chunk_groups = retrieve_chunks(db_path, question, max_results=12, language=language)
 
     # 2. Format for prompt
     context_text = format_chunks_for_prompt(chunk_groups, chat_name)
@@ -879,10 +879,21 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None, proje
                 })
                 break  # One source per chunk
 
+    # Log RAG usage
+    try:
+        from . import usage_tracker
+        usage_tracker.log_event({
+            "type": "rag", "chat_name": chat_name,
+            "provider": llm.provider, "model": llm.model,
+            "file": question[:80],
+        }, project_root or os.path.dirname(os.path.dirname(db_path)))
+    except Exception:
+        pass
+
     return {
         "answer": answer,
         "sources": sources,
-        "keywords": extract_keywords(question),
+        "keywords": extract_keywords(question, language),
         "provider": llm.provider,
         "debug": {
             "chunks_retrieved": len(chunk_groups),
@@ -912,7 +923,7 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
     import json
 
     # 1. Retrieve relevant conversation chunks
-    chunk_groups = retrieve_chunks(db_path, question, max_results=12)
+    chunk_groups = retrieve_chunks(db_path, question, max_results=12, language=language)
 
     # 2. Format for prompt
     context_text = format_chunks_for_prompt(chunk_groups, chat_name)
@@ -976,7 +987,7 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
     yield json.dumps({
         "type": "metadata",
         "sources": sources,
-        "keywords": extract_keywords(question),
+        "keywords": extract_keywords(question, language),
         "provider": llm.provider,
         "debug": debug_info,
     }) + "\n"
@@ -985,6 +996,17 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
     system = get_system_prompt(chat_name, language)
     for chunk in llm.chat_stream(system, user_message, max_tokens=2048):
         yield chunk
+
+    # Log RAG usage after stream completes
+    try:
+        from . import usage_tracker
+        usage_tracker.log_event({
+            "type": "rag", "chat_name": chat_name,
+            "provider": llm.provider, "model": llm.model,
+            "file": question[:80],
+        }, project_root or os.path.dirname(os.path.dirname(db_path)))
+    except Exception:
+        pass
 
 
 def ask_with_context(context_text: str, question: str, chat_name: str, history: list = None,

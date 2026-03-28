@@ -543,7 +543,7 @@ def api_search_all():
         except Exception:
             continue
 
-    all_results.sort(key=lambda r: r.get("relevance_score", 0))
+    all_results.sort(key=lambda r: r.get("relevance_score", 0), reverse=True)
 
     per_page = 50
     start = (page - 1) * per_page
@@ -1045,6 +1045,7 @@ def api_settings_update():
 
     # Reset AI client
     ai_chat._llm_client = None
+    ai_chat._llm_client_key = None
 
     return jsonify({"status": "ok"})
 

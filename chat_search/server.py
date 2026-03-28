@@ -122,6 +122,30 @@ def create_app(chats_dir: str) -> Flask:
         settings["rag_provider"] = preset["rag_provider"]
         settings["rag_model"] = preset["rag_model"]
 
+    def get_user_chats(user) -> set:
+        """Get the set of chat names owned by this user (from Supabase).
+        In local mode, returns all chats."""
+        if not _is_web_mode() or not user:
+            return None  # None = no filtering (local mode)
+        if user.get("email") == ADMIN_EMAIL:
+            return None  # Admin sees everything
+        try:
+            rows = sb.table("user_chats").select("chat_name").eq("user_id", user["id"]).execute()
+            return {r["chat_name"] for r in (rows.data or [])}
+        except Exception:
+            return set()
+
+    def user_owns_chat(user, chat_name: str) -> bool:
+        """Check if user owns a specific chat. In local mode, always True."""
+        if not _is_web_mode():
+            return True
+        if not user:
+            return False
+        if user.get("email") == ADMIN_EMAIL:
+            return True
+        allowed = get_user_chats(user)
+        return allowed is None or chat_name in allowed
+
     # ------------------------------------------------------------------
     # Auth endpoints
     # ------------------------------------------------------------------
@@ -313,6 +337,11 @@ def create_app(chats_dir: str) -> Flask:
         """Main app page. Auth checked client-side via JS token."""
         return render_template("index.html")
 
+    @app.route("/privacy")
+    def privacy_page():
+        """Privacy policy page."""
+        return render_template("privacy.html")
+
     @app.route("/login")
     def login_page():
         """Serve login/signup page (web mode only)."""
@@ -373,6 +402,7 @@ def create_app(chats_dir: str) -> Flask:
         </script></body></html>"""
 
     @app.route("/api/chats/<chat_name>", methods=["DELETE"])
+    @require_auth
     def api_delete_chat(chat_name):
         """Delete a chat and all its data."""
         import shutil
@@ -398,16 +428,21 @@ def create_app(chats_dir: str) -> Flask:
             if sb:
                 try:
                     sb.table("user_chats").delete().eq("chat_name", chat_name).eq("user_id", user["id"]).execute()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[DELETE] Warning: Supabase cleanup failed for {chat_name}: {e}")
 
         return jsonify({"status": "deleted", "chat": chat_name})
 
     @app.route("/api/chats")
+    @require_auth
     def api_chats():
         """List all available chats with their status (WhatsApp + Telegram)."""
+        user = getattr(request, 'user', None)
+        allowed_chats = get_user_chats(user)
         result = []
         for name in sorted(os.listdir(chats_dir)):
+            if allowed_chats is not None and name not in allowed_chats:
+                continue
             chat_dir = os.path.join(chats_dir, name)
             if not os.path.isdir(chat_dir):
                 continue
@@ -429,6 +464,7 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify(result)
 
     @app.route("/api/search/all")
+    @require_auth
     def api_search_all():
         """Search across all chats simultaneously."""
         q = request.args.get("q", "").strip()
@@ -488,6 +524,7 @@ def create_app(chats_dir: str) -> Flask:
         })
 
     @app.route("/api/search")
+    @require_auth
     def api_search():
         chat_name = request.args.get("chat", "").strip()
         if not chat_name:
@@ -530,6 +567,7 @@ def create_app(chats_dir: str) -> Flask:
         })
 
     @app.route("/api/context/<int:message_id>")
+    @require_auth
     def api_context(message_id):
         chat_name = request.args.get("chat", "").strip()
         if not chat_name:
@@ -549,6 +587,7 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify({"messages": messages, "focus_id": message_id})
 
     @app.route("/api/stats")
+    @require_auth
     def api_stats():
         chat_name = request.args.get("chat", "").strip()
         if not chat_name:
@@ -564,6 +603,7 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify(stats)
 
     @app.route("/api/ai/status")
+    @require_auth
     def api_ai_status():
         """Check AI provider availability."""
         info = ai_chat.LLMClient.get_provider_info()
@@ -574,8 +614,10 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify(info)
 
     @app.route("/api/ai/chat", methods=["POST"])
+    @require_auth
     def api_ai_chat():
         """AI chat endpoint - RAG pipeline."""
+        enforce_user_preset()
         data = request.get_json()
         if not data:
             abort(400, "Missing JSON body")
@@ -601,8 +643,10 @@ def create_app(chats_dir: str) -> Flask:
             return jsonify({"error": f"שגיאה: {str(e)}"}), 500
 
     @app.route("/api/ai/chat/stream", methods=["POST"])
+    @require_auth
     def api_ai_chat_stream():
         """Streaming AI chat endpoint using Server-Sent Events."""
+        enforce_user_preset()
         data = request.get_json()
         if not data:
             abort(400, "Missing JSON body")
@@ -713,6 +757,7 @@ def create_app(chats_dir: str) -> Flask:
     # ------------------------------------------------------------------
 
     @app.route("/api/process/status")
+    @require_auth
     def api_process_status():
         """Get full processing status for a chat (file counts, progress, per-file detail)."""
         chat_name = request.args.get("chat", "").strip()
@@ -728,6 +773,7 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify(status)
 
     @app.route("/api/process/start", methods=["POST"])
+    @require_auth
     def api_process_start():
         """Trigger a background processing step for a chat."""
         data = request.get_json()
@@ -756,6 +802,7 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify({"status": "started", "task": task})
 
     @app.route("/api/process/progress")
+    @require_auth
     def api_process_progress():
         """Lightweight polling endpoint for active task progress."""
         chat_name = request.args.get("chat", "").strip()
@@ -816,6 +863,7 @@ def create_app(chats_dir: str) -> Flask:
         return jsonify(result)
 
     @app.route("/api/process/stop", methods=["POST"])
+    @require_auth
     def api_process_stop():
         """Request cancellation of a running processing task."""
         data = request.get_json()
@@ -838,6 +886,7 @@ def create_app(chats_dir: str) -> Flask:
     # ------------------------------------------------------------------
 
     @app.route("/api/media/list")
+    @require_auth
     def api_media_list():
         """List all media files for a chat with metadata."""
         chat_name = request.args.get("chat", "").strip()
@@ -907,6 +956,7 @@ def create_app(chats_dir: str) -> Flask:
     # ------------------------------------------------------------------
 
     @app.route("/api/analytics")
+    @require_auth
     def api_analytics():
         """Get analytics data for a chat."""
         chat_name = request.args.get("chat", "").strip()
@@ -981,6 +1031,7 @@ def create_app(chats_dir: str) -> Flask:
     # ------------------------------------------------------------------
 
     @app.route("/api/usage")
+    @require_auth
     def api_usage():
         """Get usage analytics: costs, token usage, processing log.
 
@@ -1007,6 +1058,7 @@ def create_app(chats_dir: str) -> Flask:
     # ------------------------------------------------------------------
 
     @app.route("/api/export")
+    @require_auth
     def api_export():
         """Export search results as CSV or JSON file download."""
         chat_name = request.args.get("chat", "").strip()
@@ -1183,6 +1235,7 @@ def create_app(chats_dir: str) -> Flask:
 
         # Reset AI client so it picks up new settings
         ai_chat._llm_client = None
+        ai_chat._llm_client_key = None
 
         return jsonify({"status": "ok"})
 
