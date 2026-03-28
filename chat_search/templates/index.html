@@ -4693,12 +4693,8 @@
                                 stopBtn.disabled = false;
                                 stopBtn.classList.remove('inactive');
                             }
-                        }
-                        // Don't disable other buttons - allow parallel tasks
-                        // But disable "index" while other tasks are running
-                        if (btn.dataset.task === 'index' && task !== 'index') {
+                        } else {
                             btn.disabled = true;
-                            btn.title = he ? 'המתן לסיום העיבודים' : 'Wait for processing to finish';
                         }
                     });
                 }

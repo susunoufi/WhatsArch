@@ -272,13 +272,12 @@ def get_task_status(chat_name: str) -> dict | None:
 def start_processing(chat_name: str, task: str, chats_dir: str, model_size: str = "small") -> bool:
     """Launch a background thread for a processing task.
 
-    Multiple different tasks can run in parallel for the same chat.
-    Returns False only if the exact same task is already running.
+    Returns False if any task is already running for this chat.
     """
     with _processing_lock:
         current = _processing_state.get(chat_name)
-        if current and current.get("status") == "running" and current.get("task") == task:
-            return False  # Same task already running - skip
+        if current and current.get("status") == "running":
+            return False
 
         cancel_event = threading.Event()
         _cancel_events[chat_name] = cancel_event
