@@ -4484,7 +4484,18 @@
                         const status = await statusRes.json();
                         html += renderManagementCard(chat.name, status, chat.source);
                     } catch (err) {
-                        html += `<div class="mgmt-chat-card"><div class="mgmt-chat-header"><span class="mgmt-chat-name"><i class="fab fa-whatsapp"></i> ${escapeHtml(chat.name)}</span></div><div style="color:#e57373;">${t('mgmtErrorLoading')}</div></div>`;
+                        console.error('[Management] Status failed for', chat.name, err);
+                        // Show card with empty status but WITH action buttons
+                        const emptyStatus = {
+                            audio: {total:0, processed:0, files:[]},
+                            images: {total:0, processed:0, files:[]},
+                            videos: {total:0, described:0, transcribed:0, files:[]},
+                            pdfs: {total:0, processed:0, files:[]},
+                            index: {exists:false, message_count:0},
+                            embeddings: {exists:false, done:0, total:0},
+                            active_task: null,
+                        };
+                        html += renderManagementCard(chat.name, emptyStatus, chat.source);
                     }
                 }
 
