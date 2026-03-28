@@ -793,6 +793,7 @@ def _embed_openai(texts, api_key, start_idx, total, cancel_event=None, progress_
                    embeddings_path=None, existing_embeddings=None):
     """Embed texts using OpenAI text-embedding-3-small API. Saves incrementally for resume."""
     import numpy as np
+    import time as _time
     from openai import OpenAI
     client = OpenAI(api_key=api_key)
     batch_size = 100
@@ -801,7 +802,18 @@ def _embed_openai(texts, api_key, start_idx, total, cancel_event=None, progress_
         if cancel_event and cancel_event.is_set():
             raise EmbeddingCancelled()
         batch = texts[i:i + batch_size]
-        resp = client.embeddings.create(model="text-embedding-3-small", input=batch)
+        # Retry with backoff on rate limit
+        for attempt in range(5):
+            try:
+                resp = client.embeddings.create(model="text-embedding-3-small", input=batch)
+                break
+            except Exception as e:
+                if "rate_limit" in str(e).lower() or "429" in str(e):
+                    wait = 2 ** attempt + 1  # 2, 3, 5, 9, 17 seconds
+                    print(f"  Rate limit hit, waiting {wait}s...")
+                    _time.sleep(wait)
+                else:
+                    raise
         batch_emb = np.array([d.embedding for d in resp.data], dtype=np.float32)
         all_emb.append(batch_emb)
         # Incremental save for resume support
@@ -819,6 +831,7 @@ def _embed_gemini(texts, api_key, start_idx, total, cancel_event=None, progress_
                    embeddings_path=None, existing_embeddings=None):
     """Embed texts using Gemini text-embedding-004 API. Saves incrementally for resume."""
     import numpy as np
+    import time as _time
     from google import genai
     client = genai.Client(api_key=api_key)
     batch_size = 50
@@ -827,7 +840,18 @@ def _embed_gemini(texts, api_key, start_idx, total, cancel_event=None, progress_
         if cancel_event and cancel_event.is_set():
             raise EmbeddingCancelled()
         batch = texts[i:i + batch_size]
-        resp = client.models.embed_content(model="text-embedding-004", contents=batch)
+        # Retry with backoff on rate limit
+        for attempt in range(5):
+            try:
+                resp = client.models.embed_content(model="text-embedding-004", contents=batch)
+                break
+            except Exception as e:
+                if "rate" in str(e).lower() or "429" in str(e) or "quota" in str(e).lower():
+                    wait = 2 ** attempt + 1
+                    print(f"  Rate limit hit, waiting {wait}s...")
+                    _time.sleep(wait)
+                else:
+                    raise
         batch_emb = np.array([[v for v in e.values] for e in resp.embeddings], dtype=np.float32)
         all_emb.append(batch_emb)
         if embeddings_path:
