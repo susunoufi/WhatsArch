@@ -336,7 +336,7 @@
 
         input:focus, select:focus { border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2); }
         input::placeholder { color: var(--text-muted); }
-        select option { background: #ffffff; color: var(--text-primary); }
+        select option { background: #1e293b; color: var(--text-primary); }
         input[type="date"] { min-width: 140px; color-scheme: dark; }
         input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.7); }
 
@@ -775,7 +775,7 @@
         }
         .ai-chat-fab .fab-logo { width: 38px; height: 38px; border-radius: 50%; }
         .ai-chat-fab:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(37,99,235,0.4), 0 12px 40px rgba(124,58,237,0.2); }
-        .ai-chat-fab.active { background: #ffffff; border: 2px solid rgba(0,0,0,0.08); box-shadow: var(--shadow-lg); }
+        .ai-chat-fab.active { background: rgba(30,41,59,0.9); border: 2px solid rgba(255,255,255,0.1); box-shadow: var(--shadow-lg); }
 
         .ai-chat-panel {
             display: none; position: fixed; bottom: 92px; left: 24px; width: 420px; max-width: calc(100vw - 48px);
@@ -1008,7 +1008,7 @@
 
         /* --- Source citation modal --- */
         .source-modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-        .source-modal-box { background:rgba(255,255,255,0.97); backdrop-filter:blur(20px); border:1px solid rgba(0,0,0,0.08); border-radius:var(--radius-lg); padding:24px; max-width:700px; width:90%; max-height:80vh; overflow-y:auto; position:relative; box-shadow:var(--shadow-lg); }
+        .source-modal-box { background:rgba(15,23,42,0.97); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-lg); padding:24px; max-width:700px; width:90%; max-height:80vh; overflow-y:auto; position:relative; box-shadow:var(--shadow-lg); }
         .source-modal-close { position:absolute; top:10px; left:10px; background:none; border:none; font-size:1.5em; cursor:pointer; color:var(--text-muted); }
         .source-modal-close:hover { color:var(--text-primary); }
         .source-link { color:var(--accent-blue); text-decoration:underline; cursor:pointer; font-weight:600; }
@@ -1089,15 +1089,15 @@
         /* Auto light/dark via prefers-color-scheme                        */
         /* ================================================================ */
         :root {
-            --wa-bg: #fafafa; --wa-bg-raised: #ffffff; --wa-bg-subtle: #f4f4f5;
-            --wa-border: rgba(0,0,0,0.08); --wa-border-strong: rgba(0,0,0,0.14);
-            --wa-text: #09090b; --wa-text-secondary: #52525b; --wa-text-muted: #a1a1aa;
-            --wa-primary: #4f46e5; --wa-primary-hover: #4338ca;
-            --wa-primary-subtle: rgba(79,70,229,0.07); --wa-primary-text: #fff;
-            --wa-accent: #2563eb; --wa-success: #16a34a; --wa-warning: #d97706; --wa-danger: #dc2626;
-            --wa-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-            --wa-shadow: 0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
-            --wa-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07),0 2px 4px -2px rgba(0,0,0,0.05);
+            --wa-bg: #0a0f1a; --wa-bg-raised: rgba(255,255,255,0.05); --wa-bg-subtle: rgba(255,255,255,0.03);
+            --wa-border: rgba(255,255,255,0.08); --wa-border-strong: rgba(255,255,255,0.14);
+            --wa-text: #e2e8f0; --wa-text-secondary: #94a3b8; --wa-text-muted: #64748b;
+            --wa-primary: #38bdf8; --wa-primary-hover: #0ea5e9;
+            --wa-primary-subtle: rgba(56,189,248,0.1); --wa-primary-text: #0f172a;
+            --wa-accent: #818cf8; --wa-success: #22c55e; --wa-warning: #f59e0b; --wa-danger: #f87171;
+            --wa-shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+            --wa-shadow: 0 2px 6px rgba(0,0,0,0.3),0 1px 3px rgba(0,0,0,0.2);
+            --wa-shadow-md: 0 4px 12px rgba(0,0,0,0.4),0 2px 6px rgba(0,0,0,0.2);
             --wa-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08),0 4px 6px rgba(0,0,0,0.04);
             --wa-radius: 10px; --wa-radius-lg: 14px; --wa-radius-full: 9999px;
             color-scheme: light dark;
@@ -1418,9 +1418,9 @@
 
         /* --- Enhanced Cards with Glass + Glow --- */
         .message-card {
-            background: #ffffff;
-            border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .message-card:hover {
@@ -1430,8 +1430,8 @@
         }
 
         .mgmt-chat-card {
-            background: #ffffff;
-            border: 1px solid rgba(0,0,0,0.06);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
             box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -5657,11 +5657,23 @@
                 const headers = { 'Content-Type': 'application/json' };
                 const token = localStorage.getItem('auth_token');
                 if (token) headers['Authorization'] = 'Bearer ' + token;
+
+                // Save to main server
                 const res = await fetch('/api/settings', {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(body)
                 });
+
+                // Also save to agent if available (so local processing uses correct settings)
+                if (agentAvailable) {
+                    fetch(AGENT_URL + '/api/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    }).catch(() => {});
+                }
+
                 if (res.ok) {
                     showToast(t('settingsAutoSaved'), 'success', 2000);
                 } else {

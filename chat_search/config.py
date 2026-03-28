@@ -227,11 +227,18 @@ def load_settings(project_root: str) -> dict:
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         pass
 
-    # Auto-fix retired model names
+    # Auto-fix retired model names and persist the fix
+    fixed = False
     for key in ("vision_model", "video_model", "rag_model", "transcription_model"):
         val = settings.get(key, "")
         if val in _RETIRED_MODELS:
             settings[key] = _RETIRED_MODELS[val]
+            fixed = True
+    if fixed:
+        try:
+            save_settings(project_root, settings)
+        except Exception:
+            pass
     return settings
 
 
