@@ -4676,8 +4676,12 @@
                                 stopBtn.disabled = false;
                                 stopBtn.classList.remove('inactive');
                             }
-                        } else {
+                        }
+                        // Don't disable other buttons - allow parallel tasks
+                        // But disable "index" while other tasks are running
+                        if (btn.dataset.task === 'index' && task !== 'index') {
                             btn.disabled = true;
+                            btn.title = he ? 'המתן לסיום העיבודים' : 'Wait for processing to finish';
                         }
                     });
                 }
@@ -5298,17 +5302,35 @@
                 const authToken = localStorage.getItem('auth_token');
                 if (authToken) authHeaders['Authorization'] = 'Bearer ' + authToken;
 
-                const [settingsRes, hwRes, modelsRes, chatsRes] = await Promise.all([
-                    fetch('/api/settings', { headers: authHeaders }),
-                    fetch('/api/hardware'),
-                    fetch('/api/models'),
-                    fetch('/api/chats'),
-                ]);
+                const fetchOpts = { headers: authHeaders };
+                const promises = [
+                    fetch('/api/settings', fetchOpts).catch(() => ({ ok: false })),
+                    fetch(agentAvailable ? AGENT_URL + '/hardware' : '/api/hardware').catch(() => ({ ok: false })),
+                    fetch('/api/models').catch(() => ({ ok: false })),
+                    fetch('/api/chats', fetchOpts).catch(() => ({ ok: false })),
+                ];
+                // Also load settings from agent if available (agent has the real local settings)
+                if (agentAvailable) {
+                    promises.push(fetch(AGENT_URL + '/api/settings').catch(() => ({ ok: false })));
+                    promises.push(fetch(AGENT_URL + '/api/chats').catch(() => ({ ok: false })));
+                }
+                const results = await Promise.all(promises);
+                const [settingsRes, hwRes, modelsRes, chatsRes] = results;
+                const agentSettingsRes = results[4];
+                const agentChatsRes = results[5];
 
                 if (settingsRes.ok) {
                     const data = await settingsRes.json();
                     settingsData = data.settings || {};
                     renderApiKeyStatus(data.api_keys || {});
+                }
+                // Override with agent settings if available (agent has the actual processing settings)
+                if (agentSettingsRes && agentSettingsRes.ok) {
+                    try {
+                        const agentData = await agentSettingsRes.json();
+                        if (agentData.settings) Object.assign(settingsData, agentData.settings);
+                        if (agentData.api_keys) renderApiKeyStatus(agentData.api_keys);
+                    } catch (e) {}
                 }
 
                 if (hwRes.ok) {
@@ -5328,12 +5350,22 @@
                 // Build cost chat selector and load media counts per chat
                 let chatNames = [];
                 if (chatsRes.ok) {
-                    const chats = await chatsRes.json();
-                    chatNames = chats.filter(c => c.ready).map(c => c.name);
-                    console.log('[Settings] Ready chats for cost:', chatNames);
-                } else {
-                    console.error('[Settings] /api/chats failed:', chatsRes.status);
+                    try {
+                        const chats = await chatsRes.json();
+                        chatNames = chats.filter(c => c.ready).map(c => c.name);
+                    } catch (e) {}
                 }
+                // Merge agent chats
+                if (agentChatsRes && agentChatsRes.ok) {
+                    try {
+                        const agentChatList = await agentChatsRes.json();
+                        const agentNames = agentChatList.filter(c => c.ready).map(c => c.name);
+                        for (const n of agentNames) {
+                            if (!chatNames.includes(n)) chatNames.push(n);
+                        }
+                    } catch (e) {}
+                }
+                console.log('[Settings] Ready chats for cost:', chatNames);
 
                 // Build multi-select chat checkboxes
                 const checkboxContainer = document.getElementById('costChatCheckboxes');
@@ -5797,13 +5829,14 @@
             const estTrans = transModel ? transModel.cost_per_minute * (mediaCountsForSettings.audio || 0) : 0;
             const estTotal = estVision + estVideo + estRag + estTrans;
 
-            // Fetch actual usage
+            // Fetch actual usage (route to agent if local chats selected)
             let chatParam = '';
             if (selectedCostChats.size > 0) {
                 chatParam = Array.from(selectedCostChats).join(',');
             }
             try {
-                const res = await fetch('/api/usage' + (chatParam ? '?chat=' + encodeURIComponent(chatParam) : ''));
+                const usageBase = (agentAvailable && selectedCostChats.size > 0 && [...selectedCostChats].some(c => agentChats.has(c))) ? AGENT_URL : '';
+                const res = await fetch(usageBase + '/api/usage' + (chatParam ? '?chat=' + encodeURIComponent(chatParam) : ''));
                 if (res.ok) costUsageData = await res.json();
             } catch (e) {}
 
