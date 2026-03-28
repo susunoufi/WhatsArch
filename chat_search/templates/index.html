@@ -5897,11 +5897,11 @@
             let html = '';
             models.forEach((m, i) => {
                 const isSelected = m.provider === selectedProvider && (m.model === selectedModel || !selectedModel);
-                const costKeyMap = { rag: 'cost_per_query', video: 'cost_per_minute', vision: 'cost_per_image', transcription: 'cost_per_minute' };
+                const costKeyMap = { rag: 'cost_per_query', video: 'cost_per_minute', vision: 'cost_per_image', transcription: 'cost_per_minute', embeddings: 'cost_per_1k' };
                 const costKey = costKeyMap[task] || 'cost_per_image';
                 const cost = m[costKey];
-                const costLabelMap = { rag: t('settingsPerQuestion'), video: t('settingsPerMinute'), vision: t('settingsPerImage'), transcription: t('settingsPerMinute') };
-                const costLabel = costLabelMap[task] || t('settingsPerImage');
+                const costLabelMap = { rag: t('settingsPerQuestion'), video: t('settingsPerMinute'), vision: t('settingsPerImage'), transcription: t('settingsPerMinute'), embeddings: '/1K chunks' };
+                const costLabel = costLabelMap[task] || '';
 
                 const stars = '★'.repeat(m.hebrew_quality || 3) + '☆'.repeat(5 - (m.hebrew_quality || 3));
                 const speedClass = m.speed === 'fast' ? 'color:var(--accent-green)' : 'color:var(--accent-amber)';
@@ -5973,26 +5973,31 @@
             try {
                 const body = { ...settingsData };
                 const headers = { 'Content-Type': 'application/json' };
-                const token = localStorage.getItem('auth_token');
-                if (token) headers['Authorization'] = 'Bearer ' + token;
 
-                // Save to main server
-                const res = await fetch('/api/settings', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(body)
-                });
-
-                // Also save to agent if available (so local processing uses correct settings)
+                // Save to agent first (local processing)
+                let saved = false;
                 if (agentAvailable) {
-                    fetch(AGENT_URL + '/api/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
-                    }).catch(() => {});
+                    try {
+                        const agentRes = await fetch(AGENT_URL + '/api/settings', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+                        if (agentRes.ok) saved = true;
+                    } catch (e) {}
                 }
 
-                if (res.ok) {
+                // Also save to server (if authenticated)
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                    try {
+                        const res = await fetch('/api/settings', { method: 'POST', headers, body: JSON.stringify(body) });
+                        if (res.ok) saved = true;
+                    } catch (e) {}
+                }
+
+                if (saved) {
                     showToast(t('settingsAutoSaved'), 'success', 2000);
                 } else {
                     console.error('Auto-save failed:', res.status, await res.text());
