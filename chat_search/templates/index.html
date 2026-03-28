@@ -2076,6 +2076,9 @@
                 <button class="sidebar-footer-btn" onclick="showHelp()">
                     <i class="fas fa-question-circle"></i> <span data-i18n="help">עזרה</span>
                 </button>
+                <button class="sidebar-footer-btn" onclick="checkForUpdates()" id="updateBtn" style="display:none;">
+                    <i class="fas fa-sync-alt"></i> <span data-i18n="checkUpdates">בדוק עדכונים</span>
+                </button>
                 <button class="sidebar-footer-btn" onclick="toggleLanguage()">
                     <i class="fas fa-globe"></i> <span id="sidebarLangLabel">English</span>
                 </button>
@@ -2695,6 +2698,8 @@
                 installToolsDesc: 'התקן את הכלים המקומיים כדי לעבד צ\'אטים על המחשב שלך — תמלול הקלטות, תיאור תמונות וחיפוש חכם.',
                 installToolsBtn: 'הורד והתקן',
                 settingsDataDir: 'תיקיית נתונים',
+                checkUpdates: 'בדוק עדכונים',
+                checking: 'בודק...',
             },
             en: {
                 searchPlaceholder: 'Search messages... (type * to browse samples)',
@@ -2950,6 +2955,8 @@
                 installToolsDesc: 'Install local tools to process chats on your computer — voice transcription, image descriptions and smart search.',
                 installToolsBtn: 'Download & Install',
                 settingsDataDir: 'Data Directory',
+                checkUpdates: 'Check for updates',
+                checking: 'Checking...',
             }
         };
 
@@ -2979,6 +2986,38 @@
         }
 
         // --- Help modal ---
+        async function checkForUpdates() {
+            const btn = document.getElementById('updateBtn');
+            if (!btn) return;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('checking');
+            btn.disabled = true;
+            try {
+                const res = await fetch(AGENT_URL + '/api/update/check');
+                const d = await res.json();
+                if (d.update_available) {
+                    const doUpdate = confirm(he
+                        ? `יש גרסה חדשה!\n\nנוכחי: ${d.current}\nחדש: ${d.latest}\n\nלעדכן עכשיו?`
+                        : `Update available!\n\nCurrent: ${d.current}\nLatest: ${d.latest}\n\nUpdate now?`);
+                    if (doUpdate) {
+                        const applyRes = await fetch(AGENT_URL + '/api/update/apply', { method: 'POST' });
+                        const applyData = await applyRes.json();
+                        if (applyData.restart_needed) {
+                            showToast(he ? 'עודכן! הפעל מחדש את ה-Agent.' : 'Updated! Restart the Agent.', 'success', 5000);
+                        } else {
+                            showToast(applyData.output || 'Updated', 'success');
+                        }
+                    }
+                } else {
+                    showToast(he ? 'הגרסה מעודכנת!' : 'Already up to date!', 'success');
+                }
+            } catch (e) {
+                showToast(he ? 'שגיאה בבדיקת עדכונים' : 'Update check failed', 'error');
+            }
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+        }
+
         function showHelp() {
             document.getElementById('helpModal').style.display = 'flex';
             closeSidebar();
@@ -3165,12 +3204,15 @@
             const agentDot = document.getElementById('agentDot');
             const agentToggle = document.getElementById('agentToggle');
             const installLink = document.getElementById('sidebarInstallLink');
+            const updateBtn = document.getElementById('updateBtn');
             if (agentAvailable) {
                 if (agentRow) { agentRow.style.display = ''; agentDot.className = 'agent-dot online'; agentToggle.classList.add('active'); }
                 if (installLink) installLink.style.display = 'none';
+                if (updateBtn) updateBtn.style.display = '';
             } else {
                 if (agentRow) agentRow.style.display = 'none';
                 if (installLink) installLink.style.display = '';
+                if (updateBtn) updateBtn.style.display = 'none';
             }
         }
 

@@ -154,6 +154,41 @@ def status():
     })
 
 
+@app.route("/api/update/check")
+def api_update_check():
+    """Check if a newer version is available on GitHub."""
+    try:
+        import subprocess as _sp
+        agent_repo = Path(__file__).resolve().parent.parent
+        # Get local commit
+        local = _sp.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=str(agent_repo), timeout=10).stdout.strip()
+        # Fetch latest from remote
+        _sp.run(["git", "fetch", "origin", "main", "--quiet"], capture_output=True, cwd=str(agent_repo), timeout=30)
+        remote = _sp.run(["git", "rev-parse", "origin/main"], capture_output=True, text=True, cwd=str(agent_repo), timeout=10).stdout.strip()
+        return jsonify({
+            "current": local[:8],
+            "latest": remote[:8],
+            "update_available": local != remote,
+            "version": VERSION,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "update_available": False})
+
+
+@app.route("/api/update/apply", methods=["POST"])
+def api_update_apply():
+    """Pull latest code from GitHub and signal restart needed."""
+    try:
+        import subprocess as _sp
+        agent_repo = Path(__file__).resolve().parent.parent
+        result = _sp.run(["git", "pull", "origin", "main"], capture_output=True, text=True, cwd=str(agent_repo), timeout=60)
+        if result.returncode == 0:
+            return jsonify({"status": "updated", "output": result.stdout.strip(), "restart_needed": True})
+        return jsonify({"status": "error", "output": result.stderr.strip()}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/user/data-dir", methods=["GET"])
 def api_get_data_dir():
     """Get data directory info."""
