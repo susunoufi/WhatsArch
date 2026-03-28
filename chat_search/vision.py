@@ -646,7 +646,7 @@ def process_images(chat_dir: str, cache_path: str, provider: str = "anthropic", 
                         usage_tracker.log_event({
                             "type": "vision", "chat_name": os.path.basename(chat_dir),
                             "provider": provider, "model": model, "file": filename,
-                        }, os.path.dirname(os.path.dirname(cache_path)))
+                        }, os.path.dirname(os.path.dirname(chat_dir)))
                     except Exception:
                         pass
                 else:
@@ -786,7 +786,7 @@ def process_videos(
         # Log usage
         try:
             from . import usage_tracker
-            project_root = os.path.dirname(os.path.dirname(descriptions_cache_path))
+            project_root = os.path.dirname(os.path.dirname(chat_dir))
             vid_dur = get_video_duration(filepath)
             if desc_cache.get(filename):
                 usage_tracker.log_event({
@@ -862,7 +862,7 @@ def process_pdfs(chat_dir: str, cache_path: str, progress_callback=None, cancel_
                 "type": "pdf", "chat_name": os.path.basename(chat_dir),
                 "provider": "pymupdf", "model": "PyMuPDF", "file": filename,
                 "pages": page_count,
-            }, os.path.dirname(os.path.dirname(cache_path)))
+            }, os.path.dirname(os.path.dirname(chat_dir)))
         except Exception:
             pass
 

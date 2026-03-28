@@ -139,10 +139,10 @@ def _transcribe_local_batch(
             from . import usage_tracker
             audio_dur = info.duration if info and hasattr(info, "duration") else 0
             usage_tracker.log_event({
-                "type": "transcription", "chat_name": os.path.basename(os.path.dirname(cache_path)),
+                "type": "transcription", "chat_name": os.path.basename(chat_dir),
                 "provider": "whisper", "model": f"faster-whisper ({model_size})",
                 "file": filename, "audio_duration_sec": audio_dur,
-            }, os.path.dirname(os.path.dirname(cache_path)))
+            }, os.path.dirname(os.path.dirname(chat_dir)))
         except Exception:
             pass
 
@@ -241,10 +241,10 @@ def _transcribe_cloud_batch(
                     from . import usage_tracker
                     usage_tracker.log_event({
                         "type": "transcription",
-                        "chat_name": os.path.basename(os.path.dirname(os.path.dirname(cache_path))),
+                        "chat_name": os.path.basename(chat_dir),
                         "provider": provider, "model": model or "default",
                         "file": filename,
-                    }, os.path.dirname(os.path.dirname(cache_path)))
+                    }, os.path.dirname(os.path.dirname(chat_dir)))
                 except Exception:
                     pass
 

@@ -886,7 +886,7 @@ def ask(db_path: str, question: str, chat_name: str, history: list = None, proje
             "type": "rag", "chat_name": chat_name,
             "provider": llm.provider, "model": llm.model,
             "file": question[:80],
-        }, project_root or os.path.dirname(os.path.dirname(db_path)))
+        }, project_root or os.path.dirname(os.path.dirname(os.path.dirname(db_path))))
     except Exception:
         pass
 
@@ -1004,7 +1004,7 @@ def ask_stream(db_path: str, question: str, chat_name: str, history: list = None
             "type": "rag", "chat_name": chat_name,
             "provider": llm.provider, "model": llm.model,
             "file": question[:80],
-        }, project_root or os.path.dirname(os.path.dirname(db_path)))
+        }, project_root or os.path.dirname(os.path.dirname(os.path.dirname(db_path))))
     except Exception:
         pass
 

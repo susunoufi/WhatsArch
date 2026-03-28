@@ -48,6 +48,75 @@ def _get_api_key_for_provider(provider: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Garbled Hebrew filename repair (CP862 → UTF-8)
+# ---------------------------------------------------------------------------
+
+def _fix_garbled_hebrew(name: str) -> str | None:
+    """Try to decode a garbled Hebrew filename (CP862-mangled UTF-8).
+
+    Returns the fixed name if the filename was garbled, or None if it's fine.
+    WhatsApp ZIP exports on Windows sometimes extract Hebrew filenames
+    with UTF-8 bytes decoded as CP862 (DOS Hebrew codepage).
+    """
+    if '\u256b' not in name:  # ╫ character = CP862 for byte 0xD7 (Hebrew UTF-8 prefix)
+        return None
+    try:
+        return name.encode('cp862').decode('utf-8')
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        return None
+
+
+def repair_garbled_filenames(chat_dir: str) -> int:
+    """Rename garbled Hebrew filenames on disk and update cached JSON files.
+
+    Returns the number of files renamed.
+    """
+    renamed = 0
+    rename_map = {}  # old_name -> new_name
+
+    for name in os.listdir(chat_dir):
+        fixed = _fix_garbled_hebrew(name)
+        if fixed and fixed != name:
+            old_path = os.path.join(chat_dir, name)
+            new_path = os.path.join(chat_dir, fixed)
+            if not os.path.exists(new_path):
+                try:
+                    os.rename(old_path, new_path)
+                    rename_map[name] = fixed
+                    renamed += 1
+                except OSError:
+                    pass
+
+    if not rename_map:
+        return 0
+
+    # Update cached JSON files that use filenames as keys
+    data_dir = os.path.join(chat_dir, "data")
+    if os.path.isdir(data_dir):
+        for cache_file in ("transcriptions.json", "descriptions.json",
+                           "video_transcriptions.json", "pdf_texts.json"):
+            cache_path = os.path.join(data_dir, cache_file)
+            if not os.path.exists(cache_path):
+                continue
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    cache = json.load(f)
+                updated = False
+                for old_name, new_name in rename_map.items():
+                    if old_name in cache:
+                        cache[new_name] = cache.pop(old_name)
+                        updated = True
+                if updated:
+                    with open(cache_path, "w", encoding="utf-8") as f:
+                        json.dump(cache, f, ensure_ascii=False, indent=2)
+            except (json.JSONDecodeError, IOError):
+                pass
+
+    print(f"[REPAIR] Renamed {renamed} garbled Hebrew filenames in {os.path.basename(chat_dir)}")
+    return renamed
+
+
+# ---------------------------------------------------------------------------
 # File scanning
 # ---------------------------------------------------------------------------
 
@@ -55,7 +124,11 @@ def scan_chat_files(chat_dir: str) -> dict:
     """Scan a chat directory and return counts/lists of all media file types.
 
     Uses the same filtering rules as vision.py and transcribe.py.
+    Automatically repairs garbled Hebrew filenames on first scan.
     """
+    # Auto-repair garbled Hebrew filenames (CP862-mangled UTF-8 from ZIP extraction)
+    repair_garbled_filenames(chat_dir)
+
     audio_files = []
     image_files = []
     video_files = []
