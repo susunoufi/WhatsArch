@@ -4605,6 +4605,7 @@
         }
 
         function renderManagementCard(chatName, status, source) {
+            const he = currentLang === 'he';
             const isRunning = status.active_task && status.active_task.status === 'running';
             const runningTask = isRunning ? status.active_task.task : null;
             const safeName = escapeHtml(chatName);
