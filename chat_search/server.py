@@ -421,11 +421,18 @@ def create_app(chats_dir: str) -> Flask:
         # Delete from filesystem
         shutil.rmtree(chat_dir, ignore_errors=True)
 
-        # Delete from Supabase if web mode
+        # Delete from Supabase + cloud storage if web mode
         user = getattr(request, "user", None)
         if user and _is_web_mode():
             sb = _get_supabase_client()
             if sb:
+                # Delete from cloud storage
+                try:
+                    from . import storage
+                    storage.delete_chat_storage(sb, user["id"], chat_name)
+                except Exception as e:
+                    print(f"[DELETE] Warning: Storage cleanup failed for {chat_name}: {e}")
+                # Delete metadata from database
                 try:
                     sb.table("user_chats").delete().eq("chat_name", chat_name).eq("user_id", user["id"]).execute()
                 except Exception as e:
@@ -1239,6 +1246,27 @@ def create_app(chats_dir: str) -> Flask:
 
         return jsonify({"status": "ok"})
 
+    @app.route("/api/user/storage")
+    @require_auth
+    def api_user_storage():
+        """Get user's cloud storage usage."""
+        user = getattr(request, 'user', None)
+        if not user or not _is_web_mode():
+            return jsonify({"total_bytes": 0, "chats": [], "quota_bytes": 0})
+        sb = _get_supabase_client()
+        if not sb:
+            return jsonify({"total_bytes": 0, "chats": [], "quota_bytes": 0})
+        try:
+            from . import storage
+            usage = storage.get_user_storage_usage(sb, user["id"])
+            plan = get_user_plan(user["email"]).get("cloud_preset", "budget")
+            quota = storage.STORAGE_QUOTAS.get(plan, storage.STORAGE_QUOTAS["budget"])
+            usage["quota_bytes"] = quota
+            usage["plan"] = plan
+            return jsonify(usage)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     @app.route("/api/hardware")
     def api_hardware():
         """Get hardware info and Ollama performance estimates."""
@@ -1619,11 +1647,19 @@ def create_app(chats_dir: str) -> Flask:
 
             shutil.copytree(chat_root, dest_dir)
 
-            # Register in Supabase if web mode
+            # Register in Supabase if web mode + upload to cloud storage
             user = getattr(request, "user", None)
             if user and _is_web_mode():
                 sb = _get_supabase_client()
                 if sb:
+                    # Upload to Supabase Storage for persistence
+                    try:
+                        from . import storage
+                        storage_result = storage.upload_chat_data(sb, user["id"], chat_name, dest_dir)
+                    except Exception as e:
+                        print(f"[Storage] Upload warning: {e}")
+                        storage_result = {}
+
                     try:
                         sb.table("user_chats").insert({
                             "user_id": user["id"],

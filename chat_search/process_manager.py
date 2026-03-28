@@ -474,6 +474,12 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
                 "current_file": "", "processed": 0, "total": 0, "error": None,
             }
 
+        # Sync processed data to cloud storage (non-blocking)
+        try:
+            _sync_to_cloud(chat_name, chat_dir, chats_dir)
+        except Exception as e:
+            print(f"[Storage] Cloud sync warning for {chat_name}: {e}")
+
     except ProcessCancelled:
         with _processing_lock:
             _processing_state[chat_name] = {
@@ -500,6 +506,39 @@ def _run_task(chat_name: str, task: str, chats_dir: str, model_size: str):
     finally:
         with _processing_lock:
             _cancel_events.pop(chat_name, None)
+
+
+def _sync_to_cloud(chat_name: str, chat_dir: str, chats_dir: str):
+    """Sync processed data to Supabase Storage after task completion."""
+    project_root = os.path.dirname(chats_dir)
+    # Check if web mode (Supabase configured)
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    if not supabase_url:
+        return  # Local mode, no cloud sync needed
+
+    try:
+        from supabase import create_client
+        from supabase.lib.client_options import SyncClientOptions
+        from . import storage
+
+        url = supabase_url
+        key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+        if not key:
+            return
+
+        sb = create_client(url, key, options=SyncClientOptions(flow_type="implicit"))
+
+        # Find user_id from user_chats table
+        try:
+            result = sb.table("user_chats").select("user_id").eq("chat_name", chat_name).limit(1).execute()
+            if result.data:
+                user_id = result.data[0]["user_id"]
+                storage.upload_chat_data(sb, user_id, chat_name, chat_dir)
+                print(f"[Storage] Synced {chat_name} to cloud")
+        except Exception as e:
+            print(f"[Storage] Sync lookup failed: {e}")
+    except Exception as e:
+        print(f"[Storage] Sync failed: {e}")
 
 
 def _check_cancel(cancel_event):

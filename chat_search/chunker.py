@@ -135,13 +135,9 @@ def _apply_bridging(sessions: list[list[dict]]) -> list[list[dict]]:
             for m in session:
                 m["_bridging"] = True
 
-            # Append to previous session
+            # Append to previous session only (no duplication)
             if merged:
                 merged[-1].extend(session)
-
-            # Also prepend to next session if exists
-            if i + 1 < len(sessions):
-                sessions[i + 1] = session + sessions[i + 1]
         else:
             merged.append(session)
 

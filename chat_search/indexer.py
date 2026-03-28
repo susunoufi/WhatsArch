@@ -796,13 +796,15 @@ class EmbeddingCancelled(Exception):
 
 def _get_chunk_embeddings(db_path: str):
     """Load and cache chunk embeddings array."""
-    if db_path not in _chunk_embedding_cache:
+    # Normalize path for consistent cache keys (important on Windows)
+    cache_key = os.path.normcase(os.path.abspath(db_path))
+    if cache_key not in _chunk_embedding_cache:
         import numpy as np
         embeddings_path = db_path.replace(".db", "_chunk_embeddings.npy")
         if not os.path.exists(embeddings_path):
             return None
-        _chunk_embedding_cache[db_path] = np.load(embeddings_path)
-    return _chunk_embedding_cache[db_path]
+        _chunk_embedding_cache[cache_key] = np.load(embeddings_path)
+    return _chunk_embedding_cache[cache_key]
 
 
 def semantic_search_chunks(db_path: str, queries, top_k: int = 30) -> list:

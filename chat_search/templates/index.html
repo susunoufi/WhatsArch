@@ -20,46 +20,49 @@
         }
 
         :root {
-            --bg-primary: #f8fafc;
-            --bg-secondary: rgba(0,0,0,0.02);
-            --bg-tertiary: rgba(0,0,0,0.03);
-            --bg-hover: rgba(0,0,0,0.04);
-            --bg-message: #ffffff;
-            --bg-message-focus: rgba(37,99,235,0.06);
-            --bg-context: rgba(0,0,0,0.02);
-            --bg-card: #ffffff;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #94a3b8;
-            --accent-green: #2563eb;
-            --accent-green-dark: #1d4ed8;
-            --accent-blue: #7c3aed;
-            --accent-blue-dark: #6d28d9;
-            --accent-amber: #2563eb;
-            --accent-red: #ef4444;
-            --sender-dad: #7c3aed;
-            --sender-dad-bg: rgba(124, 58, 237, 0.08);
-            --sender-su: #2563eb;
-            --sender-su-bg: rgba(37, 99, 235, 0.08);
-            --mark-bg: rgba(250, 204, 21, 0.35);
-            --mark-text: #92400e;
-            --border-color: rgba(0,0,0,0.08);
-            --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --bg-primary: #0a0f1a;
+            --bg-secondary: rgba(255,255,255,0.03);
+            --bg-tertiary: rgba(255,255,255,0.05);
+            --bg-hover: rgba(255,255,255,0.07);
+            --bg-message: rgba(255,255,255,0.04);
+            --bg-message-focus: rgba(56,189,248,0.08);
+            --bg-context: rgba(255,255,255,0.03);
+            --bg-card: rgba(255,255,255,0.05);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-green: #38bdf8;
+            --accent-green-dark: #0ea5e9;
+            --accent-blue: #818cf8;
+            --accent-blue-dark: #6366f1;
+            --accent-amber: #f59e0b;
+            --accent-red: #f87171;
+            --sender-dad: #a78bfa;
+            --sender-dad-bg: rgba(167, 139, 250, 0.1);
+            --sender-su: #38bdf8;
+            --sender-su-bg: rgba(56, 189, 248, 0.1);
+            --mark-bg: rgba(250, 204, 21, 0.25);
+            --mark-text: #fef08a;
+            --border-color: rgba(255,255,255,0.08);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
             --radius: 12px;
             --radius-lg: 16px;
-            --progress-bg: rgba(0,0,0,0.06);
-            --progress-fill: #2563eb;
+            --progress-bg: rgba(255,255,255,0.06);
+            --progress-fill: linear-gradient(135deg, #38bdf8, #818cf8);
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --glass-border: rgba(255,255,255,0.08);
         }
 
-        html { direction: rtl; color-scheme: light; }
+        html { direction: rtl; color-scheme: dark; }
 
         body {
             font-family: "Heebo", "Segoe UI", "Arial", sans-serif;
             background: var(--bg-primary);
             background-image:
-                radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 50%, rgba(124,58,237,0.03) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 20%, rgba(56,189,248,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(129,140,248,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(15,23,42,1) 0%, transparent 100%);
             background-attachment: fixed;
             color: var(--text-primary);
             line-height: 1.6;
@@ -70,21 +73,33 @@
 
         /* --- Scrollbar --- */
         ::-webkit-scrollbar { width: 7px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* --- Accessibility: Focus Styles --- */
+        :focus-visible {
+            outline: 2px solid var(--accent-green);
+            outline-offset: 2px;
+        }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 2px solid var(--accent-green);
+            outline-offset: 2px;
+        }
+        /* Minimum touch target size */
+        button, a, [role="button"] { min-height: 44px; }
 
         /* --- Header --- */
         .header {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(255,255,255,0.85);
+            background: rgba(10, 15, 26, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0,0,0,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             padding: 16px 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
         }
 
         .header-top {
@@ -110,34 +125,34 @@
             padding: 7px 14px;
             font-size: 0.92em;
             min-width: 160px;
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--radius);
             color: var(--text-primary);
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
         }
-        .chat-selector option { background: #ffffff; color: var(--text-primary); }
+        .chat-selector option { background: #1e293b; color: var(--text-primary); }
 
-        .chat-selector:focus { border-color: rgba(255, 255, 255, 0.6); outline: none; }
+        .chat-selector:focus { border-color: var(--accent-green); outline: none; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
 
-        /* Header inputs on gradient */
-        .header .search-input-wrapper input { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: var(--text-primary); }
+        /* Header inputs on dark background */
+        .header .search-input-wrapper input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: var(--text-primary); }
         .header .search-input-wrapper input::placeholder { color: var(--text-muted); }
-        .header .search-input-wrapper input:focus { border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .header .search-input-wrapper input:focus { border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
         .header .search-input-wrapper i { color: var(--accent-green); opacity: 0.6; }
         .header .date-group label { color: var(--text-secondary); }
-        .header .date-group input[type="text"] { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: var(--text-primary); }
+        .header .date-group input[type="text"] { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: var(--text-primary); }
         .header .date-group input[type="text"]::placeholder { color: var(--text-muted); }
         .header .date-group input[type="text"]:focus { border-color: var(--accent-green); }
         .header .date-picker-btn { color: var(--text-secondary); }
         .header .date-picker-btn:hover { color: var(--accent-green); }
-        .header .filter-dropdown-btn { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); color: var(--text-primary); }
+        .header .filter-dropdown-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: var(--text-primary); }
         .header .filter-dropdown-btn:hover { border-color: var(--accent-green); }
-        .header .filter-dropdown-btn .filter-count { background: var(--accent-green); color: #fff; }
-        .header .btn-primary { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none; box-shadow: 0 2px 12px rgba(37,99,235,0.25); font-weight: 600; }
-        .header .btn-primary:hover { box-shadow: 0 4px 20px rgba(37,99,235,0.35); transform: translateY(-1px); }
+        .header .filter-dropdown-btn .filter-count { background: var(--accent-green); color: #0a0f1a; }
+        .header .btn-primary { background: linear-gradient(135deg, #38bdf8, #818cf8); color: #0f172a; border: none; box-shadow: 0 2px 16px rgba(56,189,248,0.3); font-weight: 700; }
+        .header .btn-primary:hover { box-shadow: 0 4px 24px rgba(56,189,248,0.45); transform: translateY(-1px); }
 
         /* --- App Layout: Sidebar + Main --- */
         .app-layout {
@@ -149,10 +164,10 @@
         .sidebar {
             width: 220px;
             min-width: 220px;
-            background: rgba(255,255,255,0.95);
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-left: 1px solid rgba(0,0,0,0.06);
+            border-left: 1px solid rgba(255,255,255,0.06);
             display: flex;
             flex-direction: column;
             position: sticky;
@@ -167,7 +182,7 @@
 
         .sidebar-user {
             padding: 16px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -184,7 +199,7 @@
 
         .sidebar-agent-toggle {
             padding: 10px 16px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -237,12 +252,12 @@
         }
 
         .tab-btn i { width: 18px; text-align: center; font-size: 0.95em; }
-        .tab-btn.active { color: var(--accent-green); background: rgba(37,99,235,0.08); font-weight: 600; }
-        .tab-btn:hover:not(.active) { color: var(--text-primary); background: rgba(0,0,0,0.04); }
+        .tab-btn.active { color: var(--accent-green); background: rgba(56,189,248,0.1); font-weight: 600; }
+        .tab-btn:hover:not(.active) { color: var(--text-primary); background: rgba(255,255,255,0.05); }
 
         .sidebar-footer {
             padding: 12px 16px;
-            border-top: 1px solid rgba(0,0,0,0.06);
+            border-top: 1px solid rgba(255,255,255,0.06);
             display: flex;
             flex-direction: column;
             gap: 4px;
@@ -255,7 +270,7 @@
             border-radius: 6px; font-family: inherit;
             transition: all 0.15s;
         }
-        .sidebar-footer-btn:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+        .sidebar-footer-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
         .sidebar-footer-btn i { width: 18px; text-align: center; }
 
         .main-content {
@@ -835,7 +850,7 @@
         }
         .help-modal-header h2 { font-size: 1.1em; display: flex; align-items: center; gap: 8px; }
         .help-close { background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--text-muted); padding: 4px 8px; border-radius: 6px; }
-        .help-close:hover { background: rgba(0,0,0,0.05); color: var(--text-primary); }
+        .help-close:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
         .help-modal-body { padding: 20px 24px; }
         .help-section { margin-bottom: 20px; }
         .help-section h3 { font-size: 0.95em; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; color: var(--accent-green); }
@@ -847,7 +862,7 @@
             background: none; border: none; font-size: 1.3em; cursor: pointer;
             color: var(--text-primary); padding: 4px 8px; border-radius: 6px;
         }
-        .sidebar-toggle:hover { background: rgba(0,0,0,0.05); }
+        .sidebar-toggle:hover { background: rgba(255,255,255,0.1); }
 
         /* --- Responsive --- */
         @media (max-width: 768px) {
@@ -1957,21 +1972,21 @@
     <!-- Header -->
     <header class="header">
         <div class="header-top">
-            <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()">
+            <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar menu">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="header-title">
                 <img src="/static/icon-48.png" class="header-logo-icon" alt="WhatsArch" style="border-radius:8px;">
                 <h1><span class="logo-whats">Whats</span><span class="logo-arch">Arch</span></h1>
             </div>
-            <select id="chatSelector" class="chat-selector">
+            <select id="chatSelector" class="chat-selector" aria-label="Select chat">
                 <option value="" data-i18n="selectChat">בחר צ'אט...</option>
             </select>
         </div>
         <div class="search-bar" id="searchBarRow">
             <div class="search-input-wrapper">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchQuery" data-i18n-placeholder="searchPlaceholder" placeholder="חיפוש הודעות..." autocomplete="off">
+                <input type="text" id="searchQuery" data-i18n-placeholder="searchPlaceholder" placeholder="חיפוש הודעות..." autocomplete="off" aria-label="Search messages">
             </div>
             <div class="filter-dropdown" id="typeDropdown">
                 <button class="filter-dropdown-btn" onclick="toggleDropdown('typeDropdown', event)">
@@ -2322,7 +2337,7 @@
     </div><!-- /app-layout -->
 
     <!-- Help Modal -->
-    <div class="help-modal" id="helpModal" style="display:none;">
+    <div class="help-modal" id="helpModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
         <div class="help-modal-content">
             <div class="help-modal-header">
                 <h2><i class="fas fa-question-circle"></i> <span data-i18n="helpTitle">איך זה עובד?</span></h2>
@@ -2360,7 +2375,7 @@
     </div>
 
     <!-- AI Chat FAB -->
-    <button class="ai-chat-fab" id="aiChatFab" onclick="toggleAiChat()" title="עוזר AI"><img class="fab-logo" src="/static/fab_icon.png" alt="AI" style="width:36px;height:36px;border-radius:50%;"></button>
+    <button class="ai-chat-fab" id="aiChatFab" onclick="toggleAiChat()" title="עוזר AI" aria-label="Open AI assistant"><img class="fab-logo" src="/static/fab_icon.png" alt="AI" style="width:36px;height:36px;border-radius:50%;"></button>
 
     <!-- AI Chat Panel -->
     <div class="ai-chat-panel" id="aiChatPanel">
@@ -2373,7 +2388,7 @@
             <div class="ai-msg assistant"><span class="ai-msg-text">שלום! אני יכול לעזור לך למצוא דברים ולנתח את השיחה.<br>שאל אותי כל שאלה על השיחה ואני אחפש בשבילך.</span></div>
         </div>
         <div class="ai-chat-input-bar">
-            <input type="text" id="aiChatInput" data-i18n-placeholder="aiPlaceholder" placeholder="שאל שאלה על השיחה..." autocomplete="off">
+            <input type="text" id="aiChatInput" data-i18n-placeholder="aiPlaceholder" placeholder="שאל שאלה על השיחה..." autocomplete="off" aria-label="Ask AI a question">
             <button class="ai-send-btn" id="aiSendBtn" onclick="sendAiMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
